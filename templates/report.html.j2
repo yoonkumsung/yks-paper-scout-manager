@@ -1,0 +1,185 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ meta.display_title }}{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1>{{ meta.display_title }}</h1>
+  <div class="stats">
+    <span>수집 {{ meta.total_collected }}편</span>
+    <span>필터 {{ meta.total_filtered }}편</span>
+    <span>폐기 {{ meta.total_discarded }}편</span>
+    <span>선정 {{ meta.total_output }}편</span>
+  </div>
+  <div class="window-info">
+    검색 윈도우: {{ meta.window_start_utc }} ~ {{ meta.window_end_utc }}
+  </div>
+</div>
+
+{% if meta.keywords_used %}
+<details>
+  <summary>검색 키워드</summary>
+  <div class="details-content">
+    {{ meta.keywords_used | join(", ") }}
+  </div>
+</details>
+{% endif %}
+
+<div class="tabs">
+  <input type="radio" name="tabs" id="tab-today" checked>
+  <input type="radio" name="tabs" id="tab-remind">
+  <div class="tab-labels">
+    <label for="tab-today">오늘의 논문</label>
+    <label for="tab-remind">다시 보기</label>
+  </div>
+
+  <div class="tab-content tab-panel-today">
+    {% if papers %}
+      {% set tier1_papers = [] %}
+      {% set tier2_papers = [] %}
+      {% for paper in papers %}
+        {% if paper.tier == 1 %}
+          {% if tier1_papers.append(paper) %}{% endif %}
+        {% else %}
+          {% if tier2_papers.append(paper) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+
+      {% for paper in tier1_papers %}
+      <div class="paper-card">
+        <div class="rank-title">
+          <span class="rank">{{ paper.rank }}위</span>
+          <span class="paper-title">
+            <a href="{{ paper.url }}">{{ paper.title }}</a>
+          </span>
+          {% if paper.score_lowered %}
+          <span class="lowered-tag">[완화]</span>
+          {% endif %}
+        </div>
+
+        <div class="score-bar-container">
+          <span>{{ paper.final_score }}</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: {{ paper.final_score }}%"></div>
+          </div>
+          <span class="score-detail">
+            base:{{ paper.llm_base_score }} + bonus:+{{ paper.bonus_score }}
+          </span>
+        </div>
+
+        {% if paper.categories %}
+        <div class="categories">
+          {% for cat in paper.categories %}
+          <span class="cat-tag">{{ cat }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if paper.flags %}
+        <div class="flags">
+          {% if paper.flags.is_edge %}
+          <span class="flag-tag flag-edge">엣지</span>
+          {% endif %}
+          {% if paper.flags.is_realtime %}
+          <span class="flag-tag flag-realtime">실시간</span>
+          {% endif %}
+          {% if paper.has_code %}
+          <span class="flag-tag flag-code">코드</span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if paper.summary_ko %}
+        <details>
+          <summary>개요</summary>
+          <div class="details-content">{{ paper.summary_ko }}</div>
+        </details>
+        {% endif %}
+
+        {% if paper.reason_ko %}
+        <p><strong>선정 근거:</strong> {{ paper.reason_ko }}</p>
+        {% endif %}
+
+        {% if paper.insight_ko %}
+        <p><strong>활용 인사이트:</strong> {{ paper.insight_ko }}</p>
+        {% endif %}
+
+        <div class="paper-links">
+          {% if paper.pdf_url %}
+          <a href="{{ paper.pdf_url }}">PDF</a>
+          {% endif %}
+          {% if paper.has_code and paper.code_url %}
+          <a href="{{ paper.code_url }}">Code</a>
+          {% endif %}
+        </div>
+
+        {% if paper.cluster_mates %}
+        <div class="cluster-links">
+          같은 클러스터: {{ paper.cluster_mates | join(", ") }}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      {% if tier1_papers and tier2_papers %}
+      <div class="tier-divider">Tier 2</div>
+      {% endif %}
+
+      {% for paper in tier2_papers %}
+      <div class="compact-card">
+        <div class="rank-title">
+          <span class="rank">{{ paper.rank }}위</span>
+          <span class="paper-title">
+            <a href="{{ paper.url }}">{{ paper.title }}</a>
+          </span>
+          {% if paper.score_lowered %}
+          <span class="lowered-tag">[완화]</span>
+          {% endif %}
+          <span class="score-detail">{{ paper.final_score }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-message">
+        오늘은 새로운 논문이 없습니다.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-content tab-panel-remind">
+    {% if remind_papers %}
+      {% for paper in remind_papers %}
+      <div class="remind-card">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="{{ paper.url }}">{{ paper.title }}</a>
+          </span>
+          <span class="recommend-count">{{ paper.recommend_count }}회째 추천</span>
+        </div>
+        <div class="score-bar-container">
+          <span>{{ paper.final_score }}</span>
+        </div>
+        {% if paper.summary_ko %}
+        <p>{{ paper.summary_ko }}</p>
+        {% endif %}
+        {% if paper.reason_ko %}
+        <p><strong>선정 근거:</strong> {{ paper.reason_ko }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-message">
+        다시 보기 논문이 없습니다.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<footer>
+  <p>이 리포트는 arXiv API를 사용하여 생성되었습니다.</p>
+  <p>arXiv 논문의 저작권은 각 저자에게 있습니다.</p>
+  <p>Thank you to arXiv for use of its open access interoperability.</p>
+  <p>run_id: {{ meta.run_id }} | embedding: {{ meta.embedding_mode }}
+    | weights: {{ meta.scoring_weights }}</p>
+</footer>
+{% endblock %}

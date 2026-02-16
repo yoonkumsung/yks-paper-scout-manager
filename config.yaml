@@ -1,0 +1,157 @@
+# Paper Scout Configuration
+# Reference: devspec.md Section 20-A
+
+app:
+  display_timezone: "Asia/Seoul"
+  report_retention_days: 90
+
+llm:
+  provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
+  model: "google/gemini-2.0-flash-001:free"
+  app_url: "https://github.com/user/paper-scout"
+  app_title: "Paper Scout"
+  retry:
+    max_retries: 3
+    backoff_base: 2
+    backoff_max: 18
+    jitter: true
+  preflight:
+    conservative_rpm: 10
+    conservative_daily: 200
+
+agents:
+  common:
+    ignore_reasoning: true
+    strip_think_blocks: true
+    debug_dir: "tmp/debug"
+  keyword_expander:
+    effort: "high"
+    max_tokens: 2048
+    temperature: 0.3
+    prompt_version: "agent1-v3"
+    cache_ttl_days: 30
+  scorer:
+    effort: "low"
+    max_tokens: 2048
+    temperature: 0.2
+    batch_size: 10
+    prompt_version: "agent2-v2"
+  summarizer:
+    effort: "low"
+    max_tokens: 4096
+    temperature: 0.4
+    tier1_batch_size: 5
+    tier2_batch_size: 10
+    tier1_prompt_version: "agent3-tier1-v1"
+    tier2_prompt_version: "agent3-tier2-v1"
+
+sources:
+  arxiv:
+    num_retries: 3
+    delay_seconds: 3
+    max_results_per_query: 200
+    empty_page_retries: 2
+    empty_page_backoff: [3, 9]
+    window_buffer_minutes: 30
+
+filter:
+  pre_embed_cap: 2000
+
+embedding:
+  model: "sentence-transformers/all-MiniLM-L6-v2"
+  device: "cpu"
+  optional: true
+  mode: "en_synthetic"
+
+scoring:
+  weights:
+    embedding_on:
+      llm: 0.55
+      embed: 0.35
+      recency: 0.10
+    embedding_off:
+      llm: 0.80
+      recency: 0.20
+  bonus:
+    is_edge: 5
+    is_realtime: 5
+    has_code: 3
+  thresholds:
+    default: 60
+    relaxation_steps: [50, 40]
+    min_papers: 5
+  discard_cutoff: 20
+  max_output: 100
+  tier1_count: 30
+
+remind:
+  enabled: true
+  min_score: 80
+  max_expose_count: 2
+
+clustering:
+  enabled: true
+  similarity_threshold: 0.85
+
+topics: []
+
+output:
+  gh_pages:
+    enabled: true
+    keep_files: true
+    retention_days: 90
+  github_issue:
+    enabled: false
+    body_max_chars: 60000
+    labels: ["paper-report"]
+  attachments:
+    enabled: true
+
+notifications:
+  weekly_summary:
+    provider: ""
+    channel_id: ""
+    secret_key: ""
+  on_zero_results: true
+  on_error: true
+
+database:
+  path: "data/paper_scout.db"
+  retention:
+    evaluations_days: 90
+    query_stats_days: 90
+    runs_days: 90
+  papers_ttl_days: 365
+  vacuum_after_purge: true
+  seen_items:
+    path: "data/seen_items.jsonl"
+    rolling_days: 30
+  usage:
+    dir: "data/usage"
+    rolling_days: 30
+  persistence:
+    cache_key_prefix: "db"
+    embed_cache_key_prefix: "embed"
+  release_backup:
+    enabled: true
+    keep_weeks: 4
+    name_template: "paper-scout-db-{date}.sqlite"
+
+weekly:
+  trend_summary:
+    enabled: true
+    top_keywords: 10
+    top_papers: 3
+  update_scan:
+    enabled: true
+    updated_within_days: 7
+    published_min_days: 7
+    published_max_days: 90
+  visualization:
+    enabled: false
+
+local_ui:
+  host: "127.0.0.1"
+  port: 8585
+  open_browser: true

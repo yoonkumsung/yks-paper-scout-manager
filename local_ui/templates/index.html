@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Scout - Local UI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 60px; }
+        .tab-content { padding: 20px 0; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Paper Scout</a>
+            <span class="navbar-text text-light">Local Management UI</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="topics-tab" data-bs-toggle="tab" data-bs-target="#topics" type="button" role="tab">Topics</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">Search</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">Settings</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="mainTabsContent">
+            <!-- Topics Tab -->
+            <div class="tab-pane fade show active" id="topics" role="tabpanel">
+                <h2>Topics Management</h2>
+                <div class="d-flex justify-content-between mb-3">
+                    <button class="btn btn-primary" id="addTopicBtn">Add Topic</button>
+                    <button class="btn btn-secondary" id="refreshTopicsBtn">Refresh</button>
+                </div>
+                <div id="topicsList">
+                    <div class="text-center text-muted">Loading topics...</div>
+                </div>
+
+                <!-- Add Topic Modal -->
+                <div class="modal fade" id="addTopicModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Add New Topic</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addTopicForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Slug</label>
+                                        <input type="text" class="form-control" name="slug" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Name</label>
+                                        <input type="text" class="form-control" name="name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-control" name="description" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">arXiv Categories (comma-separated)</label>
+                                        <input type="text" class="form-control" name="arxiv_categories" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Notify</label>
+                                        <select class="form-select" name="notify" required>
+                                            <option value="none">None</option>
+                                            <option value="telegram">Telegram</option>
+                                            <option value="discord">Discord</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="saveTopicBtn">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div class="tab-pane fade" id="search" role="tabpanel">
+                <h2>Paper Search</h2>
+
+                <!-- Dry-Run Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Dry-Run: Preview Search Keywords</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Generate keywords and arXiv queries without running the full pipeline.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Topic</label>
+                            <select class="form-select" id="dryrunTopicSelect">
+                                <option value="">All Topics</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-primary" id="runDryRunBtn">Run Dry-Run</button>
+
+                        <div id="dryrunResults" class="mt-3" style="display: none;">
+                            <h6>Results:</h6>
+                            <div id="dryrunResultsContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Search Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Manual Search: Run Full Pipeline</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Execute complete pipeline: collect → score → summarize → report.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Topic</label>
+                            <select class="form-select" id="searchTopicSelect">
+                                <option value="">All Topics</option>
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Date From</label>
+                                <input type="date" class="form-control" id="dateFrom">
+                                <small class="text-muted">Leave empty for auto</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date To</label>
+                                <input type="date" class="form-control" id="dateTo">
+                                <small class="text-muted">Leave empty for auto</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Dedup Mode</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="dedupMode" id="dedupSkip" value="skip_recent" checked>
+                                    <label class="form-check-label" for="dedupSkip">Skip Recent</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="dedupMode" id="dedupNone" value="none">
+                                    <label class="form-check-label" for="dedupNone">None</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" id="startSearchBtn">Start Search</button>
+
+                        <div id="searchProgress" class="mt-3" style="display: none;">
+                            <h6>Progress:</h6>
+                            <div id="searchProgressContent">
+                                <div class="alert alert-info">
+                                    <strong>Status:</strong> <span id="progressStatus">Starting...</span><br>
+                                    <strong>Topics:</strong> <span id="progressTopics">0/0</span><br>
+                                    <strong>Current:</strong> <span id="progressCurrent">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="searchResults" class="mt-3" style="display: none;">
+                            <h6>Results:</h6>
+                            <div id="searchResultsContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings" role="tabpanel">
+                <h2>Settings</h2>
+
+                <!-- Configuration Editor -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Configuration Editor</h5>
+                        <button class="btn btn-sm btn-primary" id="saveSettingsBtn">Save Changes</button>
+                    </div>
+                    <div class="card-body" id="configEditor">
+                        <div class="text-center text-muted">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- API Key Status -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">API Key Status</h5>
+                    </div>
+                    <div class="card-body" id="envStatus">
+                        <div class="text-center text-muted">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Database Status -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Database Status</h5>
+                        <button class="btn btn-sm btn-secondary" id="refreshDbBtn">Refresh</button>
+                    </div>
+                    <div class="card-body" id="dbStatus">
+                        <div class="text-center text-muted">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables for polling
+        let pollInterval = null;
+
+        // Load topics on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTopics();
+            loadSettings();
+            loadEnvStatus();
+            loadDbStatus();
+            loadSearchTopics();
+        });
+
+        // Add topic button
+        document.getElementById('addTopicBtn').addEventListener('click', () => {
+            const modal = new bootstrap.Modal(document.getElementById('addTopicModal'));
+            modal.show();
+        });
+
+        // Save topic
+        document.getElementById('saveTopicBtn').addEventListener('click', async () => {
+            const form = document.getElementById('addTopicForm');
+            const formData = new FormData(form);
+
+            const data = {
+                slug: formData.get('slug'),
+                name: formData.get('name'),
+                description: formData.get('description'),
+                arxiv_categories: formData.get('arxiv_categories').split(',').map(s => s.trim()),
+                notify: formData.get('notify')
+            };
+
+            try {
+                const response = await fetch('/api/topics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('Topic created successfully');
+                    bootstrap.Modal.getInstance(document.getElementById('addTopicModal')).hide();
+                    form.reset();
+                    loadTopics();
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.error}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        });
+
+        // Refresh topics
+        document.getElementById('refreshTopicsBtn').addEventListener('click', loadTopics);
+
+        // Load topics function
+        async function loadTopics() {
+            const container = document.getElementById('topicsList');
+            container.innerHTML = '<div class="text-center text-muted">Loading topics...</div>';
+
+            try {
+                const response = await fetch('/api/topics');
+                const topics = await response.json();
+
+                if (topics.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">No topics configured yet.</div>';
+                    return;
+                }
+
+                let html = '<div class="list-group">';
+                for (const topic of topics) {
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">${topic.name}</h5>
+                                <small class="text-muted">${topic.slug}</small>
+                            </div>
+                            <p class="mb-1">${topic.description}</p>
+                            <small>Categories: ${topic.arxiv_categories.join(', ')}</small>
+                            <br>
+                            <small>Last run: ${topic.last_run_date || 'Never'} | Collected: ${topic.total_collected} | Output: ${topic.total_output}</small>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading topics: ${error.message}</div>`;
+            }
+        }
+
+        // Load configuration settings
+        async function loadSettings() {
+            const container = document.getElementById('configEditor');
+
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+
+                // Store settings in global variable for editing
+                window.currentSettings = settings;
+
+                let html = '<form id="settingsForm">';
+
+                // LLM Settings
+                if (settings.llm) {
+                    html += '<h6 class="mt-3">LLM Settings</h6>';
+                    html += `<div class="mb-2"><label class="form-label">Provider</label><input type="text" class="form-control form-control-sm" name="llm.provider" value="${settings.llm.provider || ''}"></div>`;
+                    html += `<div class="mb-2"><label class="form-label">Model</label><input type="text" class="form-control form-control-sm" name="llm.model" value="${settings.llm.model || ''}"></div>`;
+                }
+
+                // Scoring Settings
+                if (settings.scoring) {
+                    html += '<h6 class="mt-3">Scoring Settings</h6>';
+                    html += `<div class="mb-2"><label class="form-label">Min Score</label><input type="number" class="form-control form-control-sm" name="scoring.min_score" value="${settings.scoring.min_score || 0}"></div>`;
+                }
+
+                // Thresholds
+                if (settings.thresholds) {
+                    html += '<h6 class="mt-3">Thresholds</h6>';
+                    html += `<div class="mb-2"><label class="form-label">Code Threshold</label><input type="number" step="0.1" class="form-control form-control-sm" name="thresholds.code_threshold" value="${settings.thresholds.code_threshold || 0}"></div>`;
+                }
+
+                // Embedding Settings
+                if (settings.embedding) {
+                    html += '<h6 class="mt-3">Embedding Settings</h6>';
+                    html += `<div class="mb-2"><label class="form-label">Provider</label><input type="text" class="form-control form-control-sm" name="embedding.provider" value="${settings.embedding.provider || ''}"></div>`;
+                    html += `<div class="mb-2"><label class="form-label">Model</label><input type="text" class="form-control form-control-sm" name="embedding.model" value="${settings.embedding.model || ''}"></div>`;
+                }
+
+                // Database Settings
+                if (settings.database) {
+                    html += '<h6 class="mt-3">Database Settings</h6>';
+                    html += `<div class="mb-2"><label class="form-label">Path</label><input type="text" class="form-control form-control-sm" name="database.path" value="${settings.database.path || ''}"></div>`;
+                }
+
+                html += '</form>';
+                container.innerHTML = html;
+
+                // Bind save button
+                document.getElementById('saveSettingsBtn').onclick = saveSettings;
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading settings: ${error.message}</div>`;
+            }
+        }
+
+        // Save configuration settings
+        async function saveSettings() {
+            const form = document.getElementById('settingsForm');
+            const formData = new FormData(form);
+
+            // Build nested object from form data
+            const updates = {};
+            for (const [key, value] of formData.entries()) {
+                const parts = key.split('.');
+                if (parts.length === 2) {
+                    if (!updates[parts[0]]) updates[parts[0]] = {};
+                    updates[parts[0]][parts[1]] = value;
+                }
+            }
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Settings saved successfully!');
+                    loadSettings(); // Reload
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`Error saving settings: ${error.message}`);
+            }
+        }
+
+        // Load environment status
+        async function loadEnvStatus() {
+            const container = document.getElementById('envStatus');
+
+            try {
+                const response = await fetch('/api/settings/env-status');
+                const status = await response.json();
+
+                let html = '<table class="table table-sm"><thead><tr><th>Name</th><th>Status</th><th>Masked Value</th><th>Valid</th></tr></thead><tbody>';
+                for (const [key, value] of Object.entries(status)) {
+                    const statusBadge = value.exists ? '<span class="badge bg-success">Set</span>' : '<span class="badge bg-secondary">Not Set</span>';
+                    const validBadge = value.exists ? (value.valid ? '<span class="badge bg-success">Valid</span>' : '<span class="badge bg-warning">Invalid</span>') : '<span class="badge bg-secondary">N/A</span>';
+                    const maskedValue = value.masked_value || '-';
+
+                    html += `
+                        <tr>
+                            <td>${key}</td>
+                            <td>${statusBadge}</td>
+                            <td><code>${maskedValue}</code></td>
+                            <td>${validBadge}</td>
+                        </tr>
+                    `;
+                }
+                html += '</tbody></table>';
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading env status: ${error.message}</div>`;
+            }
+        }
+
+        // Load database status
+        async function loadDbStatus() {
+            const container = document.getElementById('dbStatus');
+
+            try {
+                const response = await fetch('/api/settings/db-status');
+                const status = await response.json();
+
+                let html = '<table class="table table-sm"><tbody>';
+                html += `<tr><th>Database Path</th><td><code>${status.db_path || '-'}</code></td></tr>`;
+                html += `<tr><th>Exists</th><td>${status.exists ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>'}</td></tr>`;
+                html += `<tr><th>File Size</th><td>${status.file_size_mb} MB</td></tr>`;
+                html += `<tr><th>Papers</th><td>${status.papers || 0}</td></tr>`;
+                html += `<tr><th>Paper Evaluations</th><td>${status.paper_evaluations || 0}</td></tr>`;
+                html += `<tr><th>Runs</th><td>${status.runs || 0}</td></tr>`;
+                html += `<tr><th>Query Stats</th><td>${status.query_stats || 0}</td></tr>`;
+                html += `<tr><th>Remind Tracking</th><td>${status.remind_tracking || 0}</td></tr>`;
+                html += `<tr><th>Last Purge Date</th><td>${status.last_purge_date || 'N/A'}</td></tr>`;
+                html += '</tbody></table>';
+
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading DB status: ${error.message}</div>`;
+            }
+        }
+
+        // Bind refresh DB button
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('refreshDbBtn').onclick = loadDbStatus;
+        });
+
+        // Load topics for search dropdowns
+        async function loadSearchTopics() {
+            try {
+                const response = await fetch('/api/topics');
+                const topics = await response.json();
+
+                const dryrunSelect = document.getElementById('dryrunTopicSelect');
+                const searchSelect = document.getElementById('searchTopicSelect');
+
+                topics.forEach(topic => {
+                    const option1 = document.createElement('option');
+                    option1.value = topic.slug;
+                    option1.textContent = topic.name;
+                    dryrunSelect.appendChild(option1);
+
+                    const option2 = document.createElement('option');
+                    option2.value = topic.slug;
+                    option2.textContent = topic.name;
+                    searchSelect.appendChild(option2);
+                });
+            } catch (error) {
+                console.error('Error loading search topics:', error);
+            }
+        }
+
+        // Run dry-run
+        document.getElementById('runDryRunBtn').addEventListener('click', async () => {
+            const topicSlug = document.getElementById('dryrunTopicSelect').value || null;
+            const btn = document.getElementById('runDryRunBtn');
+            const resultsDiv = document.getElementById('dryrunResults');
+            const resultsContent = document.getElementById('dryrunResultsContent');
+
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/pipeline/dry-run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic_slug: topicSlug })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Dry-run failed');
+                }
+
+                // Display results
+                let html = '';
+                for (const topic of result.topics) {
+                    if (topic.error) {
+                        html += `
+                            <div class="alert alert-danger">
+                                <strong>${topic.slug}:</strong> ${topic.error}
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">${topic.slug}</h6>
+                                </div>
+                                <div class="card-body">
+                                    <h6>Concepts:</h6>
+                                    <ul>
+                                        ${topic.concepts.map(c => `<li><strong>${c.name_en}:</strong> ${c.keywords.join(', ')}</li>`).join('')}
+                                    </ul>
+
+                                    <h6>Cross-domain Keywords:</h6>
+                                    <p>${topic.cross_domain_keywords.join(', ')}</p>
+
+                                    <h6>Exclude Keywords:</h6>
+                                    <p>${topic.exclude_keywords.join(', ')}</p>
+
+                                    <h6>Generated Queries (${topic.queries.length}):</h6>
+                                    <ol>
+                                        ${topic.queries.map(q => `<li><code>${q}</code></li>`).join('')}
+                                    </ol>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                resultsContent.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            } catch (error) {
+                resultsContent.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                resultsDiv.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Run Dry-Run';
+            }
+        });
+
+        // Start search
+        document.getElementById('startSearchBtn').addEventListener('click', async () => {
+            const topicSlug = document.getElementById('searchTopicSelect').value || null;
+            const dateFrom = document.getElementById('dateFrom').value || null;
+            const dateTo = document.getElementById('dateTo').value || null;
+            const dedup = document.querySelector('input[name="dedupMode"]:checked').value;
+
+            const btn = document.getElementById('startSearchBtn');
+            const progressDiv = document.getElementById('searchProgress');
+            const resultsDiv = document.getElementById('searchResults');
+
+            btn.disabled = true;
+            btn.textContent = 'Starting...';
+            progressDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/pipeline/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        topic_slug: topicSlug,
+                        date_from: dateFrom,
+                        date_to: dateTo,
+                        dedup: dedup
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Pipeline start failed');
+                }
+
+                // Start polling
+                startPolling();
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                btn.disabled = false;
+                btn.textContent = 'Start Search';
+                progressDiv.style.display = 'none';
+            }
+        });
+
+        // Start polling for status
+        function startPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+
+            pollInterval = setInterval(pollStatus, 2000);
+            pollStatus(); // Immediate first poll
+        }
+
+        // Poll status
+        async function pollStatus() {
+            try {
+                const response = await fetch('/api/pipeline/status');
+                const status = await response.json();
+
+                const progressStatus = document.getElementById('progressStatus');
+                const progressTopics = document.getElementById('progressTopics');
+                const progressCurrent = document.getElementById('progressCurrent');
+                const resultsDiv = document.getElementById('searchResults');
+                const resultsContent = document.getElementById('searchResultsContent');
+                const btn = document.getElementById('startSearchBtn');
+
+                progressStatus.textContent = status.progress;
+                progressTopics.textContent = `${status.topics_completed}/${status.topics_total}`;
+                progressCurrent.textContent = status.current_topic || '-';
+
+                if (!status.running) {
+                    // Pipeline finished
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+
+                    btn.disabled = false;
+                    btn.textContent = 'Start Search';
+
+                    if (status.error) {
+                        resultsContent.innerHTML = `<div class="alert alert-danger">Error: ${status.error}</div>`;
+                    } else {
+                        resultsContent.innerHTML = `
+                            <div class="alert alert-success">
+                                <strong>Pipeline completed!</strong><br>
+                                Topics completed: ${status.topics_completed}<br>
+                                <a href="/reports" target="_blank" class="btn btn-sm btn-primary mt-2">View Reports</a>
+                            </div>
+                        `;
+                    }
+                    resultsDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error polling status:', error);
+            }
+        }
+    </script>
+</body>
+</html>

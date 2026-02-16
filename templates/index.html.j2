@@ -1,0 +1,27 @@
+{% extends "base.html.j2" %}
+
+{% block title %}Paper Scout - Index{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1>Paper Scout Reports</h1>
+</div>
+
+{% if reports %}
+<ul class="index-list">
+  {% for report in reports %}
+  <li>
+    <a href="{{ report.filepath }}">{{ report.date }} - {{ report.topic_name }}</a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty-message">
+  등록된 리포트가 없습니다.
+</div>
+{% endif %}
+
+<footer>
+  <p>Paper Scout - arXiv paper collection and analysis tool.</p>
+</footer>
+{% endblock %}
