@@ -1,0 +1,1 @@
+{"test_hash": {"timestamp": 1771260802.4953501, "result": {"concepts": [{"name_en": "Test Concept", "keywords": ["keyword1", "keyword2"]}], "cross_domain_keywords": ["cross1", "cross2"], "exclude_keywords": ["exclude1"], "topic_embedding_text": "Test embedding text"}}}
