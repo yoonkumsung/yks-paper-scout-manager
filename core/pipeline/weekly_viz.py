@@ -95,7 +95,7 @@ def generate_score_distribution(
 
         return output_path
 
-    except Exception:
+    except (ValueError, OSError, TypeError):
         # Graceful failure - return None instead of raising
         return None
 
@@ -192,7 +192,7 @@ def generate_cluster_map(
 
         return output_path
 
-    except Exception:
+    except (ValueError, OSError, TypeError):
         # Graceful failure
         return None
 
@@ -260,8 +260,8 @@ def generate_weekly_charts(
             rows = cursor.fetchall()
 
             if rows:
-                import numpy as np
                 import json
+                import numpy as np
 
                 # Parse embeddings (stored as JSON strings)
                 embeddings = []
@@ -293,7 +293,7 @@ def generate_weekly_charts(
 
         conn.close()
 
-    except Exception:
+    except (sqlite3.Error, OSError, ValueError):
         # Graceful failure - return whatever was generated before error
         pass
 

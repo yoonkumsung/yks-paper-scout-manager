@@ -239,6 +239,26 @@ class TopicLoopOrchestrator:
                 qs.run_id = run_id
                 self._db.insert_query_stats(qs)
 
+            # Early exit if no papers collected
+            if total_collected == 0:
+                logger.warning(
+                    "Step 3: No papers collected for '%s', skipping remaining steps",
+                    slug,
+                )
+                self._db.update_run_status(run_id, "completed")
+                self._db.update_run_stats(
+                    run_id,
+                    total_collected=0, total_filtered=0,
+                    total_scored=0, total_discarded=0, total_output=0,
+                    threshold_used=0, threshold_lowered=False,
+                )
+                return {
+                    "run_id": run_id,
+                    "total_collected": 0, "total_filtered": 0,
+                    "total_scored": 0, "total_discarded": 0,
+                    "total_output": 0, "report_paths": {},
+                }
+
             # ---- Step 4: Hybrid Filter ----
             topic_embedding_text = agent1_output.get("topic_embedding_text")
             filtered_papers, filter_stats = self._step_filter(
@@ -250,6 +270,26 @@ class TopicLoopOrchestrator:
                 "Step 4: Filtered to %d papers for '%s'",
                 total_filtered, slug,
             )
+
+            # Early exit if no papers passed filter
+            if total_filtered == 0:
+                logger.warning(
+                    "Step 4: No papers passed filter for '%s', skipping remaining steps",
+                    slug,
+                )
+                self._db.update_run_status(run_id, "completed")
+                self._db.update_run_stats(
+                    run_id,
+                    total_collected=total_collected, total_filtered=0,
+                    total_scored=0, total_discarded=0, total_output=0,
+                    threshold_used=0, threshold_lowered=False,
+                )
+                return {
+                    "run_id": run_id,
+                    "total_collected": total_collected, "total_filtered": 0,
+                    "total_scored": 0, "total_discarded": 0,
+                    "total_output": 0, "report_paths": {},
+                }
 
             # ---- Step 5: Agent 2 - Scoring ----
             evaluations = self._step_score(

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import re
+import warnings
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -106,7 +107,6 @@ def validate_topic(topic_data: dict, index: int) -> TopicSpec:
     _require_field(topic_data, "name", index)
     _require_field(topic_data, "description", index)
     _require_field(topic_data, "arxiv_categories", index)
-    _require_field(topic_data, "notify", index)
 
     # --- slug format ---
     slug = topic_data["slug"]
@@ -122,8 +122,6 @@ def validate_topic(topic_data: dict, index: int) -> TopicSpec:
         raise ConfigError(f"topics[{index}].description: must be a string")
     desc_len = len(description)
     if desc_len < 100 or desc_len > 300:
-        import warnings
-
         warnings.warn(
             f"topics[{index}].description: recommended length is 100-300 chars, "
             f"got {desc_len}",
@@ -144,40 +142,39 @@ def validate_topic(topic_data: dict, index: int) -> TopicSpec:
                 f"got {type(cat).__name__}"
             )
 
-    # --- notify ---
-    notify_data = topic_data["notify"]
-    if not isinstance(notify_data, dict):
-        raise ConfigError(f"topics[{index}].notify: must be a mapping")
-    _require_notify_field(notify_data, "provider", index)
-    _require_notify_field(notify_data, "channel_id", index)
-    _require_notify_field(notify_data, "secret_key", index)
+    # --- notify (optional) ---
+    notify: NotifyConfig | None = None
+    notify_data = topic_data.get("notify")
+    if notify_data is not None and isinstance(notify_data, dict) and notify_data:
+        provider = notify_data.get("provider", "")
+        if provider and provider in _VALID_NOTIFY_PROVIDERS:
+            _require_notify_field(notify_data, "channel_id", index)
+            _require_notify_field(notify_data, "secret_key", index)
 
-    provider = notify_data["provider"]
-    if provider not in _VALID_NOTIFY_PROVIDERS:
-        raise ConfigError(
-            f"topics[{index}].notify.provider: must be one of "
-            f"{sorted(_VALID_NOTIFY_PROVIDERS)}, got '{provider}'"
-        )
+            channel_id = notify_data["channel_id"]
+            if not isinstance(channel_id, str):
+                raise ConfigError(
+                    f"topics[{index}].notify.channel_id: must be a string, "
+                    f"got {type(channel_id).__name__}"
+                )
 
-    channel_id = notify_data["channel_id"]
-    if not isinstance(channel_id, str):
-        raise ConfigError(
-            f"topics[{index}].notify.channel_id: must be a string, "
-            f"got {type(channel_id).__name__}"
-        )
+            secret_key = notify_data["secret_key"]
+            if not isinstance(secret_key, str):
+                raise ConfigError(
+                    f"topics[{index}].notify.secret_key: must be a string, "
+                    f"got {type(secret_key).__name__}"
+                )
 
-    secret_key = notify_data["secret_key"]
-    if not isinstance(secret_key, str):
-        raise ConfigError(
-            f"topics[{index}].notify.secret_key: must be a string, "
-            f"got {type(secret_key).__name__}"
-        )
-
-    notify = NotifyConfig(
-        provider=provider,
-        channel_id=str(channel_id),
-        secret_key=str(secret_key),
-    )
+            notify = NotifyConfig(
+                provider=provider,
+                channel_id=str(channel_id),
+                secret_key=str(secret_key),
+            )
+        elif provider and provider not in _VALID_NOTIFY_PROVIDERS:
+            raise ConfigError(
+                f"topics[{index}].notify.provider: must be one of "
+                f"{sorted(_VALID_NOTIFY_PROVIDERS)}, got '{provider}'"
+            )
 
     # --- Optional fields type checking ---
     must_concepts_en = _validate_optional_str_list(
@@ -198,6 +195,69 @@ def validate_topic(topic_data: dict, index: int) -> TopicSpec:
         should_concepts_en=should_concepts_en,
         must_not_en=must_not_en,
     )
+
+
+# ---------------------------------------------------------------------------
+# Section defaults
+# ---------------------------------------------------------------------------
+
+_SECTION_DEFAULTS: dict[str, dict] = {
+    "app": {
+        "display_timezone": "UTC",
+        "report_retention_days": 90,
+    },
+    "agents": {
+        "common": {"ignore_reasoning": True},
+        "keyword_expander": {},
+        "scorer": {},
+        "summarizer": {},
+    },
+    "sources": {
+        "primary": "arxiv",
+        "arxiv": {"max_results_per_query": 100},
+        "seen_items_path": "data/seen_items.jsonl",
+    },
+    "filter": {
+        "enable": True,
+        "strategy": "quality_threshold",
+    },
+    "embedding": {
+        "provider": "",
+        "model": "",
+        "cache_dir": "data",
+    },
+    "remind": {
+        "enabled": False,
+        "min_score": 80.0,
+        "max_recommend_count": 2,
+    },
+    "clustering": {
+        "enabled": True,
+        "threshold": 0.85,
+    },
+    "output": {
+        "report_dir": "tmp/reports",
+        "report_format": "html",
+        "template_dir": "templates",
+    },
+    "notifications": {
+        "on_zero_results": True,
+        "on_error": True,
+    },
+    "weekly": {
+        "enabled": False,
+    },
+    "local_ui": {
+        "host": "127.0.0.1",
+        "port": 8585,
+    },
+}
+
+
+def _apply_defaults(section_name: str, user_config: dict) -> dict:
+    """Merge user config over section defaults."""
+    defaults = _SECTION_DEFAULTS.get(section_name, {})
+    return {**defaults, **user_config}
 
 
 # ---------------------------------------------------------------------------
@@ -295,21 +355,21 @@ def validate_config(raw: dict) -> AppConfig:
         topics.append(topic)
 
     return AppConfig(
-        app=raw.get("app", {}),
+        app=_apply_defaults("app", raw.get("app", {})),
         llm=llm,
-        agents=raw.get("agents", {}),
-        sources=raw.get("sources", {}),
-        filter=raw.get("filter", {}),
-        embedding=raw.get("embedding", {}),
+        agents=_apply_defaults("agents", raw.get("agents", {})),
+        sources=_apply_defaults("sources", raw.get("sources", {})),
+        filter=_apply_defaults("filter", raw.get("filter", {})),
+        embedding=_apply_defaults("embedding", raw.get("embedding", {})),
         scoring=scoring,
-        remind=raw.get("remind", {}),
-        clustering=raw.get("clustering", {}),
+        remind=_apply_defaults("remind", raw.get("remind", {})),
+        clustering=_apply_defaults("clustering", raw.get("clustering", {})),
         topics=topics,
-        output=raw.get("output", {}),
-        notifications=raw.get("notifications", {}),
+        output=_apply_defaults("output", raw.get("output", {})),
+        notifications=_apply_defaults("notifications", raw.get("notifications", {})),
         database=db,
-        weekly=raw.get("weekly", {}),
-        local_ui=raw.get("local_ui", {}),
+        weekly=_apply_defaults("weekly", raw.get("weekly", {})),
+        local_ui=_apply_defaults("local_ui", raw.get("local_ui", {})),
     )
 
 

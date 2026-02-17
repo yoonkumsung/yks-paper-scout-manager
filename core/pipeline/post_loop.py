@@ -315,6 +315,13 @@ class PostLoopProcessor:
                     failed += 1
                     continue
 
+                if topic_spec.notify is None:
+                    logger.info(
+                        "Topic '%s': no notify config, skipping notification",
+                        slug,
+                    )
+                    continue
+
                 # Build display date
                 display_date = self._get_display_date(slug)
 

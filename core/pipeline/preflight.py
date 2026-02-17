@@ -157,7 +157,7 @@ def _check_config(config_path: str | None) -> AppConfig:
     try:
         return load_config(config_path)
     except (ConfigError, FileNotFoundError) as exc:
-        raise PreflightError(f"Config validation failed: {exc}") from exc
+        raise PreflightError(str(exc)) from exc
 
 
 def _check_api_key(client: OpenRouterClient) -> dict[str, Any]:
@@ -169,7 +169,7 @@ def _check_api_key(client: OpenRouterClient) -> dict[str, Any]:
     try:
         return client.check_api_key()
     except OpenRouterError as exc:
-        raise PreflightError(f"API key validation failed: {exc}") from exc
+        raise PreflightError(str(exc)) from exc
 
 
 def _detect_limits(
@@ -287,6 +287,8 @@ def _check_notifications(config: AppConfig) -> list[str]:
 
     for topic in config.topics:
         notify = topic.notify
+        if notify is None:
+            continue
         provider = notify.provider
 
         if provider == "discord":

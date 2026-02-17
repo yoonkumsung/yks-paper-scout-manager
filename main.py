@@ -201,6 +201,9 @@ def main() -> int:
     use the legacy argument parser and call run_pipeline directly.
     Otherwise, delegate to cli.commands for subcommand routing.
     """
+    from dotenv import load_dotenv
+    load_dotenv()
+
     # Check if subcommand syntax is being used
     if len(sys.argv) > 1 and sys.argv[1] in ["topic", "dry-run", "run", "ui"]:
         # Use new CLI structure

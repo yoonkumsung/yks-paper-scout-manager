@@ -276,7 +276,7 @@ class TopicSpec:
     name: str
     description: str
     arxiv_categories: list[str]
-    notify: NotifyConfig
+    notify: NotifyConfig | None = None
 
     must_concepts_en: Optional[list[str]] = None
     should_concepts_en: Optional[list[str]] = None

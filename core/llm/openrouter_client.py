@@ -11,6 +11,7 @@ belongs to the base_agent layer.
 from __future__ import annotations
 
 import logging
+import os
 import random
 import time
 from typing import Any
@@ -167,11 +168,14 @@ class OpenRouterClient:
     def check_api_key(self) -> dict[str, Any]:
         """Validate the API key via ``GET /api/v1/key``.
 
+        Retries on 5xx and connection errors (up to ``max_retries``
+        attempts).  Fails immediately on 401/403 (invalid key).
+
         Returns:
             Parsed JSON response from the key-info endpoint.
 
         Raises:
-            OpenRouterError: If the request fails.
+            OpenRouterError: If the request fails after all retries.
         """
         url = self._base_url.rstrip("/").replace("/v1", "") + "/v1/key"
         headers = {
@@ -179,14 +183,49 @@ class OpenRouterClient:
             "HTTP-Referer": self._app_url,
             "X-Title": self._app_title,
         }
-        try:
-            resp = _requests_lib.get(url, headers=headers, timeout=15)
-            resp.raise_for_status()
-            return resp.json()  # type: ignore[no-any-return]
-        except Exception as exc:
-            raise OpenRouterError(
-                f"API key validation failed: {exc}"
-            ) from exc
+
+        last_error: Exception | None = None
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                resp = _requests_lib.get(url, headers=headers, timeout=15)
+                resp.raise_for_status()
+                return resp.json()  # type: ignore[no-any-return]
+            except _requests_lib.exceptions.HTTPError as exc:
+                last_error = exc
+                status = getattr(exc.response, "status_code", None)
+                if status is not None and 500 <= status < 600:
+                    delay = self._retry_delay(attempt)
+                    logger.warning(
+                        "check_api_key: %d (attempt %d/%d). "
+                        "Retrying in %.1fs ...",
+                        status, attempt, self._max_retries, delay,
+                    )
+                    time.sleep(delay)
+                else:
+                    raise OpenRouterError(
+                        f"API key validation failed: {exc}",
+                        status_code=status,
+                    ) from exc
+            except (
+                _requests_lib.exceptions.ConnectionError,
+                _requests_lib.exceptions.Timeout,
+            ) as exc:
+                last_error = exc
+                delay = self._retry_delay(attempt)
+                logger.warning(
+                    "check_api_key: connection error (attempt %d/%d). "
+                    "Retrying in %.1fs ...",
+                    attempt, self._max_retries, delay,
+                )
+                time.sleep(delay)
+            except Exception as exc:
+                raise OpenRouterError(
+                    f"API key validation failed: {exc}"
+                ) from exc
+
+        raise OpenRouterError(
+            f"API key validation failed after {self._max_retries} retries: {last_error}"
+        )
 
     def probe_response_format(self, model: str) -> bool:
         """Test whether *model* supports ``response_format``.
@@ -221,8 +260,6 @@ class OpenRouterClient:
     @staticmethod
     def _resolve_api_key() -> str:
         """Read the OpenRouter API key from the environment."""
-        import os
-
         key = os.environ.get("OPENROUTER_API_KEY", "")
         return key
 

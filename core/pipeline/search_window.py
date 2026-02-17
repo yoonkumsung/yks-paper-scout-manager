@@ -104,13 +104,21 @@ class SearchWindowComputer:
         if topic_slug in last_success:
             ts = last_success[topic_slug].get("last_success_window_end_utc")
             if ts:
-                dt = datetime.fromisoformat(ts)
-                logger.info(
-                    "Window start from last_success.json for %s: %s",
-                    topic_slug,
-                    dt,
-                )
-                return dt
+                try:
+                    dt = datetime.fromisoformat(ts)
+                except (ValueError, TypeError):
+                    logger.warning(
+                        "Invalid timestamp in last_success.json for %s: %s",
+                        topic_slug,
+                        ts,
+                    )
+                else:
+                    logger.info(
+                        "Window start from last_success.json for %s: %s",
+                        topic_slug,
+                        dt,
+                    )
+                    return dt
 
         # Level 3: 72h fallback
         fallback = window_end - timedelta(hours=FALLBACK_HOURS)
@@ -153,7 +161,14 @@ class SearchWindowComputer:
         if topic_slug in data:
             existing_ts_str = data[topic_slug].get("last_success_window_end_utc")
             if existing_ts_str:
-                existing_ts = datetime.fromisoformat(existing_ts_str)
+                try:
+                    existing_ts = datetime.fromisoformat(existing_ts_str)
+                except (ValueError, TypeError):
+                    logger.warning(
+                        "Invalid existing timestamp for %s: %s",
+                        topic_slug,
+                        existing_ts_str,
+                    )
 
         new_ts = window_end_utc
         if existing_ts is not None and existing_ts > new_ts:

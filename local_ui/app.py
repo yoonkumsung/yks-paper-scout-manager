@@ -40,6 +40,9 @@ def create_app(
     Returns:
         Configured Flask application instance
     """
+    from dotenv import load_dotenv
+    load_dotenv()
+
     app = Flask(__name__)
 
     # Store paths in app config

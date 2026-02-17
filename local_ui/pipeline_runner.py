@@ -87,6 +87,13 @@ class PipelineRunner:
         Raises:
             Exception: If dry-run fails
         """
+        with self._lock:
+            if self._status["running"]:
+                return {
+                    "success": False,
+                    "topics": [],
+                    "error": "Pipeline is already running a full execution",
+                }
         try:
             # Load config
             config = load_config(str(self._config_path))
