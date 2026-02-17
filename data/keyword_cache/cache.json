@@ -1,1 +1,1 @@
-{"test_hash": {"timestamp": 1771262275.720002, "result": {"concepts": [{"name_en": "Test Concept", "keywords": ["keyword1", "keyword2"]}], "cross_domain_keywords": ["cross1", "cross2"], "exclude_keywords": ["exclude1"], "topic_embedding_text": "Test embedding text"}}}
+{"test_hash": {"timestamp": 1771287318.5712209, "result": {"concepts": [{"name_en": "Test Concept", "keywords": ["keyword1", "keyword2"]}], "cross_domain_keywords": ["cross1", "cross2"], "exclude_keywords": ["exclude1"], "topic_embedding_text": "Test embedding text"}}}
