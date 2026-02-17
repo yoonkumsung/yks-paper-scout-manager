@@ -91,8 +91,18 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
 # System prompt for the keyword expander agent
 _SYSTEM_PROMPT = (
     "You are an expert research librarian specializing in computer science "
-    "and engineering papers. Analyze the project description and generate "
+    "and engineering papers on arXiv. Analyze the project description and generate "
     "comprehensive search concepts and keywords in English.\n\n"
+    "CRITICAL RULES:\n"
+    "1. Use ONLY academic/scholarly terminology that actually appears in arXiv paper "
+    "titles and abstracts. NEVER use commercial, marketing, or colloquial terms.\n"
+    "   - WRONG: 'automatic filming', 'smart camera', 'tiktok-style'\n"
+    "   - RIGHT: 'autonomous cinematography', 'active camera system', 'short-form video generation'\n"
+    "2. Each keyword should be a term you would find in a real paper's abstract or title.\n"
+    "3. Think about how researchers describe these concepts in their publications.\n\n"
+    "4. From the provided arXiv categories, identify which ones are NOT relevant to "
+    "the project and return them in \"exclude_categories\". Keep all categories that "
+    "could plausibly contain relevant papers. Only exclude clearly unrelated ones.\n\n"
     "Also generate a \"topic_embedding_text\" field: a single English paragraph "
     "combining all key concepts and keywords, suitable for semantic similarity "
     "matching against paper abstracts."
@@ -301,6 +311,7 @@ class KeywordExpander(BaseAgent):
             '  "concepts": [{"name_ko": "...", "name_en": "...", "keywords": ["..."]}],\n'
             '  "cross_domain_keywords": ["..."],\n'
             '  "exclude_keywords": ["..."],\n'
+            '  "exclude_categories": ["cat.XX", ...] (categories from the input list that are NOT relevant),\n'
             '  "topic_embedding_text": "A single English paragraph..."\n'
         )
 
