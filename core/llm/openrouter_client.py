@@ -57,6 +57,7 @@ class OpenRouterClient:
         llm = config.llm
 
         self._model: str = llm["model"]
+        self._fallback_models: list[str] = llm.get("fallback_models", [])
         self._base_url: str = llm.get("base_url", "https://openrouter.ai/api/v1")
         self._app_url: str = llm.get("app_url", "")
         self._app_title: str = llm.get("app_title", "")
@@ -87,12 +88,15 @@ class OpenRouterClient:
         response_format_supported: bool = False,
         extra_body: dict[str, Any] | None = None,
     ) -> str:
-        """Call the OpenRouter chat-completion endpoint.
+        """Call the OpenRouter chat-completion endpoint with model fallback.
+
+        Tries the primary model (or agent-specific override) first.
+        If all retries fail, falls back to the next model in the chain.
 
         Args:
             messages: OpenAI-format message list.
             agent_config: Agent-specific settings (``effort``,
-                ``max_tokens``, ``temperature``).
+                ``max_tokens``, ``temperature``, optional ``model``).
             response_format_supported: When ``True`` the request
                 includes ``response_format: {"type": "json_object"}``.
             extra_body: Extra body params forwarded to OpenRouter
@@ -102,66 +106,83 @@ class OpenRouterClient:
             The raw ``content`` string from the first choice.
 
         Raises:
-            OpenRouterError: After all retry attempts are exhausted.
+            OpenRouterError: After all models and retry attempts are exhausted.
         """
-        kwargs = self._build_kwargs(
-            messages,
-            agent_config=agent_config,
-            response_format_supported=response_format_supported,
-            extra_body=extra_body,
-        )
+        # Build model chain: agent-specific model (if set) > primary > fallbacks
+        primary = agent_config.get("model", self._model)
+        models_to_try = [primary] + [
+            m for m in self._fallback_models if m != primary
+        ]
 
         last_error: Exception | None = None
 
-        for attempt in range(1, self._max_retries + 1):
-            try:
-                response = self._client.chat.completions.create(**kwargs)
-                content = response.choices[0].message.content
-                return content or ""
-            except openai.RateLimitError as exc:
-                last_error = exc
-                status = getattr(exc, "status_code", 429)
-                delay = self._retry_delay(attempt)
-                logger.warning(
-                    "OpenRouter 429 (attempt %d/%d). "
-                    "Retrying in %.1fs ...",
-                    attempt,
-                    self._max_retries,
-                    delay,
-                )
-                time.sleep(delay)
-            except openai.APIStatusError as exc:
-                last_error = exc
-                status = getattr(exc, "status_code", None)
-                if status is not None and 500 <= status < 600:
+        for model_idx, model in enumerate(models_to_try):
+            kwargs = self._build_kwargs(
+                messages,
+                agent_config=agent_config,
+                response_format_supported=response_format_supported,
+                extra_body=extra_body,
+                model_override=model,
+            )
+
+            model_label = f"[{model_idx + 1}/{len(models_to_try)}] {model}"
+
+            for attempt in range(1, self._max_retries + 1):
+                try:
+                    response = self._client.chat.completions.create(**kwargs)
+                    content = response.choices[0].message.content
+                    if model_idx > 0:
+                        logger.info(
+                            "Fallback model %s succeeded", model_label
+                        )
+                    return content or ""
+                except openai.RateLimitError as exc:
+                    last_error = exc
                     delay = self._retry_delay(attempt)
                     logger.warning(
-                        "OpenRouter %d (attempt %d/%d). "
-                        "Retrying in %.1fs ...",
-                        status,
-                        attempt,
-                        self._max_retries,
-                        delay,
+                        "%s: 429 (attempt %d/%d). Retrying in %.1fs ...",
+                        model_label, attempt, self._max_retries, delay,
                     )
                     time.sleep(delay)
-                else:
-                    raise OpenRouterError(
-                        str(exc), status_code=status
-                    ) from exc
-            except openai.APIConnectionError as exc:
-                last_error = exc
-                delay = self._retry_delay(attempt)
+                except openai.APIStatusError as exc:
+                    last_error = exc
+                    status = getattr(exc, "status_code", None)
+                    if status is not None and 500 <= status < 600:
+                        delay = self._retry_delay(attempt)
+                        logger.warning(
+                            "%s: %d (attempt %d/%d). Retrying in %.1fs ...",
+                            model_label, status, attempt,
+                            self._max_retries, delay,
+                        )
+                        time.sleep(delay)
+                    else:
+                        # Non-retryable status → skip to next model
+                        logger.warning(
+                            "%s: non-retryable error %d, trying next model ...",
+                            model_label, status or 0,
+                        )
+                        break
+                except openai.APIConnectionError as exc:
+                    last_error = exc
+                    delay = self._retry_delay(attempt)
+                    logger.warning(
+                        "%s: connection error (attempt %d/%d). "
+                        "Retrying in %.1fs ...",
+                        model_label, attempt, self._max_retries, delay,
+                    )
+                    time.sleep(delay)
+
+            # All retries for this model exhausted
+            if model_idx < len(models_to_try) - 1:
                 logger.warning(
-                    "OpenRouter connection error (attempt %d/%d). "
-                    "Retrying in %.1fs ...",
-                    attempt,
-                    self._max_retries,
-                    delay,
+                    "%s: all %d retries exhausted. "
+                    "Falling back to next model ...",
+                    model_label, self._max_retries,
                 )
-                time.sleep(delay)
 
         raise OpenRouterError(
-            f"All {self._max_retries} retries exhausted: {last_error}",
+            f"All {len(models_to_try)} models exhausted "
+            f"(each tried {self._max_retries}x): {last_error}",
             status_code=getattr(last_error, "status_code", None),
         )
 
@@ -270,10 +291,11 @@ class OpenRouterClient:
         agent_config: dict[str, Any],
         response_format_supported: bool,
         extra_body: dict[str, Any] | None,
+        model_override: str | None = None,
     ) -> dict[str, Any]:
         """Build the keyword arguments for ``chat.completions.create``."""
         kwargs: dict[str, Any] = {
-            "model": self._model,
+            "model": model_override or self._model,
             "messages": messages,
         }
 

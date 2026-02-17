@@ -27,6 +27,67 @@ logger = logging.getLogger(__name__)
 # Required top-level keys in the LLM output
 _REQUIRED_KEYS = {"concepts", "cross_domain_keywords", "exclude_keywords", "topic_embedding_text"}
 
+# Representative English keywords for major arXiv categories (fallback)
+_CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    "cs.AI": ["artificial intelligence", "reasoning", "knowledge representation", "planning"],
+    "cs.LG": ["machine learning", "deep learning", "neural network", "representation learning"],
+    "cs.CL": ["natural language processing", "language model", "text generation", "sentiment analysis"],
+    "cs.CV": ["computer vision", "image recognition", "object detection", "image segmentation"],
+    "cs.NE": ["neural architecture", "evolutionary computation", "genetic algorithm", "neuroevolution"],
+    "cs.IR": ["information retrieval", "search engine", "recommendation system", "ranking"],
+    "cs.MA": ["multi-agent system", "cooperative learning", "agent communication", "swarm intelligence"],
+    "cs.RO": ["robotics", "motion planning", "robot learning", "manipulation"],
+    "cs.SE": ["software engineering", "code generation", "software testing", "DevOps"],
+    "cs.DC": ["distributed computing", "parallel processing", "cloud computing", "MapReduce"],
+    "cs.DB": ["database", "query optimization", "data management", "knowledge graph"],
+    "cs.OS": ["operating system", "kernel", "scheduling", "virtualization"],
+    "cs.PL": ["programming language", "compiler", "type system", "static analysis"],
+    "cs.AR": ["computer architecture", "hardware accelerator", "GPU", "FPGA"],
+    "cs.NI": ["computer network", "network protocol", "routing", "software-defined networking"],
+    "cs.PF": ["performance evaluation", "benchmarking", "workload characterization"],
+    "cs.DS": ["data structure", "algorithm", "graph algorithm", "sorting"],
+    "cs.CC": ["computational complexity", "NP-hard", "approximation algorithm"],
+    "cs.LO": ["logic", "formal verification", "model checking", "theorem proving"],
+    "cs.FL": ["formal language", "automata theory", "regular expression", "parsing"],
+    "cs.DM": ["discrete mathematics", "combinatorics", "graph theory"],
+    "cs.IT": ["information theory", "coding theory", "entropy", "channel capacity"],
+    "cs.NA": ["numerical analysis", "numerical methods", "finite element"],
+    "cs.SC": ["symbolic computation", "computer algebra", "symbolic reasoning"],
+    "cs.GT": ["game theory", "mechanism design", "auction", "Nash equilibrium"],
+    "cs.CG": ["computational geometry", "convex hull", "Voronoi diagram"],
+    "cs.CR": ["cryptography", "security", "privacy", "encryption"],
+    "cs.HC": ["human-computer interaction", "user interface", "usability", "UX design"],
+    "cs.CY": ["computers and society", "digital ethics", "AI policy", "fairness"],
+    "cs.CE": ["computational engineering", "simulation", "finite element analysis"],
+    "cs.GR": ["computer graphics", "rendering", "3D modeling", "ray tracing"],
+    "cs.MM": ["multimedia", "video processing", "audio processing", "streaming"],
+    "cs.SD": ["sound", "speech synthesis", "audio generation", "music information retrieval"],
+    "cs.SI": ["social network", "information diffusion", "community detection", "influence maximization"],
+    "cs.DL": ["digital library", "scholarly communication", "metadata"],
+    "cs.ET": ["emerging technology", "quantum computing", "neuromorphic computing"],
+    "cs.MS": ["mathematical software", "numerical library", "scientific computing"],
+    "cs.GL": ["general literature", "survey", "tutorial"],
+    "cs.OH": ["other", "miscellaneous"],
+    "cs.SY": ["systems and control", "control theory", "feedback control"],
+    "stat.ML": ["statistical learning", "Bayesian inference", "kernel methods", "ensemble methods"],
+    "stat.ME": ["statistical methodology", "hypothesis testing", "regression", "causal inference"],
+    "stat.TH": ["statistical theory", "asymptotic analysis", "estimation theory"],
+    "stat.AP": ["applied statistics", "biostatistics", "spatial statistics"],
+    "stat.CO": ["computational statistics", "Monte Carlo", "MCMC", "bootstrap"],
+    "eess.SP": ["signal processing", "filter design", "spectral analysis", "compressed sensing"],
+    "eess.AS": ["audio signal processing", "speech recognition", "speaker verification"],
+    "eess.IV": ["image processing", "video processing", "super-resolution", "denoising"],
+    "eess.SY": ["systems and control", "dynamical systems", "optimal control"],
+    "math.OC": ["optimization", "convex optimization", "linear programming", "gradient descent"],
+    "math.ST": ["statistics theory", "mathematical statistics", "decision theory"],
+    "math.PR": ["probability", "stochastic process", "random variable", "martingale"],
+    "q-bio.QM": ["quantitative biology", "systems biology", "bioinformatics", "genomics"],
+    "q-bio.NC": ["neuroscience", "computational neuroscience", "brain-computer interface", "neural coding"],
+    "q-fin.ST": ["statistical finance", "financial modeling", "risk analysis"],
+    "q-fin.CP": ["computational finance", "algorithmic trading", "portfolio optimization"],
+    "physics.data-an": ["data analysis", "statistical physics", "experimental data", "signal detection"],
+}
+
 # System prompt for the keyword expander agent
 _SYSTEM_PROMPT = (
     "You are an expert research librarian specializing in computer science "
@@ -92,27 +153,21 @@ class KeywordExpander(BaseAgent):
             logger.info("keyword_expander: cache hit for topic '%s'", topic.slug)
             return cache[cache_key]["result"]
 
-        # --- LLM call with retry (max 2 attempts) ---
-        messages = self.build_messages(topic=topic)
-        result: dict | None = None
-        parse_failures = 0
-
-        for attempt in range(2):
-            raw = self.call_llm(messages)
-            if raw is not None and self._validate_output(raw):
-                result = raw
-                break
-            parse_failures += 1
-            logger.warning(
-                "keyword_expander: parse failure %d/2 for topic '%s'",
-                parse_failures,
-                topic.slug,
+        # --- Chunk categories if too many ---
+        chunk_size = self.agent_config.get("chunk_size", 15)
+        cats = topic.arxiv_categories
+        if len(cats) > chunk_size:
+            logger.info(
+                "keyword_expander: chunking %d categories into batches of %d for '%s'",
+                len(cats), chunk_size, topic.slug,
             )
+            result = self._expand_chunked(topic, chunk_size)
+        else:
+            result = self._expand_single(topic)
 
-        # --- Fallback on 2x failure ---
         if result is None:
             logger.warning(
-                "keyword_expander: 2x parse failure, using fallback for '%s'",
+                "keyword_expander: all attempts failed, using fallback for '%s'",
                 topic.slug,
             )
             result = self._generate_fallback(topic)
@@ -130,6 +185,84 @@ class KeywordExpander(BaseAgent):
         self._save_cache(cache)
 
         return result
+
+    def _expand_single(self, topic: TopicSpec) -> dict | None:
+        """LLM call with retry (max 2 attempts) for a single topic."""
+        messages = self.build_messages(topic=topic)
+        parse_failures = 0
+
+        for attempt in range(2):
+            raw = self.call_llm(messages)
+            if raw is not None and self._validate_output(raw):
+                return raw
+            parse_failures += 1
+            logger.warning(
+                "keyword_expander: parse failure %d/2 for topic '%s'",
+                parse_failures,
+                topic.slug,
+            )
+
+        return None
+
+    def _expand_chunked(self, topic: TopicSpec, chunk_size: int) -> dict | None:
+        """Split categories into chunks, call LLM per chunk, merge results."""
+        cats = topic.arxiv_categories
+        merged: dict | None = None
+
+        for i in range(0, len(cats), chunk_size):
+            chunk_cats = cats[i : i + chunk_size]
+            # Create a temporary TopicSpec-like object with subset of categories
+            chunk_topic = TopicSpec(
+                slug=topic.slug,
+                name=topic.name,
+                description=topic.description,
+                arxiv_categories=chunk_cats,
+                must_concepts_en=topic.must_concepts_en if i == 0 else None,
+                should_concepts_en=topic.should_concepts_en if i == 0 else None,
+                must_not_en=topic.must_not_en if i == 0 else None,
+            )
+            chunk_result = self._expand_single(chunk_topic)
+            if chunk_result is None:
+                logger.warning(
+                    "keyword_expander: chunk %d failed for '%s', using fallback for this chunk",
+                    i // chunk_size + 1, topic.slug,
+                )
+                continue
+
+            if merged is None:
+                merged = chunk_result
+            else:
+                merged = self._merge_chunk_results(merged, chunk_result)
+
+        return merged
+
+    def _merge_chunk_results(self, base: dict, addition: dict) -> dict:
+        """Merge two chunk results, deduplicating concepts and keywords."""
+        existing_concepts = {c.get("name_en", "").lower() for c in base.get("concepts", [])}
+        for concept in addition.get("concepts", []):
+            if concept.get("name_en", "").lower() not in existing_concepts:
+                base["concepts"].append(concept)
+                existing_concepts.add(concept.get("name_en", "").lower())
+
+        existing_cross = {kw.lower() for kw in base.get("cross_domain_keywords", [])}
+        for kw in addition.get("cross_domain_keywords", []):
+            if kw.lower() not in existing_cross:
+                base["cross_domain_keywords"].append(kw)
+                existing_cross.add(kw.lower())
+
+        existing_excl = {kw.lower() for kw in base.get("exclude_keywords", [])}
+        for kw in addition.get("exclude_keywords", []):
+            if kw.lower() not in existing_excl:
+                base["exclude_keywords"].append(kw)
+                existing_excl.add(kw.lower())
+
+        # Combine embedding texts
+        if addition.get("topic_embedding_text"):
+            base["topic_embedding_text"] = (
+                base.get("topic_embedding_text", "") + " " + addition["topic_embedding_text"]
+            )
+
+        return base
 
     # ------------------------------------------------------------------
     # Message building
@@ -316,19 +449,32 @@ class KeywordExpander(BaseAgent):
     # ------------------------------------------------------------------
 
     def _generate_fallback(self, topic: TopicSpec) -> dict:
-        """Generate basic keywords from arxiv_categories without LLM."""
-        concepts = [
-            {
-                "name_ko": cat,
-                "name_en": cat,
-                "keywords": [cat.lower()],
-            }
-            for cat in topic.arxiv_categories
-        ]
+        """Generate meaningful keywords from arxiv_categories without LLM.
+
+        Uses _CATEGORY_KEYWORDS dictionary to produce real English keywords
+        instead of raw category codes like 'cs.AI'.
+        """
+        concepts = []
+        all_keywords: list[str] = []
+
+        for cat in topic.arxiv_categories:
+            kws = _CATEGORY_KEYWORDS.get(cat, [cat.lower()])
+            concepts.append(
+                {
+                    "name_ko": cat,
+                    "name_en": kws[0] if kws else cat,
+                    "keywords": kws,
+                }
+            )
+            all_keywords.extend(kws)
+
+        # Build embedding text from all collected keywords
+        unique_keywords = list(dict.fromkeys(all_keywords))  # preserve order, deduplicate
+        embedding_text = " ".join(unique_keywords[:50])  # cap at 50 keywords
 
         return {
             "concepts": concepts,
-            "cross_domain_keywords": [],
+            "cross_domain_keywords": unique_keywords[:20],
             "exclude_keywords": topic.must_not_en or [],
-            "topic_embedding_text": " ".join(topic.arxiv_categories),
+            "topic_embedding_text": embedding_text,
         }

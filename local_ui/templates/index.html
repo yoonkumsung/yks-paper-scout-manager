@@ -8,6 +8,23 @@
     <style>
         body { padding-top: 60px; }
         .tab-content { padding: 20px 0; }
+        .settings-section { border: 1px solid #dee2e6; border-radius: 0.375rem; margin-bottom: 1rem; }
+        .settings-section .section-header { background: #f8f9fa; padding: 0.75rem 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; border-radius: 0.375rem 0.375rem 0 0; }
+        .settings-section .section-header:hover { background: #e9ecef; }
+        .settings-section .section-body { padding: 1rem; display: none; }
+        .settings-section.open .section-body { display: block; }
+        .settings-section .section-header .arrow { transition: transform 0.2s; }
+        .settings-section.open .section-header .arrow { transform: rotate(90deg); }
+        .nested-group { margin-left: 1rem; padding-left: 1rem; border-left: 2px solid #dee2e6; margin-bottom: 0.5rem; }
+        .nested-group h6 { color: #6c757d; font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .form-check.setting-bool { margin-bottom: 0.5rem; }
+        .setup-key-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .setup-key-row label { min-width: 200px; font-weight: 500; }
+        .setup-key-row .input-group { flex: 1; }
+        .step-result { padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+        .step-result:last-child { border-bottom: none; }
+        #addTopicModal .modal-body { max-height: 75vh; overflow-y: auto; }
+        #addTopicForm input::placeholder, #addTopicForm textarea::placeholder { color: #c8c8c8; }
     </style>
 </head>
 <body>
@@ -21,6 +38,9 @@
     <div class="container">
         <ul class="nav nav-tabs" id="mainTabs" role="tablist">
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="setup-tab" data-bs-toggle="tab" data-bs-target="#setup" type="button" role="tab">Setup</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="topics-tab" data-bs-toggle="tab" data-bs-target="#topics" type="button" role="tab">Topics</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -32,6 +52,84 @@
         </ul>
 
         <div class="tab-content" id="mainTabsContent">
+            <!-- Setup Tab -->
+            <div class="tab-pane fade" id="setup" role="tabpanel">
+                <h2>Setup Wizard</h2>
+                <p class="text-muted">API 키와 GitHub 배포를 한 곳에서 설정합니다.</p>
+
+                <!-- Card 1: API Keys -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">API Keys (.env)</h5>
+                        <span id="setupEnvBadge" class="badge bg-secondary">Checking...</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="setupEnvForm">
+                            <div class="setup-key-row">
+                                <label for="setupKey_OPENROUTER_API_KEY">OPENROUTER_API_KEY</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control form-control-sm" id="setupKey_OPENROUTER_API_KEY" placeholder="sk-or-...">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="togglePassword(this)">Show</button>
+                                </div>
+                                <span class="badge" id="setupBadge_OPENROUTER_API_KEY"></span>
+                            </div>
+                            <div class="setup-key-row">
+                                <label for="setupKey_GITHUB_TOKEN">GITHUB_TOKEN</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control form-control-sm" id="setupKey_GITHUB_TOKEN" placeholder="ghp_... or github_pat_...">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="togglePassword(this)">Show</button>
+                                </div>
+                                <span class="badge" id="setupBadge_GITHUB_TOKEN"></span>
+                            </div>
+                            <div class="setup-key-row">
+                                <label for="setupKey_DISCORD_WEBHOOK_URL">DISCORD_WEBHOOK_URL</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control form-control-sm" id="setupKey_DISCORD_WEBHOOK_URL" placeholder="https://discord.com/api/webhooks/...">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="togglePassword(this)">Show</button>
+                                </div>
+                                <span class="badge" id="setupBadge_DISCORD_WEBHOOK_URL"></span>
+                            </div>
+                            <div class="setup-key-row">
+                                <label for="setupKey_TELEGRAM_BOT_TOKEN">TELEGRAM_BOT_TOKEN</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control form-control-sm" id="setupKey_TELEGRAM_BOT_TOKEN" placeholder="123456:ABC-DEF...">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="togglePassword(this)">Show</button>
+                                </div>
+                                <span class="badge" id="setupBadge_TELEGRAM_BOT_TOKEN"></span>
+                            </div>
+                        </div>
+                        <small class="text-muted">기존 값을 유지하려면 빈칸으로 두세요. 입력한 항목만 업데이트됩니다.</small>
+                    </div>
+                </div>
+
+                <!-- Card 2: GitHub Deployment -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">GitHub 배포</h5>
+                        <span id="setupRepoBadge" class="badge bg-secondary">Checking...</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="setupRepoInfo">
+                            <div class="text-center text-muted">저장소 감지 중...</div>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="pushSecretsCheck" checked>
+                            <label class="form-check-label" for="pushSecretsCheck">
+                                GitHub Actions에 시크릿 등록 (OPENROUTER_API_KEY, DISCORD_WEBHOOK_URL, TELEGRAM_BOT_TOKEN)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Save & Deploy -->
+                <div class="card mb-3">
+                    <div class="card-body text-center">
+                        <button class="btn btn-lg btn-success" id="saveAndDeployBtn" onclick="saveAndDeploy()">Save & Deploy</button>
+                        <div id="deployResults" class="mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Topics Tab -->
             <div class="tab-pane fade show active" id="topics" role="tabpanel">
                 <h2>Topics Management</h2>
@@ -45,7 +143,7 @@
 
                 <!-- Add Topic Modal -->
                 <div class="modal fade" id="addTopicModal" tabindex="-1">
-                    <div class="modal-dialog">
+                    <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title">Add New Topic</h5>
@@ -54,28 +152,136 @@
                             <div class="modal-body">
                                 <form id="addTopicForm">
                                     <div class="mb-3">
-                                        <label class="form-label">Slug</label>
-                                        <input type="text" class="form-control" name="slug" required>
+                                        <label class="form-label">Slug <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="slug" required placeholder="llm-research">
+                                        <small class="text-muted">토픽 고유 ID. 영문 소문자와 하이픈(-)만 사용. 내부적으로 토픽을 구분하는 데 쓰입니다.</small>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Name</label>
-                                        <input type="text" class="form-control" name="name" required>
+                                        <label class="form-label">Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="name" required placeholder="LLM 최신 연구">
+                                        <small class="text-muted">리포트와 알림에 표시되는 이름입니다.</small>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Description</label>
-                                        <textarea class="form-control" name="description" required></textarea>
+                                        <label class="form-label">Description <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" name="description" required rows="3" placeholder="대규모 언어 모델(LLM) 학습 및 추론 최적화, RAG, 프롬프트 엔지니어링, RLHF, 파인튜닝 기법"></textarea>
+                                        <small class="text-muted">추적하고 싶은 연구 분야를 설명해 주세요. AI가 이 설명을 바탕으로 검색 키워드를 자동 생성합니다.</small>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">arXiv Categories (comma-separated)</label>
-                                        <input type="text" class="form-control" name="arxiv_categories" required>
+                                        <label class="form-label">arXiv Categories <span class="text-danger">*</span></label>
+                                        <small class="text-muted d-block mb-2">논문을 검색할 arXiv 카테고리를 선택하세요. 여러 개 선택 가능합니다.</small>
+                                        <div class="mb-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.querySelectorAll('.cat-check').forEach(c=>{c.checked=true});updateCatDisplay()">전체 선택</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.querySelectorAll('.cat-check').forEach(c=>{c.checked=false});updateCatDisplay()">전체 해제</button>
+                                            <button type="button" class="btn btn-sm btn-success" id="aiRecommendBtn" onclick="aiRecommendCategories()">AI 추천</button>
+                                            <span id="aiRecommendSpinner" class="spinner-border spinner-border-sm text-success ms-1 d-none" role="status"></span>
+                                        </div>
+                                        <div id="catWarning" class="alert alert-warning py-1 px-2 small d-none mb-2">
+                                            카테고리를 10개 이하로 선택하는 것을 권장합니다. 너무 많으면 키워드 생성 품질이 저하될 수 있습니다.
+                                        </div>
+                                        <div id="categoryPicker" style="border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.75rem;">
+
+                                            <div class="mb-1"><strong class="text-muted small">Computer Science - AI / ML</strong></div>
+                                            <div class="row row-cols-2 g-0 mb-2">
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.AI" id="cat-cs-AI"><label class="form-check-label small" for="cat-cs-AI">cs.AI - 인공지능</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.LG" id="cat-cs-LG"><label class="form-check-label small" for="cat-cs-LG">cs.LG - 머신러닝</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.CL" id="cat-cs-CL"><label class="form-check-label small" for="cat-cs-CL">cs.CL - 자연어처리 (NLP)</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.CV" id="cat-cs-CV"><label class="form-check-label small" for="cat-cs-CV">cs.CV - 컴퓨터 비전</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.NE" id="cat-cs-NE"><label class="form-check-label small" for="cat-cs-NE">cs.NE - 신경망 및 진화 컴퓨팅</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.IR" id="cat-cs-IR"><label class="form-check-label small" for="cat-cs-IR">cs.IR - 정보 검색</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.MA" id="cat-cs-MA"><label class="form-check-label small" for="cat-cs-MA">cs.MA - 멀티에이전트 시스템</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.RO" id="cat-cs-RO"><label class="form-check-label small" for="cat-cs-RO">cs.RO - 로보틱스</label></div></div>
+                                            </div>
+
+                                            <div class="mb-1"><strong class="text-muted small">Computer Science - Systems / Software</strong></div>
+                                            <div class="row row-cols-2 g-0 mb-2">
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.SE" id="cat-cs-SE"><label class="form-check-label small" for="cat-cs-SE">cs.SE - 소프트웨어 공학</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.DC" id="cat-cs-DC"><label class="form-check-label small" for="cat-cs-DC">cs.DC - 분산/병렬/클러스터 컴퓨팅</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.DB" id="cat-cs-DB"><label class="form-check-label small" for="cat-cs-DB">cs.DB - 데이터베이스</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.OS" id="cat-cs-OS"><label class="form-check-label small" for="cat-cs-OS">cs.OS - 운영체제</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.PL" id="cat-cs-PL"><label class="form-check-label small" for="cat-cs-PL">cs.PL - 프로그래밍 언어</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.AR" id="cat-cs-AR"><label class="form-check-label small" for="cat-cs-AR">cs.AR - 하드웨어 아키텍처</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.NI" id="cat-cs-NI"><label class="form-check-label small" for="cat-cs-NI">cs.NI - 네트워킹/인터넷 아키텍처</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.PF" id="cat-cs-PF"><label class="form-check-label small" for="cat-cs-PF">cs.PF - 성능</label></div></div>
+                                            </div>
+
+                                            <div class="mb-1"><strong class="text-muted small">Computer Science - Theory / Math</strong></div>
+                                            <div class="row row-cols-2 g-0 mb-2">
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.DS" id="cat-cs-DS"><label class="form-check-label small" for="cat-cs-DS">cs.DS - 자료구조 및 알고리즘</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.CC" id="cat-cs-CC"><label class="form-check-label small" for="cat-cs-CC">cs.CC - 계산 복잡도</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.LO" id="cat-cs-LO"><label class="form-check-label small" for="cat-cs-LO">cs.LO - 논리학</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.FL" id="cat-cs-FL"><label class="form-check-label small" for="cat-cs-FL">cs.FL - 형식 언어 및 오토마타</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.DM" id="cat-cs-DM"><label class="form-check-label small" for="cat-cs-DM">cs.DM - 이산 수학</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.IT" id="cat-cs-IT"><label class="form-check-label small" for="cat-cs-IT">cs.IT - 정보 이론</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.NA" id="cat-cs-NA"><label class="form-check-label small" for="cat-cs-NA">cs.NA - 수치 해석</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.SC" id="cat-cs-SC"><label class="form-check-label small" for="cat-cs-SC">cs.SC - 기호 계산</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.GT" id="cat-cs-GT"><label class="form-check-label small" for="cat-cs-GT">cs.GT - 게임 이론</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.CG" id="cat-cs-CG"><label class="form-check-label small" for="cat-cs-CG">cs.CG - 계산 기하학</label></div></div>
+                                            </div>
+
+                                            <div class="mb-1"><strong class="text-muted small">Computer Science - Applications</strong></div>
+                                            <div class="row row-cols-2 g-0 mb-2">
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.CR" id="cat-cs-CR"><label class="form-check-label small" for="cat-cs-CR">cs.CR - 암호학 및 보안</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.HC" id="cat-cs-HC"><label class="form-check-label small" for="cat-cs-HC">cs.HC - 인간-컴퓨터 상호작용</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.CY" id="cat-cs-CY"><label class="form-check-label small" for="cat-cs-CY">cs.CY - 컴퓨터와 사회</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.CE" id="cat-cs-CE"><label class="form-check-label small" for="cat-cs-CE">cs.CE - 전산 공학/금융/과학</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.GR" id="cat-cs-GR"><label class="form-check-label small" for="cat-cs-GR">cs.GR - 그래픽스</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.MM" id="cat-cs-MM"><label class="form-check-label small" for="cat-cs-MM">cs.MM - 멀티미디어</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.SD" id="cat-cs-SD"><label class="form-check-label small" for="cat-cs-SD">cs.SD - 사운드</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.SI" id="cat-cs-SI"><label class="form-check-label small" for="cat-cs-SI">cs.SI - 소셜/정보 네트워크</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.DL" id="cat-cs-DL"><label class="form-check-label small" for="cat-cs-DL">cs.DL - 디지털 라이브러리</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.ET" id="cat-cs-ET"><label class="form-check-label small" for="cat-cs-ET">cs.ET - 신흥 기술</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.MS" id="cat-cs-MS"><label class="form-check-label small" for="cat-cs-MS">cs.MS - 수학 소프트웨어</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.GL" id="cat-cs-GL"><label class="form-check-label small" for="cat-cs-GL">cs.GL - 일반 문헌</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.OH" id="cat-cs-OH"><label class="form-check-label small" for="cat-cs-OH">cs.OH - 기타</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="cs.SY" id="cat-cs-SY"><label class="form-check-label small" for="cat-cs-SY">cs.SY - 시스템 및 제어</label></div></div>
+                                            </div>
+
+                                            <div class="mb-1"><strong class="text-muted small">Statistics</strong></div>
+                                            <div class="row row-cols-2 g-0 mb-2">
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="stat.ML" id="cat-stat-ML"><label class="form-check-label small" for="cat-stat-ML">stat.ML - 머신러닝 (통계)</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="stat.ME" id="cat-stat-ME"><label class="form-check-label small" for="cat-stat-ME">stat.ME - 통계 방법론</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="stat.TH" id="cat-stat-TH"><label class="form-check-label small" for="cat-stat-TH">stat.TH - 통계 이론</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="stat.AP" id="cat-stat-AP"><label class="form-check-label small" for="cat-stat-AP">stat.AP - 응용 통계</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="stat.CO" id="cat-stat-CO"><label class="form-check-label small" for="cat-stat-CO">stat.CO - 전산 통계</label></div></div>
+                                            </div>
+
+                                            <div class="mb-1"><strong class="text-muted small">Electrical Engineering / Signal Processing</strong></div>
+                                            <div class="row row-cols-2 g-0 mb-2">
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="eess.SP" id="cat-eess-SP"><label class="form-check-label small" for="cat-eess-SP">eess.SP - 신호 처리</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="eess.AS" id="cat-eess-AS"><label class="form-check-label small" for="cat-eess-AS">eess.AS - 오디오 및 음성 처리</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="eess.IV" id="cat-eess-IV"><label class="form-check-label small" for="cat-eess-IV">eess.IV - 이미지/비디오 처리</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="eess.SY" id="cat-eess-SY"><label class="form-check-label small" for="cat-eess-SY">eess.SY - 시스템 및 제어</label></div></div>
+                                            </div>
+
+                                            <div class="mb-1"><strong class="text-muted small">Mathematics / Quantitative / Other</strong></div>
+                                            <div class="row row-cols-2 g-0">
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="math.OC" id="cat-math-OC"><label class="form-check-label small" for="cat-math-OC">math.OC - 최적화 및 제어</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="math.ST" id="cat-math-ST"><label class="form-check-label small" for="cat-math-ST">math.ST - 통계 이론</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="math.PR" id="cat-math-PR"><label class="form-check-label small" for="cat-math-PR">math.PR - 확률론</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="q-bio.QM" id="cat-qbio-QM"><label class="form-check-label small" for="cat-qbio-QM">q-bio.QM - 정량적 생물학</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="q-bio.NC" id="cat-qbio-NC"><label class="form-check-label small" for="cat-qbio-NC">q-bio.NC - 뉴런 및 인지</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="q-fin.ST" id="cat-qfin-ST"><label class="form-check-label small" for="cat-qfin-ST">q-fin.ST - 통계 금융</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="q-fin.CP" id="cat-qfin-CP"><label class="form-check-label small" for="cat-qfin-CP">q-fin.CP - 전산 금융</label></div></div>
+                                                <div class="col"><div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="physics.data-an" id="cat-phys-da"><label class="form-check-label small" for="cat-phys-da">physics.data-an - 데이터 분석 (물리)</label></div></div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-1">
+                                            <small class="text-muted">선택됨: </small><small id="selectedCatsDisplay" class="text-primary">없음</small>
+                                        </div>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Notify</label>
-                                        <select class="form-select" name="notify" required>
-                                            <option value="none">None</option>
-                                            <option value="telegram">Telegram</option>
-                                            <option value="discord">Discord</option>
+                                        <label class="form-label">알림 설정</label>
+                                        <select class="form-select" name="notify_provider" id="notifyProvider" onchange="toggleNotifyFields()">
+                                            <option value="none">없음 - 알림을 보내지 않습니다</option>
+                                            <option value="telegram">Telegram - 텔레그램 봇으로 결과 전송</option>
+                                            <option value="discord">Discord - 디스코드 웹훅으로 결과 전송</option>
                                         </select>
+                                        <small class="text-muted">논문 알림을 받을 채널을 선택하세요. Setup 탭에서 해당 API 키를 먼저 설정해야 합니다.</small>
+                                    </div>
+                                    <div class="mb-3 d-none" id="notifyChannelGroup">
+                                        <label class="form-label">채널 ID <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="notify_channel_id" id="notifyChannelId" placeholder="예: -1001234567890 (Telegram) 또는 채널 ID">
+                                        <small class="text-muted" id="notifyChannelHelp">Telegram: 채팅방/그룹의 Chat ID를 입력하세요. Discord: 웹훅 URL을 입력하세요.</small>
                                     </div>
                                 </form>
                             </div>
@@ -95,13 +301,13 @@
                 <!-- Dry-Run Section -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0">Dry-Run: Preview Search Keywords</h5>
+                        <h5 class="mb-0">Dry-Run: 검색 키워드 미리보기</h5>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted">Generate keywords and arXiv queries without running the full pipeline.</p>
+                        <p class="text-muted">전체 파이프라인을 실행하지 않고, AI가 생성할 키워드와 arXiv 쿼리를 미리 확인합니다.</p>
 
                         <div class="mb-3">
-                            <label class="form-label">Topic</label>
+                            <label class="form-label">토픽</label>
                             <select class="form-select" id="dryrunTopicSelect">
                                 <option value="">All Topics</option>
                             </select>
@@ -119,13 +325,13 @@
                 <!-- Manual Search Section -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0">Manual Search: Run Full Pipeline</h5>
+                        <h5 class="mb-0">수동 검색: 전체 파이프라인 실행</h5>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted">Execute complete pipeline: collect → score → summarize → report.</p>
+                        <p class="text-muted">전체 파이프라인을 실행합니다: 논문 수집 → 평가 → 요약 → 리포트 생성</p>
 
                         <div class="mb-3">
-                            <label class="form-label">Topic</label>
+                            <label class="form-label">토픽</label>
                             <select class="form-select" id="searchTopicSelect">
                                 <option value="">All Topics</option>
                             </select>
@@ -133,32 +339,32 @@
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Date From</label>
+                                <label class="form-label">시작일</label>
                                 <input type="date" class="form-control" id="dateFrom">
-                                <small class="text-muted">Leave empty for auto</small>
+                                <small class="text-muted">비워두면 자동 설정</small>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Date To</label>
+                                <label class="form-label">종료일</label>
                                 <input type="date" class="form-control" id="dateTo">
-                                <small class="text-muted">Leave empty for auto</small>
+                                <small class="text-muted">비워두면 자동 설정</small>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Dedup Mode</label>
+                            <label class="form-label">중복 제거</label>
                             <div>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" name="dedupMode" id="dedupSkip" value="skip_recent" checked>
-                                    <label class="form-check-label" for="dedupSkip">Skip Recent</label>
+                                    <label class="form-check-label" for="dedupSkip">최근 논문 건너뛰기</label>
                                 </div>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" name="dedupMode" id="dedupNone" value="none">
-                                    <label class="form-check-label" for="dedupNone">None</label>
+                                    <label class="form-check-label" for="dedupNone">중복 허용</label>
                                 </div>
                             </div>
                         </div>
 
-                        <button class="btn btn-success" id="startSearchBtn">Start Search</button>
+                        <button class="btn btn-success" id="startSearchBtn">검색 시작</button>
 
                         <div id="searchProgress" class="mt-3" style="display: none;">
                             <h6>Progress:</h6>
@@ -223,14 +429,164 @@
         // Global variables for polling
         let pollInterval = null;
 
-        // Load topics on page load
+        // Load all data on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadTopics();
             loadSettings();
             loadEnvStatus();
             loadDbStatus();
             loadSearchTopics();
+            loadSetupStatus();
         });
+
+        // Toggle password visibility
+        function togglePassword(btn) {
+            const input = btn.parentElement.querySelector('input');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                btn.textContent = 'Show';
+            }
+        }
+
+        // Load setup status and auto-activate tab if needed
+        async function loadSetupStatus() {
+            try {
+                const response = await fetch('/api/setup/status');
+                const status = await response.json();
+
+                // Update env badges
+                const envKeys = ['OPENROUTER_API_KEY', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK_URL', 'TELEGRAM_BOT_TOKEN'];
+                const requiredKeys = ['OPENROUTER_API_KEY'];
+                let requiredOk = true;
+                for (const key of envKeys) {
+                    const badge = document.getElementById(`setupBadge_${key}`);
+                    const info = status.env[key];
+                    if (info && info.exists) {
+                        badge.className = info.valid ? 'badge bg-success' : 'badge bg-warning';
+                        badge.textContent = info.valid ? 'Valid' : 'Invalid';
+                        document.getElementById(`setupKey_${key}`).placeholder = info.masked_value || '(set)';
+                    } else {
+                        badge.className = 'badge bg-secondary';
+                        badge.textContent = requiredKeys.includes(key) ? 'Required' : 'Optional';
+                        if (requiredKeys.includes(key)) requiredOk = false;
+                    }
+                }
+
+                // Update env card badge
+                const envBadge = document.getElementById('setupEnvBadge');
+                envBadge.className = requiredOk ? 'badge bg-success' : 'badge bg-warning';
+                envBadge.textContent = requiredOk ? 'All Set' : 'Missing Keys';
+
+                // Update repo info
+                const repoDiv = document.getElementById('setupRepoInfo');
+                const repoBadge = document.getElementById('setupRepoBadge');
+                if (status.repo && !status.repo.error) {
+                    repoDiv.innerHTML = `<p class="mb-0"><strong>Repository:</strong> <a href="${status.repo.url}" target="_blank">${status.repo.full_name}</a></p>`;
+                    repoBadge.className = 'badge bg-success';
+                    repoBadge.textContent = 'Detected';
+                } else {
+                    repoDiv.innerHTML = `<p class="mb-0 text-warning">${status.repo?.error || 'No GitHub repository detected'}</p>`;
+                    repoBadge.className = 'badge bg-warning';
+                    repoBadge.textContent = 'Not Found';
+                }
+
+                // Auto-activate Setup tab if setup is needed
+                if (status.needs_setup) {
+                    const setupTab = document.getElementById('setup-tab');
+                    const topicsTab = document.getElementById('topics-tab');
+                    const setupPane = document.getElementById('setup');
+                    const topicsPane = document.getElementById('topics');
+
+                    topicsTab.classList.remove('active');
+                    topicsPane.classList.remove('show', 'active');
+                    setupTab.classList.add('active');
+                    setupPane.classList.add('show', 'active');
+                }
+            } catch (error) {
+                console.error('Error loading setup status:', error);
+            }
+        }
+
+        // Save & Deploy
+        async function saveAndDeploy() {
+            const btn = document.getElementById('saveAndDeployBtn');
+            const resultsDiv = document.getElementById('deployResults');
+
+            btn.disabled = true;
+            btn.textContent = 'Deploying...';
+            resultsDiv.style.display = 'none';
+
+            // Collect env values (only non-empty)
+            const envData = {};
+            const envKeys = ['OPENROUTER_API_KEY', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK_URL', 'TELEGRAM_BOT_TOKEN'];
+            for (const key of envKeys) {
+                const val = document.getElementById(`setupKey_${key}`).value.trim();
+                if (val) envData[key] = val;
+            }
+
+            const pushSecrets = document.getElementById('pushSecretsCheck').checked;
+
+            try {
+                const response = await fetch('/api/setup/save-and-deploy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        env: Object.keys(envData).length > 0 ? envData : null,
+                        push_secrets: pushSecrets,
+                    })
+                });
+
+                const result = await response.json();
+
+                let html = '';
+                for (const step of result.steps) {
+                    let icon, cls;
+                    if (step.status === 'ok') { icon = '&#10004;'; cls = 'text-success'; }
+                    else if (step.status === 'skipped') { icon = '&#8212;'; cls = 'text-muted'; }
+                    else if (step.status === 'partial') { icon = '&#9888;'; cls = 'text-warning'; }
+                    else { icon = '&#10008;'; cls = 'text-danger'; }
+
+                    html += `<div class="step-result">
+                        <span class="${cls}"><strong>${icon} ${step.step}</strong></span>
+                        <span class="ms-2">${step.status}</span>`;
+
+                    if (step.error) html += `<br><small class="text-danger">${step.error}</small>`;
+                    if (step.manual_url) html += `<br><small><a href="${step.manual_url}" target="_blank">Set secrets manually</a></small>`;
+                    if (step.results) {
+                        const details = Object.entries(step.results).map(([k, v]) => `${k}: ${v}`).join(', ');
+                        html += `<br><small class="text-muted">${details}</small>`;
+                    }
+                    html += '</div>';
+                }
+
+                if (result.success) {
+                    html = `<div class="alert alert-success">${html}</div>`;
+                } else {
+                    html = `<div class="alert alert-warning">${html}</div>`;
+                }
+
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+
+                // Refresh status
+                loadSetupStatus();
+                loadEnvStatus();
+
+                // Clear inputs
+                for (const key of envKeys) {
+                    document.getElementById(`setupKey_${key}`).value = '';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                resultsDiv.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save & Deploy';
+            }
+        }
 
         // Add topic button
         document.getElementById('addTopicBtn').addEventListener('click', () => {
@@ -243,12 +599,34 @@
             const form = document.getElementById('addTopicForm');
             const formData = new FormData(form);
 
+            const selectedCats = Array.from(document.querySelectorAll('.cat-check:checked')).map(cb => cb.value);
+            if (selectedCats.length === 0) {
+                alert('arXiv 카테고리를 1개 이상 선택해 주세요.');
+                return;
+            }
+
+            const notifyProvider = formData.get('notify_provider');
+            let notifyObj = null;
+            if (notifyProvider && notifyProvider !== 'none') {
+                const channelId = formData.get('notify_channel_id');
+                if (!channelId || !channelId.trim()) {
+                    alert('알림을 사용하려면 채널 ID를 입력해 주세요.');
+                    return;
+                }
+                const secretKey = notifyProvider === 'telegram' ? 'TELEGRAM_BOT_TOKEN' : 'DISCORD_WEBHOOK_URL';
+                notifyObj = {
+                    provider: notifyProvider,
+                    channel_id: channelId.trim(),
+                    secret_key: secretKey
+                };
+            }
+
             const data = {
                 slug: formData.get('slug'),
                 name: formData.get('name'),
                 description: formData.get('description'),
-                arxiv_categories: formData.get('arxiv_categories').split(',').map(s => s.trim()),
-                notify: formData.get('notify')
+                arxiv_categories: selectedCats,
+                notify: notifyObj
             };
 
             try {
@@ -300,7 +678,10 @@
                             <p class="mb-1">${topic.description}</p>
                             <small>Categories: ${topic.arxiv_categories.join(', ')}</small>
                             <br>
-                            <small>Last run: ${topic.last_run_date || 'Never'} | Collected: ${topic.total_collected} | Output: ${topic.total_output}</small>
+                            <small>Last run: ${topic.last_run_date || 'Never'} | Collected: ${topic.total_collected || 0} | Output: ${topic.total_output || 0}</small>
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${topic.slug}', '${topic.name}')">Delete</button>
+                            </div>
                         </div>
                     `;
                 }
@@ -312,6 +693,180 @@
             }
         }
 
+        // Update selected categories display
+        function toggleNotifyFields() {
+            const provider = document.getElementById('notifyProvider').value;
+            const group = document.getElementById('notifyChannelGroup');
+            const help = document.getElementById('notifyChannelHelp');
+            if (provider === 'none') {
+                group.classList.add('d-none');
+            } else {
+                group.classList.remove('d-none');
+                help.textContent = provider === 'telegram'
+                    ? 'Telegram: 채팅방/그룹의 Chat ID를 입력하세요. (@userinfobot 으로 확인 가능)'
+                    : 'Discord: 웹훅 URL을 입력하세요.';
+            }
+        }
+
+        function updateCatDisplay() {
+            const selected = Array.from(document.querySelectorAll('.cat-check:checked')).map(cb => cb.value);
+            document.getElementById('selectedCatsDisplay').textContent = selected.length > 0 ? `${selected.join(', ')} (${selected.length}개)` : '없음';
+            const warning = document.getElementById('catWarning');
+            if (selected.length > 10) {
+                warning.classList.remove('d-none');
+            } else {
+                warning.classList.add('d-none');
+            }
+        }
+
+        async function aiRecommendCategories() {
+            const desc = document.querySelector('#addTopicForm textarea[name="description"]').value.trim();
+            if (!desc) {
+                alert('Description을 먼저 입력해 주세요.');
+                return;
+            }
+
+            const btn = document.getElementById('aiRecommendBtn');
+            const spinner = document.getElementById('aiRecommendSpinner');
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+
+            try {
+                const response = await fetch('/api/recommend/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: desc })
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Recommendation failed');
+                }
+
+                // Uncheck all first
+                document.querySelectorAll('.cat-check').forEach(cb => cb.checked = false);
+
+                // Check recommended categories
+                let matched = 0;
+                for (const cat of result.categories) {
+                    const cb = document.querySelector(`.cat-check[value="${cat}"]`);
+                    if (cb) {
+                        cb.checked = true;
+                        matched++;
+                    }
+                }
+
+                updateCatDisplay();
+
+                const methodLabel = result.method === 'llm' ? 'AI' : 'Rule-based';
+                alert(`${methodLabel} 추천 완료: ${matched}개 카테고리 선택됨\n\n${result.reasoning || ''}`);
+            } catch (error) {
+                alert(`추천 실패: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add('d-none');
+            }
+        }
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('cat-check')) {
+                updateCatDisplay();
+            }
+        });
+
+        // Reset category checkboxes when modal closes
+        document.getElementById('addTopicModal').addEventListener('hidden.bs.modal', () => {
+            document.querySelectorAll('.cat-check').forEach(cb => cb.checked = false);
+            document.getElementById('selectedCatsDisplay').textContent = '없음';
+            document.getElementById('notifyProvider').value = 'none';
+            document.getElementById('notifyChannelGroup').classList.add('d-none');
+            document.getElementById('notifyChannelId').value = '';
+        });
+
+        // Delete topic
+        async function deleteTopic(slug, name) {
+            if (!confirm(`"${name}" 토픽을 삭제하시겠습니까?`)) return;
+            try {
+                const response = await fetch(`/api/topics/${slug}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadTopics();
+                    loadSearchTopics();
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.error}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Section display names and descriptions
+        const SECTION_LABELS = {
+            app: 'App (General)',
+            llm: 'LLM (AI Model)',
+            agents: 'Agents (AI Pipelines)',
+            sources: 'Sources (arXiv)',
+            filter: 'Filter',
+            embedding: 'Embedding',
+            scoring: 'Scoring',
+            remind: 'Remind',
+            clustering: 'Clustering',
+            output: 'Output (Reports)',
+            notifications: 'Notifications',
+            database: 'Database',
+            weekly: 'Weekly Tasks',
+            local_ui: 'Local UI'
+        };
+
+        const SECTION_DESCRIPTIONS = {
+            app: '앱 이름, 버전 등 기본 설정입니다.',
+            llm: 'AI 모델 설정. 키워드 생성, 논문 평가, 요약에 사용할 언어 모델을 지정합니다. 모델명이나 제공자를 변경할 수 있습니다.',
+            agents: 'AI 파이프라인 에이전트 설정. 키워드 생성기, 평가기, 요약기 각각의 모델, 프롬프트, 파라미터를 조정합니다. 고급 사용자용입니다.',
+            sources: 'arXiv 검색 설정. 쿼리당 가져올 논문 수, 검색 날짜 범위, API 요청 간격 등을 조절합니다.',
+            filter: '논문 필터링 규칙. 최소 관련성 점수, 토픽당 최대 논문 수 등 결과 품질 기준을 설정합니다.',
+            embedding: '텍스트 임베딩 설정. 유사 논문 탐색과 중복 감지에 사용됩니다. 선택적 임베딩 패키지 설치가 필요합니다.',
+            scoring: '논문 평가 설정. AI가 논문의 연구 주제 관련성을 평가하고 순위를 매기는 방식을 조절합니다.',
+            remind: '재평가 설정. 이전에 낮은 점수를 받은 논문을 주기적으로 다시 확인하여 놓친 관련 논문을 찾습니다.',
+            clustering: '논문 그룹핑 설정. 유사한 논문을 묶어서 리포트를 읽기 쉽게 만듭니다.',
+            output: '리포트 출력 설정. 리포트 형식(Markdown/HTML), 저장 경로, 템플릿 옵션을 설정합니다.',
+            notifications: 'Discord, Telegram 알림 설정. 메시지 형식, 배치 크기, 알림 조건을 설정합니다.',
+            database: 'SQLite 데이터베이스 설정. DB 파일 경로와 자동 정리 같은 유지보수 옵션을 조절합니다.',
+            weekly: '주간 유지보수 작업. 오래된 데이터 자동 삭제, DB 최적화, 사용량 통계 초기화 등을 설정합니다.',
+            local_ui: '로컬 웹 UI 설정. 서버 포트, 브라우저 자동 열기 등을 조절합니다.'
+        };
+
+        // Render a single field input based on value type
+        function renderField(name, value, label) {
+            const escaped = String(value).replace(/"/g, '&quot;');
+            if (typeof value === 'boolean') {
+                const checked = value ? 'checked' : '';
+                return `<div class="form-check setting-bool"><input class="form-check-input" type="checkbox" name="${name}" ${checked} data-type="bool"><label class="form-check-label">${label}</label></div>`;
+            } else if (typeof value === 'number') {
+                const step = Number.isInteger(value) ? '1' : '0.01';
+                return `<div class="mb-2"><label class="form-label">${label}</label><input type="number" step="${step}" class="form-control form-control-sm" name="${name}" value="${value}" data-type="number"></div>`;
+            } else if (Array.isArray(value)) {
+                const arrStr = JSON.stringify(value);
+                return `<div class="mb-2"><label class="form-label">${label} <small class="text-muted">(JSON array)</small></label><input type="text" class="form-control form-control-sm" name="${name}" value='${arrStr.replace(/'/g, "&#39;")}' data-type="array"></div>`;
+            } else {
+                return `<div class="mb-2"><label class="form-label">${label}</label><input type="text" class="form-control form-control-sm" name="${name}" value="${escaped}" data-type="string"></div>`;
+            }
+        }
+
+        // Render nested object fields recursively
+        function renderObject(obj, prefix) {
+            let html = '';
+            for (const [key, value] of Object.entries(obj)) {
+                const fullKey = prefix ? `${prefix}.${key}` : key;
+                if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                    html += `<div class="nested-group"><h6>${key}</h6>`;
+                    html += renderObject(value, fullKey);
+                    html += '</div>';
+                } else {
+                    html += renderField(fullKey, value, key);
+                }
+            }
+            return html;
+        }
+
         // Load configuration settings
         async function loadSettings() {
             const container = document.getElementById('configEditor');
@@ -319,48 +874,22 @@
             try {
                 const response = await fetch('/api/settings');
                 const settings = await response.json();
-
-                // Store settings in global variable for editing
                 window.currentSettings = settings;
 
                 let html = '<form id="settingsForm">';
-
-                // LLM Settings
-                if (settings.llm) {
-                    html += '<h6 class="mt-3">LLM Settings</h6>';
-                    html += `<div class="mb-2"><label class="form-label">Provider</label><input type="text" class="form-control form-control-sm" name="llm.provider" value="${settings.llm.provider || ''}"></div>`;
-                    html += `<div class="mb-2"><label class="form-label">Model</label><input type="text" class="form-control form-control-sm" name="llm.model" value="${settings.llm.model || ''}"></div>`;
+                for (const [section, value] of Object.entries(settings)) {
+                    if (typeof value !== 'object' || value === null) continue;
+                    const label = SECTION_LABELS[section] || section;
+                    const desc = SECTION_DESCRIPTIONS[section] || '';
+                    html += `<div class="settings-section" id="section-${section}">`;
+                    html += `<div class="section-header" onclick="this.parentElement.classList.toggle('open')"><strong>${label}</strong><span class="arrow">&#9654;</span></div>`;
+                    html += `<div class="section-body">`;
+                    if (desc) html += `<p class="text-muted small mb-3">${desc}</p>`;
+                    html += renderObject(value, section);
+                    html += '</div></div>';
                 }
-
-                // Scoring Settings
-                if (settings.scoring) {
-                    html += '<h6 class="mt-3">Scoring Settings</h6>';
-                    html += `<div class="mb-2"><label class="form-label">Min Score</label><input type="number" class="form-control form-control-sm" name="scoring.min_score" value="${settings.scoring.min_score || 0}"></div>`;
-                }
-
-                // Thresholds
-                if (settings.thresholds) {
-                    html += '<h6 class="mt-3">Thresholds</h6>';
-                    html += `<div class="mb-2"><label class="form-label">Code Threshold</label><input type="number" step="0.1" class="form-control form-control-sm" name="thresholds.code_threshold" value="${settings.thresholds.code_threshold || 0}"></div>`;
-                }
-
-                // Embedding Settings
-                if (settings.embedding) {
-                    html += '<h6 class="mt-3">Embedding Settings</h6>';
-                    html += `<div class="mb-2"><label class="form-label">Provider</label><input type="text" class="form-control form-control-sm" name="embedding.provider" value="${settings.embedding.provider || ''}"></div>`;
-                    html += `<div class="mb-2"><label class="form-label">Model</label><input type="text" class="form-control form-control-sm" name="embedding.model" value="${settings.embedding.model || ''}"></div>`;
-                }
-
-                // Database Settings
-                if (settings.database) {
-                    html += '<h6 class="mt-3">Database Settings</h6>';
-                    html += `<div class="mb-2"><label class="form-label">Path</label><input type="text" class="form-control form-control-sm" name="database.path" value="${settings.database.path || ''}"></div>`;
-                }
-
                 html += '</form>';
                 container.innerHTML = html;
-
-                // Bind save button
                 document.getElementById('saveSettingsBtn').onclick = saveSettings;
             } catch (error) {
                 container.innerHTML = `<div class="alert alert-danger">Error loading settings: ${error.message}</div>`;
@@ -370,32 +899,46 @@
         // Save configuration settings
         async function saveSettings() {
             const form = document.getElementById('settingsForm');
-            const formData = new FormData(form);
+            const result = {};
 
-            // Build nested object from form data
-            const updates = {};
-            for (const [key, value] of formData.entries()) {
-                const parts = key.split('.');
-                if (parts.length === 2) {
-                    if (!updates[parts[0]]) updates[parts[0]] = {};
-                    updates[parts[0]][parts[1]] = value;
+            // Collect all inputs
+            form.querySelectorAll('input').forEach(input => {
+                const parts = input.name.split('.');
+                const dataType = input.dataset.type;
+                let value;
+
+                if (dataType === 'bool') {
+                    value = input.checked;
+                } else if (dataType === 'number') {
+                    value = Number(input.value);
+                } else if (dataType === 'array') {
+                    try { value = JSON.parse(input.value); } catch { value = input.value; }
+                } else {
+                    value = input.value;
                 }
-            }
+
+                // Build nested object
+                let current = result;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]]) current[parts[i]] = {};
+                    current = current[parts[i]];
+                }
+                current[parts[parts.length - 1]] = value;
+            });
 
             try {
                 const response = await fetch('/api/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updates)
+                    body: JSON.stringify(result)
                 });
 
-                const result = await response.json();
-
+                const data = await response.json();
                 if (response.ok) {
                     alert('Settings saved successfully!');
-                    loadSettings(); // Reload
+                    loadSettings();
                 } else {
-                    alert(`Error: ${result.error}`);
+                    alert(`Error: ${data.error}`);
                 }
             } catch (error) {
                 alert(`Error saving settings: ${error.message}`);

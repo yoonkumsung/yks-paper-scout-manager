@@ -54,10 +54,14 @@ def create_app(
     from local_ui.api.topics import topics_bp
     from local_ui.api.pipeline import pipeline_bp
     from local_ui.api.settings import settings_bp
+    from local_ui.api.setup import setup_bp
+    from local_ui.api.recommend import recommend_bp
 
     app.register_blueprint(topics_bp, url_prefix="/api/topics")
     app.register_blueprint(pipeline_bp, url_prefix="/api/pipeline")
     app.register_blueprint(settings_bp, url_prefix="/api/settings")
+    app.register_blueprint(setup_bp, url_prefix="/api/setup")
+    app.register_blueprint(recommend_bp, url_prefix="/api/recommend")
 
     @app.route("/")
     def index() -> str:

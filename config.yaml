@@ -1,16 +1,15 @@
-# Paper Scout Configuration
-# Reference: devspec.md Section 20-A
-
 app:
-  display_timezone: "Asia/Seoul"
+  display_timezone: Asia/Seoul
   report_retention_days: 90
-
 llm:
-  provider: "openrouter"
-  base_url: "https://openrouter.ai/api/v1"
-  model: "google/gemini-2.0-flash-001:free"
-  app_url: "https://github.com/user/paper-scout"
-  app_title: "Paper Scout"
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  model: z-ai/glm-4.5-air:free
+  fallback_models:
+    - deepseek/deepseek-r1-0528:free
+    - qwen/qwen3-235b-a22b-thinking-2507
+  app_url: https://github.com/user/paper-scout
+  app_title: Paper Scout
   retry:
     max_retries: 3
     backoff_base: 2
@@ -19,83 +18,148 @@ llm:
   preflight:
     conservative_rpm: 10
     conservative_daily: 200
-
 agents:
   common:
     ignore_reasoning: true
     strip_think_blocks: true
-    debug_dir: "tmp/debug"
+    debug_dir: tmp/debug
   keyword_expander:
-    effort: "high"
-    max_tokens: 2048
+    model: deepseek/deepseek-r1-0528:free
+    effort: mid
+    max_tokens: 16384
     temperature: 0.3
-    prompt_version: "agent1-v3"
+    prompt_version: agent1-v3
     cache_ttl_days: 30
+    chunk_size: 15
   scorer:
-    effort: "low"
-    max_tokens: 2048
+    effort: low
+    max_tokens: 8192
     temperature: 0.2
     batch_size: 10
-    prompt_version: "agent2-v2"
+    prompt_version: agent2-v2
   summarizer:
-    effort: "low"
-    max_tokens: 4096
+    effort: low
+    max_tokens: 16384
     temperature: 0.4
     tier1_batch_size: 5
     tier2_batch_size: 10
-    tier1_prompt_version: "agent3-tier1-v1"
-    tier2_prompt_version: "agent3-tier2-v1"
-
+    tier1_prompt_version: agent3-tier1-v1
+    tier2_prompt_version: agent3-tier2-v1
 sources:
   arxiv:
     num_retries: 3
     delay_seconds: 3
     max_results_per_query: 200
     empty_page_retries: 2
-    empty_page_backoff: [3, 9]
+    empty_page_backoff:
+    - 3
+    - 9
     window_buffer_minutes: 30
-
 filter:
   pre_embed_cap: 2000
-
 embedding:
-  model: "sentence-transformers/all-MiniLM-L6-v2"
-  device: "cpu"
+  model: sentence-transformers/all-MiniLM-L6-v2
+  device: cpu
   optional: true
-  mode: "en_synthetic"
-
+  mode: en_synthetic
 scoring:
   weights:
     embedding_on:
       llm: 0.55
       embed: 0.35
-      recency: 0.10
+      recency: 0.1
     embedding_off:
-      llm: 0.80
-      recency: 0.20
+      llm: 0.8
+      recency: 0.2
   bonus:
     is_edge: 5
     is_realtime: 5
     has_code: 3
   thresholds:
     default: 60
-    relaxation_steps: [50, 40]
+    relaxation_steps:
+    - 50
+    - 40
     min_papers: 5
   discard_cutoff: 20
   max_output: 100
   tier1_count: 30
-
 remind:
   enabled: true
   min_score: 80
   max_expose_count: 2
-
 clustering:
   enabled: true
   similarity_threshold: 0.85
-
-topics: []
-
+topics:
+- slug: cappic-ai
+  name: CAPP!C_AI
+  description: 자동으로 스포츠 경기 또는 운동, 훈련 장면을 촬영하고 주요 장면 및 개인별 하이라이트 편집을 하는 AI 촬영 디바이스다.
+    생성한 영상을 보정하거나 사진처럼 만들어 이미지를 보정할 수 있다. 또한 영상이나 이미지를 토대로 자세나 동작, 경기 전략 분석 등을 할 수
+    있다. 이렇게 만든 경기나 하이라이트 영상이나 숏폼, 이미지 등을 SNS처럼 공유하고 광고나 마켓 등을 갖춘 플랫폼을 만들고자 한다. 나아가
+    모든 스포츠 활동과 상호작용하는 피지컬 AI 하드웨어를 만들고자 한다.
+  arxiv_categories:
+  - cs.AI
+  - cs.LG
+  - cs.CL
+  - cs.CV
+  - cs.NE
+  - cs.IR
+  - cs.MA
+  - cs.RO
+  - cs.SE
+  - cs.DC
+  - cs.DB
+  - cs.OS
+  - cs.PL
+  - cs.AR
+  - cs.NI
+  - cs.PF
+  - cs.DS
+  - cs.CC
+  - cs.LO
+  - cs.FL
+  - cs.DM
+  - cs.IT
+  - cs.NA
+  - cs.SC
+  - cs.GT
+  - cs.CG
+  - cs.CR
+  - cs.HC
+  - cs.CY
+  - cs.CE
+  - cs.GR
+  - cs.MM
+  - cs.SD
+  - cs.SI
+  - cs.DL
+  - cs.ET
+  - cs.MS
+  - cs.GL
+  - cs.OH
+  - cs.SY
+  - stat.ML
+  - stat.ME
+  - stat.TH
+  - stat.AP
+  - stat.CO
+  - eess.SP
+  - eess.AS
+  - eess.IV
+  - eess.SY
+  - math.OC
+  - math.ST
+  - math.PR
+  - q-bio.QM
+  - q-bio.NC
+  - q-fin.ST
+  - q-fin.CP
+  - physics.data-an
+  notify:
+    provider: telegram
+    channel_id: '@YKSGM_bot'
+    secret_key: TELEGRAM_BOT_TOKEN
 output:
   gh_pages:
     enabled: true
@@ -104,20 +168,19 @@ output:
   github_issue:
     enabled: false
     body_max_chars: 60000
-    labels: ["paper-report"]
+    labels:
+    - paper-report
   attachments:
     enabled: true
-
 notifications:
   weekly_summary:
-    provider: ""
-    channel_id: ""
-    secret_key: ""
+    provider: ''
+    channel_id: ''
+    secret_key: ''
   on_zero_results: true
   on_error: true
-
 database:
-  path: "data/paper_scout.db"
+  path: data/paper_scout.db
   retention:
     evaluations_days: 90
     query_stats_days: 90
@@ -125,19 +188,18 @@ database:
   papers_ttl_days: 365
   vacuum_after_purge: true
   seen_items:
-    path: "data/seen_items.jsonl"
+    path: data/seen_items.jsonl
     rolling_days: 30
   usage:
-    dir: "data/usage"
+    dir: data/usage
     rolling_days: 30
   persistence:
-    cache_key_prefix: "db"
-    embed_cache_key_prefix: "embed"
+    cache_key_prefix: db
+    embed_cache_key_prefix: embed
   release_backup:
     enabled: true
     keep_weeks: 4
-    name_template: "paper-scout-db-{date}.sqlite"
-
+    name_template: paper-scout-db-{date}.sqlite
 weekly:
   trend_summary:
     enabled: true
@@ -150,8 +212,7 @@ weekly:
     published_max_days: 90
   visualization:
     enabled: false
-
 local_ui:
-  host: "127.0.0.1"
+  host: 127.0.0.1
   port: 8585
   open_browser: true
