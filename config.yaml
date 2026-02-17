@@ -25,7 +25,7 @@ agents:
     debug_dir: tmp/debug
   keyword_expander:
     model: deepseek/deepseek-r1-0528:free
-    effort: mid
+    effort: medium
     max_tokens: 16384
     temperature: 0.3
     prompt_version: agent1-v3
