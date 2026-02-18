@@ -106,6 +106,9 @@ def run_pipeline(args: argparse.Namespace) -> int:
             date_to=_to_utc_dt(date_to),
         )
         config = preflight_result.config
+        config.llm["response_format_supported"] = (
+            preflight_result.response_format_supported
+        )
         for w in preflight_result.warnings:
             logger.warning("Preflight warning: %s", w)
     except SystemExit:

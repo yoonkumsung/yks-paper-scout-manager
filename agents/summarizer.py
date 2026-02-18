@@ -73,7 +73,7 @@ class Summarizer(BaseAgent):
 
     @property
     def agent_config_key(self) -> str:
-        return "agent3"
+        return "summarizer"
 
     # ------------------------------------------------------------------
     # Public API

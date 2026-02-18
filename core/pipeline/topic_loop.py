@@ -827,7 +827,7 @@ class TopicLoopOrchestrator:
 
         from core.clustering.clusterer import Clusterer
 
-        threshold = self._config.clustering.get("threshold", 0.85)
+        threshold = self._config.clustering.get("similarity_threshold", 0.85)
         clusterer = Clusterer(threshold=threshold)
         return clusterer.cluster(papers)
 
@@ -913,7 +913,7 @@ class TopicLoopOrchestrator:
 
         remind_config = self._config.remind
         min_score = remind_config.get("min_score", 80.0)
-        max_count = remind_config.get("max_recommend_count", 2)
+        max_count = remind_config.get("max_expose_count", 2)
 
         selector = RemindSelector(db=self._db)
         return selector.select(

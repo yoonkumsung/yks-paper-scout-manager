@@ -52,7 +52,7 @@ class Scorer(BaseAgent):
 
     @property
     def agent_config_key(self) -> str:
-        return "agent2"
+        return "scorer"
 
     # ------------------------------------------------------------------
     # Public API
