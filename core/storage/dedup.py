@@ -8,9 +8,12 @@ mode-dependent (skip_recent or none).
 from __future__ import annotations
 
 import json
+import logging
 import tempfile
 from datetime import date, timedelta
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from core.models import Paper
 from core.storage.db_manager import DBManager
@@ -132,6 +135,8 @@ class DedupManager:
             "date": date.today().isoformat(),
         }
         self._new_items.append(entry)
+        # Keep in-memory set in sync so subsequent is_duplicate checks work
+        self._seen_set.add((paper_key, topic_slug))
 
     def save_seen_items(self) -> None:
         """Save seen_items.jsonl with new items appended.

@@ -10,7 +10,7 @@ Compatible with Python 3.9+.
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from core.models import EvaluationFlags, Paper
@@ -101,7 +101,7 @@ class Ranker:
         # Step 1-3: Calculate scores for each evaluation.
         scored: List[dict] = []
         for ev in active:
-            paper_key: str = ev["paper_key"]
+            paper_key: str = ev.get("paper_key", "")
             paper = papers.get(paper_key)
             if paper is None:
                 continue
@@ -109,9 +109,9 @@ class Ranker:
             enriched = dict(ev)
 
             # Step 1: Deterministic bonus.
-            flags: EvaluationFlags = ev["flags"]
+            flags: EvaluationFlags = ev.get("flags", EvaluationFlags())
             bonus = self._calculate_bonus(flags, paper)
-            base_score: int = ev["llm_base_score"]
+            base_score: int = ev.get("llm_base_score", 0)
             llm_adjusted = min(base_score + bonus, 100)
 
             enriched["bonus_score"] = bonus
@@ -181,6 +181,11 @@ class Ranker:
         """Calculate recency score based on days elapsed."""
         if published_at_utc is None:
             return _RECENCY_DEFAULT
+        # Ensure both datetimes are timezone-aware for safe subtraction
+        if published_at_utc.tzinfo is None:
+            published_at_utc = published_at_utc.replace(tzinfo=timezone.utc)
+        if window_end.tzinfo is None:
+            window_end = window_end.replace(tzinfo=timezone.utc)
         delta = window_end - published_at_utc
         total_seconds = delta.total_seconds()
         days_elapsed = int(math.floor(total_seconds / 86400))  # 24 * 60 * 60

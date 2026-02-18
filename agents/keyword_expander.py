@@ -187,6 +187,8 @@ class KeywordExpander(BaseAgent):
 
         # --- Chunk categories if too many ---
         chunk_size = self.agent_config.get("chunk_size", 15)
+        if not chunk_size or chunk_size <= 0:
+            chunk_size = 15
         cats = topic.arxiv_categories
         if len(cats) > chunk_size:
             logger.info(

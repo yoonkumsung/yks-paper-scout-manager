@@ -6,10 +6,13 @@ Ensures weekly tasks (full crawling, RSS feed scraping) run at most once per ISO
 
 from __future__ import annotations
 
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def is_weekly_due(flag_path: str = "data/weekly_done.flag") -> bool:
@@ -75,4 +78,5 @@ def read_weekly_flag(flag_path: str = "data/weekly_done.flag") -> Optional[str]:
         content = path.read_text(encoding="utf-8").strip()
         return content if content else None
     except (IOError, OSError):
+        logger.warning("Failed to read weekly flag file: %s", flag_path, exc_info=True)
         return None

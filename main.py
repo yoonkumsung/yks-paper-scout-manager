@@ -70,11 +70,6 @@ def _setup_logging(level_name: str) -> None:
     )
 
 
-def _is_sunday_utc() -> bool:
-    """Return True if the current UTC day is Sunday (weekday 6)."""
-    return datetime.now(timezone.utc).weekday() == 6
-
-
 def _to_utc_dt(date_str: str | None) -> datetime | None:
     """Convert a YYYY-MM-DD string to a UTC datetime, or None."""
     if date_str is None:
@@ -171,6 +166,41 @@ def run_pipeline(args: argparse.Namespace) -> int:
         logger.critical("Topic loop failed with exception", exc_info=True)
         return 2
 
+    # 5-b. Error alert for failed topics
+    failed = topic_results.get("topics_failed", [])
+    if failed:
+        try:
+            from output.notifiers.error_alert import send_error_alert
+            from output.notifiers.registry import NotifierRegistry
+            from datetime import datetime as _dt
+
+            display_date = _dt.now(timezone.utc).strftime("%y년 %m월 %d일")
+            registry = NotifierRegistry()
+            # Try to find a notifier from any configured topic
+            for t_spec in config.topics:
+                if hasattr(t_spec, "notify") and t_spec.notify:
+                    notifiers = registry.get_notifiers_for_event(
+                        t_spec.notify, "error"
+                    )
+                    if not notifiers:
+                        notifiers = registry.get_notifiers_for_event(
+                            t_spec.notify, "complete"
+                        )
+                    if notifiers:
+                        first_fail = failed[0]
+                        completed = topic_results.get("topics_completed", [])
+                        send_error_alert(
+                            notifier=notifiers[0],
+                            display_date=display_date,
+                            failed_topic=first_fail["slug"],
+                            failed_stage="pipeline",
+                            error_cause=first_fail.get("error", "unknown")[:200],
+                            completed_topics=completed,
+                        )
+                        break
+        except Exception:
+            logger.warning("Failed to send error alert (non-fatal)", exc_info=True)
+
     # 6. Post-loop (full mode only)
     if args.mode == "full" and topic_results:
         try:
@@ -184,30 +214,39 @@ def run_pipeline(args: argparse.Namespace) -> int:
         except Exception:
             logger.error("Post-loop processing failed (non-fatal)", exc_info=True)
 
-    # 7. Weekly tasks
-    try:
-        from core.pipeline.weekly_guard import is_weekly_due, mark_weekly_done
-        if is_weekly_due():
-            logger.info("Running weekly tasks...")
-            from core.pipeline.weekly_db_maintenance import run_weekly_maintenance
-            maint_summary = run_weekly_maintenance(db_path=db_path)
-            logger.info("Weekly maintenance: %s", maint_summary)
-            try:
-                from core.pipeline.weekly_summary import generate_weekly_summary
-                today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-                generate_weekly_summary(db_path=db_path, date_str=today_str)
-            except Exception:
-                logger.warning("Weekly summary generation failed (non-fatal)", exc_info=True)
-            mark_weekly_done()
-            logger.info("Weekly tasks completed")
-        else:
-            logger.debug("Weekly tasks: not due yet")
-    except Exception:
-        logger.warning("Weekly tasks failed (non-fatal)", exc_info=True)
+    # 7. Weekly tasks (skip if pipeline fully failed)
+    if exit_code >= 2:
+        logger.info("Skipping weekly tasks: pipeline failed (exit_code=%d)", exit_code)
+    else:
+        try:
+            from core.pipeline.weekly_guard import is_weekly_due, mark_weekly_done
+            if is_weekly_due():
+                logger.info("Running weekly tasks...")
+                # Close main DB connection before VACUUM (requires exclusive access)
+                try:
+                    db_manager.close()
+                except Exception:
+                    logger.warning("Failed to close DB before weekly maintenance", exc_info=True)
+                from core.pipeline.weekly_db_maintenance import run_weekly_maintenance
+                maint_summary = run_weekly_maintenance(db_path=db_path)
+                logger.info("Weekly maintenance: %s", maint_summary)
+                try:
+                    from core.pipeline.weekly_summary import generate_weekly_summary
+                    today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+                    generate_weekly_summary(db_path=db_path, date_str=today_str)
+                except Exception:
+                    logger.warning("Weekly summary generation failed (non-fatal)", exc_info=True)
+                mark_weekly_done()
+                logger.info("Weekly tasks completed")
+            else:
+                logger.debug("Weekly tasks: not due yet")
+        except Exception:
+            logger.warning("Weekly tasks failed (non-fatal)", exc_info=True)
 
-    # 8. Cleanup
+    # 8. Cleanup (db_manager may already be closed by weekly maintenance)
     try:
-        db_manager.close()
+        if hasattr(db_manager, '_conn') and db_manager._conn is not None:
+            db_manager.close()
     except Exception:
         logger.warning("Failed to close database", exc_info=True)
 
@@ -245,6 +284,7 @@ def main() -> int:
     # Default: launch UI
     from local_ui.app import start_server
     start_server()
+    return 0
 
 
 if __name__ == "__main__":

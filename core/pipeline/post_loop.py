@@ -85,7 +85,7 @@ class PostLoopProcessor:
 
         completed = topic_results.get("topics_completed", [])
 
-        # Step 1: Cross-topic duplicate tagging
+        # Step 1: Cross-topic duplicate tagging (data-critical)
         try:
             tagged = self._tag_multi_topic(completed)
             summary["multi_topic_tagged"] = tagged
@@ -94,9 +94,11 @@ class PostLoopProcessor:
             )
         except Exception:
             logger.error(
-                "Post-loop step 1: multi_topic tagging failed",
+                "Post-loop step 1: multi_topic tagging failed "
+                "(data-critical step)",
                 exc_info=True,
             )
+            raise
 
         # Step 2: HTML build (index + latest)
         try:

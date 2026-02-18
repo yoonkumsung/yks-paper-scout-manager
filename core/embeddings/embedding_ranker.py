@@ -107,6 +107,9 @@ class EmbeddingRanker:
             # Compute similarities
             scores: List[float] = []
             for i in range(len(papers)):
+                if i >= len(paper_embs):
+                    scores.append(0.0)
+                    continue
                 sim = self.cosine_similarity(topic_emb, paper_embs[i])
                 scores.append(sim)
 
@@ -147,6 +150,8 @@ class EmbeddingRanker:
         embedding = model.encode(topic_text, convert_to_numpy=True)
         if embedding.ndim > 1:
             embedding = embedding.squeeze()
+        if embedding.ndim == 0:
+            embedding = embedding.reshape(1)
 
         # Save to cache
         if cached is None:
@@ -177,7 +182,7 @@ class EmbeddingRanker:
             )
 
         texts = [
-            (p.title + " " + p.abstract) for p in papers
+            ((p.title or "") + " " + (p.abstract or "")) for p in papers
         ]
         model = self._get_model()
         embeddings = model.encode(texts, convert_to_numpy=True)

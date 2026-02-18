@@ -289,7 +289,7 @@ class GitHubIssueManager:
             "body": body,
             "labels": labels,
         }
-        resp = requests.post(url, headers=self._headers(), json=payload)
+        resp = requests.post(url, headers=self._headers(), json=payload, timeout=30)
 
         if resp.status_code != 201:
             raise GitHubIssueError(
@@ -326,7 +326,7 @@ class GitHubIssueManager:
             "body": body,
             "labels": labels,
         }
-        resp = requests.patch(url, headers=self._headers(), json=payload)
+        resp = requests.patch(url, headers=self._headers(), json=payload, timeout=30)
 
         if resp.status_code != 200:
             raise GitHubIssueError(

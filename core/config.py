@@ -284,6 +284,8 @@ _SECTION_DEFAULTS: dict[str, dict] = {
 def _apply_defaults(section_name: str, user_config: dict) -> dict:
     """Merge user config over section defaults."""
     defaults = _SECTION_DEFAULTS.get(section_name, {})
+    if user_config is None:
+        return defaults
     return {**defaults, **user_config}
 
 

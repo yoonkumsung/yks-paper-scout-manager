@@ -122,8 +122,20 @@ def run_preflight(
     db_path = config.database.get("path", "data/paper_scout.db")
     db = DBManager(db_path)
 
-    # Check 7: Search windows per topic
-    topic_windows = _compute_windows(config, db, date_from, date_to)
+    # Quick integrity check
+    try:
+        result = db._conn.execute("PRAGMA integrity_check(1)").fetchone()
+        if result and result[0] != "ok":
+            logger.warning("DB integrity issue detected: %s", result[0])
+    except Exception as ic_exc:
+        logger.warning("DB integrity check failed: %s", ic_exc)
+
+    try:
+        # Check 7: Search windows per topic
+        topic_windows = _compute_windows(config, db, date_from, date_to)
+    except Exception:
+        db.close()
+        raise
 
     # Check 8: RateLimiter initialization
     rate_limiter = _init_rate_limiter(detected_rpm, detected_daily_limit)
@@ -409,6 +421,9 @@ def _lookup_window_start(
         if ts is not None:
             try:
                 dt = datetime.fromisoformat(ts)
+                # Ensure timezone-aware (assume UTC if naive)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=UTC)
                 logger.info(
                     "Topic '%s': window_start from last_success.json: %s",
                     topic_slug,

@@ -13,7 +13,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from local_ui.config_io import read_config, write_config
 from local_ui.env_io import read_env, write_env
-from local_ui.github_secrets import detect_github_repo, push_secrets
+from local_ui.github_secrets import detect_github_repo, push_secrets, sync_data_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +110,30 @@ def save_github_secrets():
 
     except Exception as e:
         logger.error(f"Error pushing GitHub secrets: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@setup_bp.route("/sync-actions", methods=["POST"])
+def sync_actions():
+    """Sync data files (config, keyword_cache, last_success) to GitHub Actions.
+
+    Encodes each file as base64 and pushes as GitHub Secrets so that
+    GitHub Actions workflows can restore them.
+
+    Returns:
+        JSON with per-file results and overall success flag.
+    """
+    try:
+        config_path = current_app.config["CONFIG_PATH"]
+        data_path = current_app.config.get("DATA_PATH", "data")
+
+        result = sync_data_secrets(config_path=config_path, data_dir=data_path)
+        status_code = 200 if result["success"] else 207
+
+        return jsonify(result), status_code
+
+    except Exception as e:
+        logger.error(f"Error syncing data to GitHub Actions: {e}")
         return jsonify({"error": str(e)}), 500
 
 

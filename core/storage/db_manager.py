@@ -150,6 +150,8 @@ class DBManager:
         """
         self._db_path = db_path
         os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+        # check_same_thread=False: callers are responsible for ensuring
+        # thread-safe access (e.g. single-writer or external locking).
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode=WAL;")
@@ -174,6 +176,7 @@ class DBManager:
         """Close the database connection."""
         if self._conn:
             self._conn.close()
+            self._conn = None  # Prevent use-after-close
 
     # ------------------------------------------------------------------
     # Table creation
@@ -297,8 +300,16 @@ class DBManager:
     # Evaluations CRUD
     # ==================================================================
 
-    def insert_evaluation(self, evaluation: Evaluation) -> None:
-        """Insert an evaluation record."""
+    def insert_evaluation(
+        self, evaluation: Evaluation, commit: bool = True
+    ) -> None:
+        """Insert an evaluation record.
+
+        Args:
+            evaluation: Evaluation dataclass to insert.
+            commit: Whether to commit immediately (default True).
+                Set to False for batch inserts, then call commit() manually.
+        """
         self._conn.execute(
             """
             INSERT OR REPLACE INTO paper_evaluations (
@@ -331,7 +342,8 @@ class DBManager:
                 evaluation.prompt_ver_summ,
             ),
         )
-        self._conn.commit()
+        if commit:
+            self._conn.commit()
 
     def get_evaluations_by_run(self, run_id: int) -> list[Evaluation]:
         """Retrieve all evaluations for a given run."""
@@ -581,6 +593,23 @@ class DBManager:
             recommend_count=row["recommend_count"],
             last_recommend_run_id=row["last_recommend_run_id"],
         )
+
+    def get_remind_trackings_by_topic(self, topic_slug: str) -> dict[str, RemindTracking]:
+        """Get all remind_tracking entries for a topic as a dict keyed by paper_key."""
+        rows = self._conn.execute(
+            "SELECT * FROM remind_tracking WHERE topic_slug = ?",
+            (topic_slug,),
+        ).fetchall()
+        result: dict[str, RemindTracking] = {}
+        for row in rows:
+            tracking = RemindTracking(
+                paper_key=row["paper_key"],
+                topic_slug=row["topic_slug"],
+                recommend_count=row["recommend_count"],
+                last_recommend_run_id=row["last_recommend_run_id"],
+            )
+            result[tracking.paper_key] = tracking
+        return result
 
     def upsert_remind_tracking(self, tracking: RemindTracking) -> None:
         """Insert or update a remind_tracking entry."""

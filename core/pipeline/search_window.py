@@ -186,11 +186,30 @@ class SearchWindowComputer:
                     )
 
         new_ts = window_end_utc
-        if existing_ts is not None and existing_ts > new_ts:
-            new_ts = existing_ts  # Keep existing if newer
+        # Ensure both are timezone-aware for safe comparison
+        if new_ts.tzinfo is None:
+            new_ts = new_ts.replace(tzinfo=timezone.utc)
+        if existing_ts is not None:
+            if existing_ts.tzinfo is None:
+                existing_ts = existing_ts.replace(tzinfo=timezone.utc)
+            if existing_ts > new_ts:
+                new_ts = existing_ts  # Keep existing if newer
 
         data[topic_slug] = {"last_success_window_end_utc": new_ts.isoformat()}
 
-        os.makedirs(os.path.dirname(self._last_success_path) or ".", exist_ok=True)
-        with open(self._last_success_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        import tempfile
+
+        dir_path = os.path.dirname(self._last_success_path) or "."
+        os.makedirs(dir_path, exist_ok=True)
+        # Atomic write: write to temp file then rename
+        fd, tmp_path = tempfile.mkstemp(dir=dir_path, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            os.replace(tmp_path, self._last_success_path)
+        except Exception:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise

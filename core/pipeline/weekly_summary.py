@@ -8,6 +8,7 @@ Provides keyword frequency, score trends, top papers, and graduated reminds.
 
 from __future__ import annotations
 
+import html
 import json
 import sqlite3
 from datetime import datetime, timedelta
@@ -77,17 +78,19 @@ def _get_keyword_frequency(
             Top 10 keywords per topic sorted by count descending
     """
     conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # Query runs within date range
-    query = """
-    SELECT topic_slug, keywords_used
-    FROM runs
-    WHERE DATE(window_start_utc) >= ? AND DATE(window_end_utc) <= ?
-    """
-    cursor.execute(query, (start_date, end_date))
-    rows = cursor.fetchall()
-    conn.close()
+        # Query runs within date range
+        query = """
+        SELECT topic_slug, keywords_used
+        FROM runs
+        WHERE DATE(window_start_utc) >= ? AND DATE(window_end_utc) <= ?
+        """
+        cursor.execute(query, (start_date, end_date))
+        rows = cursor.fetchall()
+    finally:
+        conn.close()
 
     # Aggregate keywords by topic
     topic_keywords: Dict[str, Dict[str, int]] = {}
@@ -136,23 +139,25 @@ def _get_score_trends(
             Daily averages sorted by date
     """
     conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    query = """
-    SELECT
-        r.topic_slug,
-        DATE(r.window_start_utc) as date,
-        AVG(e.final_score) as avg_score
-    FROM runs r
-    JOIN paper_evaluations e ON r.run_id = e.run_id
-    WHERE DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
-        AND e.final_score IS NOT NULL
-    GROUP BY r.topic_slug, DATE(r.window_start_utc)
-    ORDER BY r.topic_slug, date
-    """
-    cursor.execute(query, (start_date, end_date))
-    rows = cursor.fetchall()
-    conn.close()
+        query = """
+        SELECT
+            r.topic_slug,
+            DATE(r.window_start_utc) as date,
+            AVG(e.final_score) as avg_score
+        FROM runs r
+        JOIN paper_evaluations e ON r.run_id = e.run_id
+        WHERE DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
+            AND e.final_score IS NOT NULL
+        GROUP BY r.topic_slug, DATE(r.window_start_utc)
+        ORDER BY r.topic_slug, date
+        """
+        cursor.execute(query, (start_date, end_date))
+        rows = cursor.fetchall()
+    finally:
+        conn.close()
 
     # Group by topic
     result: Dict[str, List[Tuple[str, float]]] = {}
@@ -182,25 +187,27 @@ def _get_top_papers(
         List[dict]: Papers with title, url, final_score, topic_slug
     """
     conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    query = """
-    SELECT
-        p.title,
-        p.url,
-        e.final_score,
-        r.topic_slug
-    FROM paper_evaluations e
-    JOIN papers p ON e.paper_key = p.paper_key
-    JOIN runs r ON e.run_id = r.run_id
-    WHERE DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
-        AND e.final_score IS NOT NULL
-    ORDER BY e.final_score DESC
-    LIMIT ?
-    """
-    cursor.execute(query, (start_date, end_date, limit))
-    rows = cursor.fetchall()
-    conn.close()
+        query = """
+        SELECT
+            p.title,
+            p.url,
+            e.final_score,
+            r.topic_slug
+        FROM paper_evaluations e
+        JOIN papers p ON e.paper_key = p.paper_key
+        JOIN runs r ON e.run_id = r.run_id
+        WHERE DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
+            AND e.final_score IS NOT NULL
+        ORDER BY e.final_score DESC
+        LIMIT ?
+        """
+        cursor.execute(query, (start_date, end_date, limit))
+        rows = cursor.fetchall()
+    finally:
+        conn.close()
 
     return [
         {
@@ -229,25 +236,27 @@ def _get_graduated_reminds(
         List[dict]: Papers with title, url, topic_slug, recommend_count
     """
     conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # Find papers with recommend_count=2 whose last_recommend_run_id is in date range
-    query = """
-    SELECT
-        p.title,
-        p.url,
-        rt.topic_slug,
-        rt.recommend_count
-    FROM remind_tracking rt
-    JOIN papers p ON rt.paper_key = p.paper_key
-    JOIN runs r ON rt.last_recommend_run_id = r.run_id
-    WHERE rt.recommend_count = 2
-        AND DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
-    ORDER BY p.title
-    """
-    cursor.execute(query, (start_date, end_date))
-    rows = cursor.fetchall()
-    conn.close()
+        # Find papers with recommend_count=2 whose last_recommend_run_id is in date range
+        query = """
+        SELECT
+            p.title,
+            p.url,
+            rt.topic_slug,
+            rt.recommend_count
+        FROM remind_tracking rt
+        JOIN papers p ON rt.paper_key = p.paper_key
+        JOIN runs r ON rt.last_recommend_run_id = r.run_id
+        WHERE rt.recommend_count = 2
+            AND DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
+        ORDER BY p.title
+        """
+        cursor.execute(query, (start_date, end_date))
+        rows = cursor.fetchall()
+    finally:
+        conn.close()
 
     return [
         {
@@ -374,10 +383,10 @@ def render_weekly_summary_html(summary_data: dict, date_str: str) -> str:
     keyword_freq = summary_data.get("keyword_freq", {})
     if keyword_freq:
         for topic_slug, keywords in sorted(keyword_freq.items()):
-            lines.append(f"<h3>{topic_slug}</h3>")
+            lines.append(f"<h3>{html.escape(str(topic_slug))}</h3>")
             lines.append("<ul>")
             for kw, count in keywords:
-                lines.append(f"<li><strong>{kw}</strong>: {count}</li>")
+                lines.append(f"<li><strong>{html.escape(str(kw))}</strong>: {count}</li>")
             lines.append("</ul>")
     else:
         lines.append("<p><em>No keyword data available</em></p>")
@@ -387,11 +396,11 @@ def render_weekly_summary_html(summary_data: dict, date_str: str) -> str:
     score_trends = summary_data.get("score_trends", {})
     if score_trends:
         for topic_slug, trends in sorted(score_trends.items()):
-            lines.append(f"<h3>{topic_slug}</h3>")
+            lines.append(f"<h3>{html.escape(str(topic_slug))}</h3>")
             lines.append("<table>")
             lines.append("<tr><th>Date</th><th>Avg Score</th></tr>")
             for date, avg_score in trends:
-                lines.append(f"<tr><td>{date}</td><td>{avg_score}</td></tr>")
+                lines.append(f"<tr><td>{html.escape(str(date))}</td><td>{avg_score}</td></tr>")
             lines.append("</table>")
     else:
         lines.append("<p><em>No score trend data available</em></p>")
@@ -401,11 +410,14 @@ def render_weekly_summary_html(summary_data: dict, date_str: str) -> str:
     top_papers = summary_data.get("top_papers", [])
     if top_papers:
         for i, paper in enumerate(top_papers, 1):
-            lines.append(f"<h3>{i}. {paper['title']}</h3>")
+            escaped_title = html.escape(str(paper['title']))
+            escaped_topic = html.escape(str(paper['topic_slug']))
+            escaped_url = html.escape(str(paper['url']))
+            lines.append(f"<h3>{i}. {escaped_title}</h3>")
             lines.append("<ul>")
             lines.append(f"<li><strong>Score</strong>: {paper['final_score']}</li>")
-            lines.append(f"<li><strong>Topic</strong>: {paper['topic_slug']}</li>")
-            lines.append(f"<li><strong>URL</strong>: <a href='{paper['url']}'>{paper['url']}</a></li>")
+            lines.append(f"<li><strong>Topic</strong>: {escaped_topic}</li>")
+            lines.append(f"<li><strong>URL</strong>: <a href='{escaped_url}'>{escaped_url}</a></li>")
             lines.append("</ul>")
     else:
         lines.append("<p><em>No top papers available</em></p>")
@@ -416,8 +428,11 @@ def render_weekly_summary_html(summary_data: dict, date_str: str) -> str:
     if graduated:
         lines.append("<ul>")
         for paper in graduated:
-            lines.append(f"<li><strong>{paper['title']}</strong> ({paper['topic_slug']})")
-            lines.append(f"<br>URL: <a href='{paper['url']}'>{paper['url']}</a></li>")
+            escaped_title = html.escape(str(paper['title']))
+            escaped_topic = html.escape(str(paper['topic_slug']))
+            escaped_url = html.escape(str(paper['url']))
+            lines.append(f"<li><strong>{escaped_title}</strong> ({escaped_topic})")
+            lines.append(f"<br>URL: <a href='{escaped_url}'>{escaped_url}</a></li>")
         lines.append("</ul>")
     else:
         lines.append("<p><em>No graduated reminds this week</em></p>")

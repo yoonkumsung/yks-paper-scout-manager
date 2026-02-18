@@ -52,6 +52,7 @@ class TelegramNotifier(NotifierBase):
                 "text": message,
                 # NO parse_mode - plain text only
             },
+            timeout=30,
         )
         if not resp.ok:
             return False
@@ -64,6 +65,7 @@ class TelegramNotifier(NotifierBase):
                     f"{self._api_base}/sendDocument",
                     data={"chat_id": self._chat_id, "caption": caption},
                     files={"document": (os.path.basename(path), f)},
+                    timeout=30,
                 )
                 if not resp.ok:
                     return False
@@ -83,5 +85,6 @@ class TelegramNotifier(NotifierBase):
                 "chat_id": self._chat_id,
                 "text": text,
             },
+            timeout=30,
         )
         return resp.ok

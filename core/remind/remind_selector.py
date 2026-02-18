@@ -54,6 +54,9 @@ class RemindSelector:
             topic_slug, min_score, max_recommend_count, current_run_id
         )
 
+        # Batch-load all tracking entries for this topic to avoid N+1 queries
+        tracking_map = self._db.get_remind_trackings_by_topic(topic_slug)
+
         remind_papers: list[dict] = []
         for paper_key, final_score in candidates:
             paper = self._db.get_paper(paper_key)
@@ -65,7 +68,7 @@ class RemindSelector:
                 continue
 
             # Get or initialize tracking record
-            tracking = self._db.get_remind_tracking(paper_key, topic_slug)
+            tracking = tracking_map.get(paper_key)
             if tracking is None:
                 tracking = RemindTracking(
                     paper_key=paper_key,
@@ -128,6 +131,9 @@ class RemindSelector:
                 result.append((pk, row["final_score"]))
 
         # Source 2: High-score evaluations not yet in remind_tracking
+        # Batch-load all tracking entries for this topic to avoid N+1 queries
+        tracking_map = self._db.get_remind_trackings_by_topic(topic_slug)
+
         high_score_evals = self._db.get_high_score_papers(
             topic_slug, min_score
         )
@@ -137,10 +143,8 @@ class RemindSelector:
                 continue
             if ev.paper_key in seen:
                 continue
-            # Check if already tracked
-            tracking = self._db.get_remind_tracking(
-                ev.paper_key, topic_slug
-            )
+            # Check if already tracked (using batch-loaded map)
+            tracking = tracking_map.get(ev.paper_key)
             if tracking is not None and tracking.recommend_count >= max_count:
                 continue
             seen.add(ev.paper_key)

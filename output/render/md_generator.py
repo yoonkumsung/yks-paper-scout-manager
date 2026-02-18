@@ -43,7 +43,7 @@ def generate_markdown(
         Absolute path to the written ``.md`` file.
         File naming: ``{YYYYMMDD}_paper_{slug}.md``.
     """
-    meta: dict = report_data["meta"]
+    meta: dict = report_data.get("meta", {})
     papers: List[dict] = report_data.get("papers", [])
     clusters: List[dict] = report_data.get("clusters", [])
     remind_papers: List[dict] = report_data.get("remind_papers", [])

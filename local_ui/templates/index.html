@@ -274,6 +274,25 @@
                         <div id="deployResults" class="mt-3" style="display: none;"></div>
                     </div>
                 </div>
+
+                <!-- Card 4: Sync Data to GitHub Actions -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">GitHub Actions 데이터 동기화</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-2">로컬에서 수정한 설정/캐시 파일을 GitHub Actions에 반영합니다.</p>
+                        <ul class="list-unstyled small text-muted mb-3">
+                            <li>config.yaml → PAPER_SCOUT_CONFIG</li>
+                            <li>data/keyword_cache.json → PAPER_SCOUT_KEYWORD_CACHE</li>
+                            <li>data/last_success.json → PAPER_SCOUT_LAST_SUCCESS</li>
+                        </ul>
+                        <div class="text-center">
+                            <button class="btn btn-outline-primary" id="syncActionsBtn" onclick="syncActions()">GitHub Actions 동기화</button>
+                        </div>
+                        <div id="syncActionsResults" class="mt-3" style="display: none;"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Topics Tab -->
@@ -857,6 +876,100 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '저장 및 배포';
+            }
+        }
+
+        // Sync data files to GitHub Actions
+        async function syncActions() {
+            const btn = document.getElementById('syncActionsBtn');
+            const resultsDiv = document.getElementById('syncActionsResults');
+
+            btn.disabled = true;
+            btn.textContent = '동기화 중...';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/setup/sync-actions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                const result = await response.json();
+                let html = '';
+
+                if (result.success) {
+                    html += '<div class="alert alert-success">';
+                    html += '<strong>동기화 완료</strong><br>';
+                    if (result.results) {
+                        for (const [key, status] of Object.entries(result.results)) {
+                            const icon = status === 'ok' ? '&#10004;' : '&#10008;';
+                            const cls = status === 'ok' ? 'text-success' : 'text-danger';
+                            html += `<span class="${cls}">${icon} ${key}: ${status}</span><br>`;
+                        }
+                    }
+                    html += `<small class="text-muted">방법: ${result.method}</small>`;
+                    if (result.file_status) {
+                        html += '<hr><small><strong>파일 상태:</strong><br>';
+                        for (const [key, status] of Object.entries(result.file_status)) {
+                            html += `${key}: ${status}<br>`;
+                        }
+                        html += '</small>';
+                    }
+                    if (result.warnings && result.warnings.length > 0) {
+                        html += '<hr><small class="text-warning"><strong>경고:</strong><br>';
+                        for (const w of result.warnings) {
+                            html += `&#9888; ${w}<br>`;
+                        }
+                        html += '</small>';
+                    }
+                    html += '</div>';
+                } else {
+                    html += '<div class="alert alert-warning">';
+                    html += `<strong>동기화 실패</strong><br>`;
+                    if (result.error) html += `<span class="text-danger">${result.error}</span><br>`;
+                    if (result.message) html += `<span>${result.message}</span><br>`;
+                    if (result.results) {
+                        for (const [key, status] of Object.entries(result.results)) {
+                            const icon = status === 'ok' ? '&#10004;' : '&#10008;';
+                            const cls = status === 'ok' ? 'text-success' : 'text-danger';
+                            html += `<span class="${cls}">${icon} ${key}: ${status}</span><br>`;
+                        }
+                    }
+                    if (result.file_status) {
+                        html += '<hr><small><strong>파일 상태:</strong><br>';
+                        for (const [key, status] of Object.entries(result.file_status)) {
+                            html += `${key}: ${status}<br>`;
+                        }
+                        html += '</small>';
+                    }
+                    if (result.warnings && result.warnings.length > 0) {
+                        html += '<hr><small class="text-warning"><strong>경고:</strong><br>';
+                        for (const w of result.warnings) {
+                            html += `&#9888; ${w}<br>`;
+                        }
+                        html += '</small>';
+                    }
+                    if (result.suggestions) {
+                        html += '<hr><small><strong>해결 방법:</strong><br>';
+                        for (const suggestion of result.suggestions) {
+                            html += `&bull; ${suggestion}<br>`;
+                        }
+                        html += '</small>';
+                    }
+                    if (result.manual_url) {
+                        html += `<br><a href="${result.manual_url}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1">수동으로 시크릿 설정</a>`;
+                    }
+                    html += '</div>';
+                }
+
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                resultsDiv.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'GitHub Actions 동기화';
             }
         }
 

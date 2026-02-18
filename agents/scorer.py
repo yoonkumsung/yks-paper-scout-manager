@@ -90,7 +90,12 @@ class Scorer(BaseAgent):
             return []
 
         batch_size = self.agent_config.get("batch_size", 10)
-        batch_timeout = float(self.agent_config.get("batch_timeout_seconds", 500))
+        if not batch_size or batch_size <= 0:
+            batch_size = 5
+        try:
+            batch_timeout = float(self.agent_config.get("batch_timeout_seconds", 500))
+        except (TypeError, ValueError):
+            batch_timeout = 500.0
         all_results: list[dict] = []
 
         # Sticky fallback: once triggered, all subsequent batches use
@@ -265,7 +270,15 @@ class Scorer(BaseAgent):
                 return None
 
         # --- Check for missing items ---
-        received_indices = {item.get("index") for item in raw if isinstance(item, dict)}
+        received_indices: set[int] = set()
+        for item in raw:
+            if isinstance(item, dict):
+                raw_idx = item.get("index")
+                if raw_idx is not None:
+                    try:
+                        received_indices.add(int(raw_idx))
+                    except (TypeError, ValueError):
+                        pass
         expected_indices = set(indices)
         missing_indices = expected_indices - received_indices
 
@@ -316,8 +329,14 @@ class Scorer(BaseAgent):
             if not isinstance(item, dict):
                 continue
 
-            index = item.get("index")
-            if index is None or index not in paper_by_index:
+            raw_index = item.get("index")
+            if raw_index is None:
+                continue
+            try:
+                index = int(raw_index)
+            except (TypeError, ValueError):
+                continue
+            if index not in paper_by_index:
                 continue
 
             paper = paper_by_index[index]

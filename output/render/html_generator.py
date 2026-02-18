@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -60,6 +61,7 @@ def generate_report_html(
     papers: List[dict] = report_data.get("papers", [])
     clusters: List[dict] = report_data.get("clusters", [])
     remind_papers: List[dict] = report_data.get("remind_papers", [])
+    discarded_papers: List[dict] = report_data.get("discarded_papers", [])
 
     # Build cluster mate lookup.
     key_to_rank = _build_key_to_rank(papers)
@@ -74,6 +76,7 @@ def generate_report_html(
         meta=meta,
         papers=enriched_papers,
         remind_papers=remind_papers,
+        discarded_papers=discarded_papers,
     )
 
     # Write output file.
@@ -146,6 +149,7 @@ def generate_latest_html(
     papers: List[dict] = report_data.get("papers", [])
     clusters: List[dict] = report_data.get("clusters", [])
     remind_papers: List[dict] = report_data.get("remind_papers", [])
+    discarded_papers: List[dict] = report_data.get("discarded_papers", [])
 
     # Build cluster mate lookup.
     key_to_rank = _build_key_to_rank(papers)
@@ -159,6 +163,7 @@ def generate_latest_html(
         meta=meta,
         papers=enriched_papers,
         remind_papers=remind_papers,
+        discarded_papers=discarded_papers,
     )
 
     os.makedirs(output_dir, exist_ok=True)
@@ -177,15 +182,41 @@ def generate_latest_html(
 # ---------------------------------------------------------------------------
 
 
+_KST = timezone(timedelta(hours=9))
+
+
+def _format_window_date(iso_str: str) -> str:
+    """Convert ISO 8601 datetime string to human-readable dual-timezone format.
+
+    Example:
+        '2026-01-01T00:00:00+00:00'
+        -> 'UTC 2026-01-01 00:00 / KST 2026-01-01 09:00'
+    """
+    if not iso_str:
+        return iso_str
+    try:
+        dt = datetime.fromisoformat(iso_str)
+        utc_dt = dt.astimezone(timezone.utc)
+        kst_dt = dt.astimezone(_KST)
+        return "UTC %s / KST %s" % (
+            utc_dt.strftime("%Y-%m-%d %H:%M"),
+            kst_dt.strftime("%Y-%m-%d %H:%M"),
+        )
+    except (ValueError, TypeError):
+        return iso_str
+
+
 def _create_env(template_dir: str) -> Environment:
     """Create a Jinja2 Environment with autoescape enabled.
 
     Security requirement: autoescape=True prevents XSS.
     """
-    return Environment(
+    env = Environment(
         loader=FileSystemLoader(template_dir),
-        autoescape=select_autoescape(["html", "j2", "html.j2"]),
+        autoescape=select_autoescape(["html", "j2"]),
     )
+    env.filters["window_date"] = _format_window_date
+    return env
 
 
 def _build_filename(meta: dict) -> str:

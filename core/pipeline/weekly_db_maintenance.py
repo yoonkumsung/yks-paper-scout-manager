@@ -173,9 +173,6 @@ def _upload_release_asset(db_path: str, release_tag: str, date_str: str) -> bool
         logger.warning("Database file not found: %s", db_path)
         return False
 
-    # Asset filename format: paper-scout-db-{YYYYMMDD}.sqlite
-    asset_name = f"paper-scout-db-{date_str}.sqlite"
-
     try:
         # Upload asset using gh CLI
         result = subprocess.run(
@@ -201,7 +198,7 @@ def _upload_release_asset(db_path: str, release_tag: str, date_str: str) -> bool
             )
             return False
 
-        logger.info("Uploaded Release asset: %s", asset_name)
+        logger.info("Uploaded Release asset: %s (date=%s)", db_path, date_str)
         return True
 
     except subprocess.TimeoutExpired:

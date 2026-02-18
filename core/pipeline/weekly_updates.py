@@ -12,6 +12,7 @@ Target conditions:
 
 from __future__ import annotations
 
+import html as html_mod
 import os
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -182,19 +183,25 @@ def render_updates_html(papers: list[dict], date_str: str) -> str:
         if not arxiv_id and paper.get("paper_key", "").startswith("arxiv:"):
             arxiv_id = paper["paper_key"].split(":", 1)[1]
 
+        escaped_title = html_mod.escape(str(paper['title']))
+        escaped_url = html_mod.escape(str(paper['url']))
+        escaped_arxiv_id = html_mod.escape(str(arxiv_id))
+        escaped_topic = html_mod.escape(str(paper['topic_slug']))
+        escaped_updated = html_mod.escape(str(paper['updated_at_utc']))
+
         html_parts.extend(
             [
                 '    <div class="paper">',
-                f"        <h2>{paper['title']}</h2>",
+                f"        <h2>{escaped_title}</h2>",
                 '        <div class="paper-meta">',
-                f'            <a href="{paper["url"]}" class="arxiv-link" target="_blank">arXiv:{arxiv_id}</a>',
+                f'            <a href="{escaped_url}" class="arxiv-link" target="_blank">arXiv:{escaped_arxiv_id}</a>',
                 "        </div>",
                 '        <div class="paper-meta">',
                 f'            <span class="badge badge-score">Score: {paper["llm_base_score"]}</span>',
-                f'            <span class="badge badge-updated">Updated: {paper["updated_at_utc"]}</span>',
+                f'            <span class="badge badge-updated">Updated: {escaped_updated}</span>',
                 "        </div>",
                 '        <div class="paper-meta">',
-                f'            <strong>Topic:</strong> {paper["topic_slug"]}',
+                f'            <strong>Topic:</strong> {escaped_topic}',
                 "        </div>",
                 "    </div>",
             ]

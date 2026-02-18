@@ -13,15 +13,18 @@ import json
 import logging
 import os
 from dataclasses import asdict
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class _DataclassEncoder(json.JSONEncoder):
-    """JSON encoder that handles dataclass instances."""
+    """JSON encoder that handles dataclass and datetime instances."""
 
     def default(self, o: Any) -> Any:
+        if isinstance(o, datetime):
+            return o.isoformat()
         if hasattr(o, "__dataclass_fields__"):
             return asdict(o)
         return super().default(o)
@@ -44,6 +47,7 @@ def export_json(
     papers: List[dict],  # ranked papers with evaluations/summaries
     clusters: List[dict],  # from Clusterer
     remind_papers: List[dict],  # remind tab papers
+    discarded_papers: Optional[List[dict]] = None,  # discarded papers with reason
     output_dir: str = "tmp/reports",
 ) -> str:
     """Export report data as JSON file.
@@ -70,6 +74,7 @@ def export_json(
         papers: List of ranked paper dicts with evaluations and summaries.
         clusters: List of cluster dicts from :class:`Clusterer`.
         remind_papers: List of remind-tab paper dicts.
+        discarded_papers: List of discarded paper dicts with title, url, reason.
         output_dir: Directory to write the JSON file into.
             Created if it does not exist.  Defaults to ``"tmp/reports"``.
 
@@ -103,6 +108,7 @@ def export_json(
         "clusters": clusters,
         "papers": papers,
         "remind_papers": remind_papers,
+        "discarded_papers": discarded_papers or [],
     }
 
     # Ensure output directory exists

@@ -16,6 +16,7 @@ import os
 import random
 import time
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 
 import httpx
 import openai
@@ -171,6 +172,10 @@ class OpenRouterClient:
                     response = self._client.chat.completions.create(
                         **kwargs, timeout=req_timeout
                     )
+                    if not response.choices:
+                        raise IndexError(
+                            "API returned empty choices list"
+                        )
                     content = response.choices[0].message.content
                     # Detect truncated JSON responses
                     stripped = (content or "").strip()
@@ -288,7 +293,11 @@ class OpenRouterClient:
         Raises:
             OpenRouterError: If the request fails after all retries.
         """
-        url = self._base_url.rstrip("/").replace("/v1", "") + "/v1/key"
+        parsed = urlparse(self._base_url)
+        # Build /api/v1/key path on the same scheme+host
+        url = urlunparse((
+            parsed.scheme, parsed.netloc, "/api/v1/key", "", "", ""
+        ))
         headers = {
             "Authorization": f"Bearer {self._resolve_api_key()}",
             "HTTP-Referer": self._app_url,
@@ -370,8 +379,17 @@ class OpenRouterClient:
 
     @staticmethod
     def _resolve_api_key() -> str:
-        """Read the OpenRouter API key from the environment."""
-        key = os.environ.get("OPENROUTER_API_KEY", "")
+        """Read the OpenRouter API key from the environment.
+
+        Raises:
+            ValueError: If the key is empty or whitespace-only.
+        """
+        key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+        if not key:
+            raise ValueError(
+                "OPENROUTER_API_KEY environment variable is missing or empty. "
+                "Set it to a valid OpenRouter API key."
+            )
         return key
 
     def _build_kwargs(

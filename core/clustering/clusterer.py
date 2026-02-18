@@ -76,6 +76,14 @@ class Clusterer:
         if embeddings is None or len(papers) == 0:
             return []
 
+        if embeddings.ndim != 2 or embeddings.shape[0] != len(papers):
+            logger.warning(
+                "Clusterer: embeddings shape %s does not match %d papers. "
+                "Skipping clustering.",
+                embeddings.shape, len(papers),
+            )
+            return []
+
         n = len(papers)
 
         # Compute pairwise cosine similarity matrix

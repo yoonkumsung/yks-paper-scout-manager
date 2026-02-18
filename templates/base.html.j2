@@ -75,7 +75,37 @@
     .stats span { white-space: nowrap; }
     .stats span::after { content: " | "; }
     .stats span:last-child::after { content: ""; }
-    .window-info { font-size: 0.8rem; color: var(--muted); }
+    .window-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.3rem;
+      line-height: 1.6;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .window-label {
+      font-weight: 600;
+      color: var(--fg);
+      margin-right: 0.2rem;
+    }
+    .window-range {
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--divider);
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+    }
+    .window-sep {
+      color: var(--muted);
+      font-weight: 600;
+    }
 
     details { margin-bottom: 1rem; }
     details summary {
@@ -114,16 +144,15 @@
     }
     .tab-labels label:hover { color: var(--fg); }
     .tab-content { display: none; }
-    #tab-today:checked ~ .tab-labels label[for="tab-today"] {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-    #tab-remind:checked ~ .tab-labels label[for="tab-remind"] {
+    #tab-today:checked ~ .tab-labels label[for="tab-today"],
+    #tab-remind:checked ~ .tab-labels label[for="tab-remind"],
+    #tab-excluded:checked ~ .tab-labels label[for="tab-excluded"] {
       color: var(--accent);
       border-bottom-color: var(--accent);
     }
     #tab-today:checked ~ .tab-panel-today { display: block; }
     #tab-remind:checked ~ .tab-panel-remind { display: block; }
+    #tab-excluded:checked ~ .tab-panel-excluded { display: block; }
 
     .paper-card {
       background: var(--card-bg);
@@ -134,7 +163,7 @@
     }
     .paper-card .rank-title {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 0.5rem;
       margin-bottom: 0.5rem;
     }
@@ -143,12 +172,22 @@
       font-weight: 700;
       color: var(--accent);
       white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
     }
     .paper-card .paper-title {
       font-size: 1rem;
       font-weight: 600;
+      flex: 1;
+      min-width: 0;
     }
-    .paper-card .paper-title a { color: var(--fg); }
+    .paper-card .paper-title a {
+      color: var(--fg);
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .paper-card .paper-title a:hover { color: var(--accent); }
 
     .score-bar-container {
@@ -233,14 +272,17 @@
       text-align: center;
       margin: 1.5rem 0;
       color: var(--muted);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
       position: relative;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
     .tier-divider::before, .tier-divider::after {
       content: "";
       position: absolute;
       top: 50%;
-      width: 30%;
+      width: 35%;
       border-top: 1px solid var(--divider);
     }
     .tier-divider::before { left: 0; }
@@ -256,11 +298,48 @@
     }
     .compact-card .rank-title {
       display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+    }
+    .compact-card .rank {
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+    }
+    .compact-card .paper-title {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .compact-meta {
+      display: flex;
       align-items: center;
       gap: 0.4rem;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
-    .compact-card .rank { font-weight: 700; color: var(--accent); }
-    .compact-card .paper-title { font-weight: 600; }
+    .compact-link {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.3rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+    }
+    .compact-body {
+      margin-top: 0.3rem;
+      margin-left: calc(16px + 0.4rem + 2.5em + 0.4rem);
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     .remind-card {
       background: var(--remind-bg);
@@ -273,6 +352,30 @@
       font-size: 0.8rem;
       color: var(--muted);
       font-weight: 600;
+    }
+
+    .discarded-card {
+      background: var(--tier2-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+    .discarded-card .paper-title {
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .discarded-card .discard-reason {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .empty-message {
@@ -310,7 +413,7 @@
     .compact-card .paper-links {
       display: inline-flex;
       gap: 0.4rem;
-      margin: 0 0 0 0.5rem;
+      margin: 0;
       font-size: 0.8rem;
     }
 

@@ -118,6 +118,8 @@ class ArxivSourceAdapter(SourceAdapter):
         filter_end = buffered_end
 
         # arXiv client -- library handles its own retries; no extra sleep.
+        # Note: arxiv.Client does not support a request-level timeout parameter.
+        # Timeouts are managed internally by the underlying urllib/httplib layer.
         client = arxiv.Client(
             num_retries=3,
             delay_seconds=3,
@@ -255,7 +257,7 @@ class ArxivSourceAdapter(SourceAdapter):
                 try:
                     for result in client.results(search):
                         raw_results.append(result)
-                except Exception as gen_exc:
+                except (arxiv.HTTPError, arxiv.ArxivError, arxiv.UnexpectedEmptyPageError, ConnectionError, TimeoutError) as gen_exc:
                     logger.warning(
                         "arXiv generator interrupted after %d results "
                         "(max_results=%d, partial data returned): %s",

@@ -251,9 +251,8 @@ class HybridFilter:
         topic_embedding_text: str,
     ) -> list[Any]:
         """Sort papers by cosine similarity to *topic_embedding_text*."""
-        texts = [self._searchable_text(p) for p in papers]
         scores = embedding_ranker.compute_similarity(
-            texts, topic_embedding_text
+            topic_embedding_text, papers
         )
 
         # Validate score count matches paper count

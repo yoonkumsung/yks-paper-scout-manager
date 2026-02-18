@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 import time
 from collections import deque
-from datetime import date
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -25,13 +27,13 @@ _WINDOW_SECONDS = 60.0
 
 
 def _today_key() -> str:
-    """Return today's date as YYYYMMDD string."""
-    return date.today().strftime("%Y%m%d")
+    """Return today's UTC date as YYYYMMDD string."""
+    return datetime.now(timezone.utc).strftime("%Y%m%d")
 
 
 def _today_iso() -> str:
-    """Return today's date as YYYY-MM-DD string."""
-    return date.today().isoformat()
+    """Return today's UTC date as YYYY-MM-DD string."""
+    return datetime.now(timezone.utc).date().isoformat()
 
 
 class RateLimiter:
@@ -135,14 +137,28 @@ class RateLimiter:
     # ------------------------------------------------------------------
 
     def save_usage(self) -> None:
-        """Persist current usage to data/usage/YYYYMMDD.json."""
+        """Persist current usage to data/usage/YYYYMMDD.json.
+
+        Uses atomic write (tempfile + rename) to prevent file corruption
+        if the process is interrupted mid-write.
+        """
         self._usage_dir.mkdir(parents=True, exist_ok=True)
         file_path = self._usage_file_path()
         try:
-            file_path.write_text(
-                json.dumps(self._usage, indent=2, ensure_ascii=False),
-                encoding="utf-8",
+            fd, tmp_path = tempfile.mkstemp(
+                dir=str(self._usage_dir), suffix=".tmp"
             )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(self._usage, f, indent=2, ensure_ascii=False)
+                os.replace(tmp_path, str(file_path))
+            except BaseException:
+                # Clean up temp file on any failure
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
         except OSError:
             logger.warning("Failed to save usage file: %s", file_path)
 

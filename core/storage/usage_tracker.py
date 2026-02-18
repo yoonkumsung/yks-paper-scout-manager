@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 def _today_key() -> str:
-    """Return today's date as YYYYMMDD string."""
-    return date.today().strftime("%Y%m%d")
+    """Return today's date as YYYYMMDD string (UTC)."""
+    return datetime.now(timezone.utc).strftime("%Y%m%d")
 
 
 def _today_iso() -> str:
-    """Return today's date as YYYY-MM-DD string."""
-    return date.today().isoformat()
+    """Return today's date as YYYY-MM-DD string (UTC)."""
+    return datetime.now(timezone.utc).date().isoformat()
 
 
 class UsageTracker:
@@ -138,7 +138,7 @@ class UsageTracker:
         if not self._usage_dir.exists():
             return 0
 
-        cutoff = date.today() - timedelta(days=max_age_days)
+        cutoff = datetime.now(timezone.utc).date() - timedelta(days=max_age_days)
         deleted = 0
 
         for path in self._usage_dir.glob("*.json"):

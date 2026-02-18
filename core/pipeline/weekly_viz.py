@@ -216,6 +216,7 @@ def generate_weekly_charts(
         return []
 
     generated_files = []
+    conn = None
 
     try:
         # Connect to database
@@ -223,12 +224,16 @@ def generate_weekly_charts(
         cursor = conn.cursor()
 
         # Query 1: Score distribution from paper_evaluations
+        # Join with runs to filter by date using window_start_utc,
+        # since paper_evaluations has no created_at column.
+        # Use final_score (actual column name, not 'score').
         cursor.execute("""
-            SELECT score
-            FROM paper_evaluations
-            WHERE created_at >= date(?, '-7 days')
-              AND created_at < date(?)
-              AND score IS NOT NULL
+            SELECT pe.final_score
+            FROM paper_evaluations pe
+            JOIN runs r ON pe.run_id = r.run_id
+            WHERE DATE(r.window_start_utc) >= date(?, '-7 days')
+              AND DATE(r.window_start_utc) < date(?)
+              AND pe.final_score IS NOT NULL
         """, (date_str, date_str))
 
         scores = [row[0] for row in cursor.fetchall()]
@@ -246,55 +251,15 @@ def generate_weekly_charts(
             if result:
                 generated_files.append(result)
 
-        # Query 2: Cluster map from embeddings (if available)
-        if _UMAP_AVAILABLE:
-            cursor.execute("""
-                SELECT embedding, cluster_label
-                FROM paper_embeddings
-                WHERE created_at >= date(?, '-7 days')
-                  AND created_at < date(?)
-                  AND embedding IS NOT NULL
-                  AND cluster_label IS NOT NULL
-            """, (date_str, date_str))
-
-            rows = cursor.fetchall()
-
-            if rows:
-                import json
-                import numpy as np
-
-                # Parse embeddings (stored as JSON strings)
-                embeddings = []
-                labels = []
-
-                for emb_json, label in rows:
-                    try:
-                        emb = json.loads(emb_json)
-                        embeddings.append(emb)
-                        labels.append(label)
-                    except (json.JSONDecodeError, TypeError):
-                        continue
-
-                if embeddings and labels:
-                    embeddings_array = np.array(embeddings)
-
-                    cluster_chart_path = os.path.join(
-                        output_dir,
-                        f"cluster_map_{date_str}.png"
-                    )
-                    result = generate_cluster_map(
-                        embeddings_array,
-                        labels,
-                        cluster_chart_path,
-                        f"Paper Clusters - Week of {date_str}"
-                    )
-                    if result:
-                        generated_files.append(result)
-
-        conn.close()
+        # Query 2: Cluster map from embeddings
+        # NOTE: paper_embeddings table does not exist in the current schema.
+        # Skipping cluster map generation until embeddings storage is added.
 
     except (sqlite3.Error, OSError, ValueError):
         # Graceful failure - return whatever was generated before error
         pass
+    finally:
+        if conn is not None:
+            conn.close()
 
     return generated_files

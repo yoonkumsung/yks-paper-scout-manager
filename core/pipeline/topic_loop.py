@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import traceback
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from core.config import AppConfig
@@ -66,6 +66,25 @@ class TopicLoopOrchestrator:
         self._search_window = search_window
         self._usage_tracker = usage_tracker
         self._run_options = run_options or {}
+
+    # ------------------------------------------------------------------
+    # Lazy-initialized shared components
+    # ------------------------------------------------------------------
+
+    def _get_dedup_manager(self) -> Any:
+        """Return a shared DedupManager instance (created once per orchestrator)."""
+        if not hasattr(self, "_dedup_manager"):
+            from core.storage.dedup import DedupManager
+
+            dedup_mode = self._run_options.get("dedup_mode", "skip_recent")
+            self._dedup_manager = DedupManager(
+                db_manager=self._db,
+                seen_items_path=self._config.database.get(
+                    "seen_items", {}
+                ).get("path", "data/seen_items.jsonl"),
+                dedup_mode=dedup_mode,
+            )
+        return self._dedup_manager
 
     # ------------------------------------------------------------------
     # Public API
@@ -125,10 +144,12 @@ class TopicLoopOrchestrator:
                 summary["topics_completed"].append(
                     {"slug": slug, "total_output": result.get("total_output", 0)}
                 )
-            except Exception:
+            except Exception as exc:
                 error_msg = traceback.format_exc()
                 logger.error(
-                    "Topic '%s' failed:\n%s", slug, error_msg
+                    "Topic '%s' failed with %s: %s",
+                    slug, type(exc).__name__, exc,
+                    exc_info=True,
                 )
                 summary["topics_failed"].append(
                     {"slug": slug, "error": error_msg}
@@ -253,7 +274,8 @@ class TopicLoopOrchestrator:
             # Early exit if no papers collected
             if total_collected == 0:
                 logger.warning(
-                    "Step 3: No papers collected for '%s', skipping remaining steps",
+                    "Step 3: No papers collected for '%s', skipping remaining steps. "
+                    "Pipeline completed with 0 results.",
                     slug,
                 )
                 if run_id >= 0:
@@ -316,10 +338,24 @@ class TopicLoopOrchestrator:
             )
             total_scored = len(evaluations)
 
-            # Count discarded
-            total_discarded = sum(
-                1 for e in evaluations if e.get("discard", False)
-            )
+            # Count discarded and collect discarded paper info for report
+            total_discarded = 0
+            discarded_papers: List[dict] = []
+            for e in evaluations:
+                if e.get("discard", False):
+                    total_discarded += 1
+                    pk = e.get("paper_key", "")
+                    paper_obj = None
+                    for fp in filtered_papers:
+                        if fp.paper_key == pk:
+                            paper_obj = fp
+                            break
+                    discarded_papers.append({
+                        "paper_key": pk,
+                        "title": paper_obj.title if paper_obj else pk,
+                        "url": paper_obj.url if paper_obj else "",
+                        "reason": e.get("brief_reason", ""),
+                    })
             logger.info(
                 "Step 5: Scored %d papers (%d discarded) for '%s'",
                 total_scored, total_discarded, slug,
@@ -332,14 +368,21 @@ class TopicLoopOrchestrator:
                     paper.first_seen_run_id = run_id
                     self._db.insert_paper(paper, commit=False)
                 papers_map[paper.paper_key] = paper
-            self._db.commit()
+            try:
+                self._db.commit()
+            except Exception as exc:
+                logger.error(
+                    "DB batch commit failed for topic '%s': %s. "
+                    "Continuing pipeline without persisted papers.",
+                    slug, exc,
+                )
 
             # Merge code detection with LLM output
             from core.scoring.code_detector import CodeDetector
 
             code_detector = CodeDetector()
             for ev in evaluations:
-                pk = ev["paper_key"]
+                pk = ev.get("paper_key", "")
                 paper = papers_map.get(pk)
                 if paper is None:
                     continue
@@ -442,7 +485,7 @@ class TopicLoopOrchestrator:
 
                 evaluation = Evaluation(
                     run_id=run_id,
-                    paper_key=sp["paper_key"],
+                    paper_key=sp.get("paper_key", ""),
                     llm_base_score=sp.get("llm_base_score", sp.get("base_score", 0)),
                     flags=flags_obj,
                     prompt_ver_score=prompt_versions.get("agent2", ""),
@@ -451,7 +494,7 @@ class TopicLoopOrchestrator:
                     final_score=sp.get("final_score"),
                     rank=sp.get("rank"),
                     tier=sp.get("tier"),
-                    discarded=sp.get("discard", False),
+                    discarded=sp.get("discarded", sp.get("discard", False)),
                     score_lowered=sp.get("score_lowered"),
                     summary_ko=sp.get("summary_ko"),
                     reason_ko=sp.get("reason_ko"),
@@ -459,7 +502,8 @@ class TopicLoopOrchestrator:
                     brief_reason=sp.get("brief_reason"),
                     prompt_ver_summ=prompt_versions.get("agent3"),
                 )
-                self._db.insert_evaluation(evaluation)
+                self._db.insert_evaluation(evaluation, commit=False)
+            self._db.commit()
 
             # ---- Step 9: Remind Selection ----
             remind_papers = self._step_remind(slug, run_id)
@@ -475,6 +519,7 @@ class TopicLoopOrchestrator:
                 "total_discarded": total_discarded,
                 "total_scored": total_scored,
                 "total_output": total_output,
+                "scoring_incomplete": total_scored < total_filtered,
             }
 
             # Extract keywords used from agent1 output
@@ -496,6 +541,7 @@ class TopicLoopOrchestrator:
                 ranked_papers=summarized_papers,
                 clusters=clusters,
                 remind_papers=remind_papers,
+                discarded_papers=discarded_papers,
             )
             logger.info(
                 "Step 10: Reports generated for '%s': %s",
@@ -504,18 +550,9 @@ class TopicLoopOrchestrator:
 
             # ---- Step 11: Post-run updates ----
             # Save dedup seen items
-            dedup_mode = self._run_options.get("dedup_mode", "skip_recent")
-            from core.storage.dedup import DedupManager
-
-            dedup = DedupManager(
-                db_manager=self._db,
-                seen_items_path=self._config.database.get(
-                    "seen_items", {}
-                ).get("path", "data/seen_items.jsonl"),
-                dedup_mode=dedup_mode,
-            )
+            dedup = self._get_dedup_manager()
             for sp in summarized_papers:
-                dedup.mark_seen(sp["paper_key"], slug)
+                dedup.mark_seen(sp.get("paper_key", ""), slug)
             dedup.save_seen_items()
 
             # Update last_success.json
@@ -684,16 +721,7 @@ class TopicLoopOrchestrator:
             query_stats = adapter.query_stats
 
         # Apply dedup
-        dedup_mode = self._run_options.get("dedup_mode", "skip_recent")
-        from core.storage.dedup import DedupManager
-
-        dedup = DedupManager(
-            db_manager=self._db,
-            seen_items_path=self._config.database.get(
-                "seen_items", {}
-            ).get("path", "data/seen_items.jsonl"),
-            dedup_mode=dedup_mode,
-        )
+        dedup = self._get_dedup_manager()
         dedup.reset_in_run()
 
         deduped: List[Paper] = []
@@ -829,7 +857,18 @@ class TopicLoopOrchestrator:
 
         threshold = self._config.clustering.get("similarity_threshold", 0.85)
         clusterer = Clusterer(threshold=threshold)
-        return clusterer.cluster(papers)
+
+        try:
+            embeddings = embedding_ranker.compute_paper_embeddings(papers)
+        except Exception as exc:
+            logger.warning(
+                "Failed to compute paper embeddings for clustering: %s. "
+                "Skipping clustering step.",
+                exc,
+            )
+            return []
+
+        return clusterer.cluster(papers, embeddings=embeddings)
 
     def _step_summarize(
         self,
@@ -940,6 +979,7 @@ class TopicLoopOrchestrator:
         ranked_papers: List[dict],
         clusters: List[dict],
         remind_papers: List[dict],
+        discarded_papers: Optional[List[dict]] = None,
     ) -> Dict[str, str]:
         """Step 10: Generate reports (JSON, MD, HTML)."""
         from output.render.json_exporter import export_json
@@ -971,14 +1011,23 @@ class TopicLoopOrchestrator:
             papers=ranked_papers,
             clusters=clusters,
             remind_papers=remind_papers,
+            discarded_papers=discarded_papers,
             output_dir=date_subdir,
         )
 
         # Load JSON report data for MD and HTML generation
         import json
 
-        with open(json_path, "r", encoding="utf-8") as f:
-            report_data = json.load(f)
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                report_data = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError, OSError) as exc:
+            logger.error(
+                "Failed to load JSON report at '%s': %s. "
+                "Skipping MD/HTML generation.",
+                json_path, exc,
+            )
+            return {"json": json_path, "md": "", "html": ""}
 
         # Markdown
         md_path = generate_markdown(
@@ -1027,7 +1076,7 @@ class TopicLoopOrchestrator:
             manager = GitHubIssueManager(
                 repo=repo,
                 token=token,
-                issue_map_path=github_config.get(
+                issue_map_path=github_issue_config.get(
                     "issue_map_path", "data/issue_map.json"
                 ),
             )
