@@ -58,6 +58,13 @@ jobs:
             echo "${{ secrets.PAPER_SCOUT_KEYWORD_CACHE }}" | base64 -d > data/keyword_cache.json
           fi
 
+      - name: Restore last success
+        run: |
+          if [ ! -f data/last_success.json ] && [ -n "${{ secrets.PAPER_SCOUT_LAST_SUCCESS }}" ]; then
+            mkdir -p data
+            echo "${{ secrets.PAPER_SCOUT_LAST_SUCCESS }}" | base64 -d > data/last_success.json
+          fi
+
       - name: Restore DB cache
         id: cache-db
         uses: actions/cache/restore@v4
