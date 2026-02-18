@@ -51,6 +51,13 @@ jobs:
             cp config.example.yaml config.yaml
           fi
 
+      - name: Restore keyword cache
+        run: |
+          if [ -n "${{ secrets.PAPER_SCOUT_KEYWORD_CACHE }}" ]; then
+            mkdir -p data
+            echo "${{ secrets.PAPER_SCOUT_KEYWORD_CACHE }}" | base64 -d > data/keyword_cache.json
+          fi
+
       - name: Restore DB cache
         id: cache-db
         uses: actions/cache/restore@v4
