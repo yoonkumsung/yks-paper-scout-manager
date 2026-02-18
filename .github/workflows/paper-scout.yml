@@ -43,6 +43,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Restore config
+        run: |
+          if [ -n "${{ secrets.PAPER_SCOUT_CONFIG }}" ]; then
+            echo "${{ secrets.PAPER_SCOUT_CONFIG }}" | base64 -d > config.yaml
+          elif [ ! -f config.yaml ] && [ -f config.example.yaml ]; then
+            cp config.example.yaml config.yaml
+          fi
+
       - name: Restore DB cache
         id: cache-db
         uses: actions/cache/restore@v4
