@@ -898,6 +898,11 @@ class TopicLoopOrchestrator:
                 merged["summary_ko"] = sm.get("summary_ko", "")
                 merged["reason_ko"] = sm.get("reason_ko", "")
                 merged["insight_ko"] = sm.get("insight_ko", "")
+            else:
+                # Summarization failed for this paper - set defaults
+                merged.setdefault("summary_ko", "(요약 생성 실패)")
+                merged.setdefault("reason_ko", "")
+                merged.setdefault("insight_ko", "")
             enriched.append(merged)
 
         return enriched

@@ -25,12 +25,12 @@ def _strip_cjk_noise(text: str) -> str:
 
     DeepSeek and similar Chinese-trained LLMs sometimes inject
     CJK Unified Ideographs (U+4E00-U+9FFF) into Korean output.
-    This strips isolated Chinese characters while preserving
-    Korean Hangul, Hangul Jamo, and common Hanja used in Korean.
+    Replaces Chinese character runs with a space to avoid
+    words being merged unnaturally after removal.
     """
-    # Remove runs of CJK ideographs that appear mid-Korean text
-    # Keep the surrounding Korean context intact
-    return re.sub(r"[\u4e00-\u9fff]+", "", text)
+    cleaned = re.sub(r"[\u4e00-\u9fff]+", " ", text)
+    # Collapse multiple spaces into one
+    return re.sub(r" {2,}", " ", cleaned).strip()
 
 # Tier boundaries
 _TIER1_MAX_RANK = 30
@@ -42,6 +42,8 @@ _TIER2_BATCH_SIZE = 10
 # System prompt for the summarizer agent (devspec 7-3)
 _SYSTEM_PROMPT = (
     "You are a technical writer for a startup CEO. Write in simple Korean.\n"
+    "IMPORTANT: Write ALL text in Korean only. Do NOT use Chinese characters (汉字/漢字). "
+    "Proper nouns and technical terms may use English.\n"
     "No thinking, no analysis preamble. Output ONLY raw JSON."
 )
 
