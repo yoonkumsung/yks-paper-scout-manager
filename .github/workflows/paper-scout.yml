@@ -51,6 +51,7 @@ jobs:
             data/*.db
             data/*.db-shm
             data/*.db-wal
+            data/keyword_cache.json
           key: paper-scout-db-${{ github.sha }}
           restore-keys: |
             paper-scout-db-
@@ -101,6 +102,7 @@ jobs:
             data/*.db
             data/*.db-shm
             data/*.db-wal
+            data/keyword_cache.json
           key: paper-scout-db-${{ github.sha }}
 
       - name: Commit metadata
@@ -108,7 +110,7 @@ jobs:
         run: |
           git config user.name "paper-scout[bot]"
           git config user.email "paper-scout[bot]@users.noreply.github.com"
-          git add data/seen_items.jsonl data/issue_map.json data/usage/ data/keyword_cache.json data/weekly_done.flag data/last_success.json
+          git add data/seen_items.jsonl data/issue_map.json data/usage/ data/weekly_done.flag data/last_success.json
           git diff --cached --quiet || git commit -m "chore: update metadata [skip ci]"
           git push
         continue-on-error: true
