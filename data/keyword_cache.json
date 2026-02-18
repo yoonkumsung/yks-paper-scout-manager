@@ -1,0 +1,278 @@
+{
+  "8954cfa72b9eb891a6c14fed07788c3ef53edaeda44a657e90fdd95c75a63460": {
+    "result": {
+      "concepts": [
+        {
+          "name_ko": "Autonomous Sports Camera Control",
+          "name_en": "Autonomous Sports Camera Control",
+          "keywords": [
+            "autonomous sports filming",
+            "active camera control",
+            "automatic subject tracking",
+            "multi-camera orchestration",
+            "field-of-view planning"
+          ]
+        },
+        {
+          "name_ko": "Event and Highlight Detection",
+          "name_en": "Event and Highlight Detection",
+          "keywords": [
+            "sports event detection",
+            "key moment extraction",
+            "highlight segmentation",
+            "important play detection",
+            "temporal action localization"
+          ]
+        },
+        {
+          "name_ko": "Personalized Athlete Highlighting",
+          "name_en": "Personalized Athlete Highlighting",
+          "keywords": [
+            "player-centric highlight generation",
+            "identity-aware tracking",
+            "individual performance clips",
+            "athlete-specific summarization",
+            "re-identification in sports video"
+          ]
+        },
+        {
+          "name_ko": "Video and Image Enhancement",
+          "name_en": "Video and Image Enhancement",
+          "keywords": [
+            "sports video enhancement",
+            "video super-resolution",
+            "motion deblurring",
+            "video stabilization",
+            "color correction"
+          ]
+        },
+        {
+          "name_ko": "Pose and Biomechanics Analysis",
+          "name_en": "Pose and Biomechanics Analysis",
+          "keywords": [
+            "sports pose estimation",
+            "human pose tracking",
+            "3d pose reconstruction",
+            "kinematic analysis",
+            "biomechanical assessment",
+            "yolo",
+            "dino feature representation",
+            "temporal convolutional network",
+            "lstm motion modeling"
+          ]
+        },
+        {
+          "name_ko": "Tactical and Strategy Analysis",
+          "name_en": "Tactical and Strategy Analysis",
+          "keywords": [
+            "tactical pattern recognition",
+            "team formation analysis",
+            "play strategy mining",
+            "spatiotemporal game analysis",
+            "opponent behavior modeling"
+          ]
+        },
+        {
+          "name_ko": "Training and Coaching Feedback",
+          "name_en": "Training and Coaching Feedback",
+          "keywords": [
+            "training drill assessment",
+            "technique feedback generation",
+            "performance progression tracking",
+            "error pattern detection",
+            "coaching decision support"
+          ]
+        },
+        {
+          "name_ko": "Short-form Content Generation",
+          "name_en": "Short-form Content Generation",
+          "keywords": [
+            "short-form sports video generation",
+            "automated reel creation",
+            "highlight montage generation",
+            "caption-aware video summarization",
+            "multimodal sports storytelling"
+          ]
+        },
+        {
+          "name_ko": "Sports Social Platform and Monetization",
+          "name_en": "Sports Social Platform and Monetization",
+          "keywords": [
+            "sports media sharing platform",
+            "user-generated sports content",
+            "creator monetization",
+            "sports advertising optimization",
+            "sports marketplace integration"
+          ]
+        },
+        {
+          "name_ko": "Physical AI Sports Hardware and Edge Intelligence",
+          "name_en": "Physical AI Sports Hardware and Edge Intelligence",
+          "keywords": [
+            "physical ai sports device",
+            "edge ai inference",
+            "on-device video analytics",
+            "low-latency sports sensing",
+            "camera-robot co-design"
+          ]
+        }
+      ],
+      "cross_domain_keywords": [
+        "computer vision for sports",
+        "spatiotemporal action recognition",
+        "multimodal sports understanding",
+        "edge ai for video analytics",
+        "autonomous camera system",
+        "player tracking and re-identification",
+        "sports biomechanics",
+        "tactical pattern mining",
+        "highlight video summarization",
+        "short-form video generation",
+        "creator economy platform",
+        "sports media recommendation",
+        "on-device inference",
+        "real-time feedback coaching",
+        "sensor fusion for sports",
+        "video super-resolution",
+        "motion analysis in training",
+        "athlete performance analytics",
+        "sports social commerce",
+        "physical ai hardware"
+      ],
+      "query_must_keywords": [
+        "tcn",
+        "dino",
+        "sam",
+        "yolo"
+      ],
+      "exclude_keywords": [
+        "medical imaging",
+        "satellite imagery",
+        "autonomous driving",
+        "remote sensing",
+        "industrial inspection",
+        "financial analysis",
+        "bioinformatics",
+        "climate modeling",
+        "particle physics",
+        "quantum computing"
+      ],
+      "exclude_mode": "soft",
+      "topic_embedding_text": "An autonomous sports capture and analysis system that performs active camera control and event-aware highlight extraction, generates athlete-centric clips and short-form media, and improves visual quality through enhancement and stabilization. The system supports pose and biomechanics analysis, tactical pattern mining, and training feedback for coaching decisions. It extends to a social platform with sharing, recommendation, monetization, advertising, and marketplace workflows, and ultimately targets physical AI sports hardware with edge inference and low-latency on-device analytics."
+    },
+    "cached_at": "2026-02-17T16:15:56.745712+00:00",
+    "prompt_version": "manual-edit"
+  },
+  "8220bbbeb1eee8e3a68412e7bfd1e43f418bc9d9d7905f71e40bb72474540d6a": {
+    "result": {
+      "concepts": [
+        {
+          "name_ko": "자율 스포츠 촬영",
+          "name_en": "Autonomous Sports Cinematography",
+          "keywords": [
+            "autonomous cinematography",
+            "active camera system",
+            "real-time camera control",
+            "sports video capture"
+          ]
+        },
+        {
+          "name_ko": "스포츠 하이라이트 생성",
+          "name_en": "Sports Highlight Generation",
+          "keywords": [
+            "highlight generation",
+            "sports highlight summarization",
+            "key moment detection",
+            "athlete-centric summarization"
+          ]
+        },
+        {
+          "name_ko": "스포츠 영상 보정",
+          "name_en": "Sports Video Enhancement",
+          "keywords": [
+            "video stabilization",
+            "image enhancement",
+            "sports video restoration",
+            "photo-realistic rendering"
+          ]
+        },
+        {
+          "name_ko": "스포츠 자세 및 동작 분석",
+          "name_en": "Sports Pose and Motion Analysis",
+          "keywords": [
+            "pose estimation",
+            "human motion analysis",
+            "sports biomechanics",
+            "action recognition"
+          ]
+        },
+        {
+          "name_ko": "스포츠 전술 분석",
+          "name_en": "Sports Tactical Analysis",
+          "keywords": [
+            "tactical analysis",
+            "game strategy modeling",
+            "sports analytics",
+            "team formation analysis"
+          ]
+        },
+        {
+          "name_ko": "스포츠 숏폼 영상 생성",
+          "name_en": "Short-form Sports Video Generation",
+          "keywords": [
+            "short-form video generation",
+            "vertical video production",
+            "social media content creation",
+            "highlight reel generation"
+          ]
+        },
+        {
+          "name_ko": "스포츠 상호작용 물리적 AI",
+          "name_en": "Physical AI for Sports Interaction",
+          "keywords": [
+            "embodied AI",
+            "physical human-robot interaction",
+            "sports robotics",
+            "interactive sports systems"
+          ]
+        },
+        {
+          "name_ko": "엣지 기반 스포츠 영상 처리",
+          "name_en": "Edge-based Sports Video Processing",
+          "keywords": [
+            "edge AI",
+            "real-time sports analytics",
+            "embedded vision systems",
+            "low-latency video processing"
+          ]
+        }
+      ],
+      "cross_domain_keywords": [
+        "real-time autonomous camera control for sports events",
+        "sports highlight generation via multi-object tracking",
+        "video stabilization in sports broadcasting applications",
+        "tactical analysis of team sports using pose estimation",
+        "short-form sports video generation for social media platforms"
+      ],
+      "query_must_keywords": [
+        "dino",
+        "sam",
+        "tcn",
+        "yolo"
+      ],
+      "exclude_keywords": [
+        "medical imaging",
+        "satellite imagery",
+        "remote sensing",
+        "autonomous driving",
+        "surgical robotics",
+        "astronomical imaging",
+        "microscopy"
+      ],
+      "exclude_mode": "soft",
+      "topic_embedding_text": "This research focuses on edge-based autonomous cinematography for sports video capture using real-time camera control and active camera systems, encompassing sports highlight generation through key moment detection and athlete-centric summarization. It includes sports video enhancement via video stabilization and photo-realistic rendering, sports pose and motion analysis using pose estimation and action recognition, and sports tactical analysis for game strategy modeling and team formation. The work extends to short-form sports video generation for social media content creation and vertical video production, alongside physical AI systems for sports interaction involving embodied AI and sports robotics. All components are implemented within embedded vision systems for low-latency sports analytics and real-time processing on edge devices."
+    },
+    "cached_at": "2026-02-18T05:02:02.901476+00:00",
+    "prompt_version": "manual-edit"
+  }
+}
