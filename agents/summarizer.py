@@ -10,6 +10,7 @@ Section 7-3 of the devspec covers the full specification.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any
 
@@ -17,6 +18,19 @@ from agents.base_agent import BaseAgent
 from core.llm.rate_limiter import RateLimiter
 
 logger = logging.getLogger(__name__)
+
+
+def _strip_cjk_noise(text: str) -> str:
+    """Remove stray Chinese characters from Korean text.
+
+    DeepSeek and similar Chinese-trained LLMs sometimes inject
+    CJK Unified Ideographs (U+4E00-U+9FFF) into Korean output.
+    This strips isolated Chinese characters while preserving
+    Korean Hangul, Hangul Jamo, and common Hanja used in Korean.
+    """
+    # Remove runs of CJK ideographs that appear mid-Korean text
+    # Keep the surrounding Korean context intact
+    return re.sub(r"[\u4e00-\u9fff]+", "", text)
 
 # Tier boundaries
 _TIER1_MAX_RANK = 30
@@ -431,11 +445,11 @@ class Summarizer(BaseAgent):
 
             # Create enriched copy with summary fields
             enriched = dict(paper)
-            enriched["summary_ko"] = str(item.get("summary_ko", ""))
-            enriched["reason_ko"] = str(item.get("reason_ko", ""))
+            enriched["summary_ko"] = _strip_cjk_noise(str(item.get("summary_ko", "")))
+            enriched["reason_ko"] = _strip_cjk_noise(str(item.get("reason_ko", "")))
 
             if tier == 1:
-                enriched["insight_ko"] = str(item.get("insight_ko", ""))
+                enriched["insight_ko"] = _strip_cjk_noise(str(item.get("insight_ko", "")))
             # Tier 2: no insight_ko field
 
             enriched["prompt_ver_summ"] = self.prompt_version

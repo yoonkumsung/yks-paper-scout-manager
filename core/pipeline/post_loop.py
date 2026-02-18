@@ -531,11 +531,14 @@ class PostLoopProcessor:
         if not best_filepath:
             return None
 
+        # Convert filesystem path to web-relative path under /reports/
+        rel_path = os.path.relpath(best_filepath, report_dir)
+
         return {
             "topic_slug": slug,
             "topic_name": topic_name,
             "date": best_date,
-            "filepath": best_filepath,
+            "filepath": rel_path,
         }
 
     def _load_latest_report_data(
