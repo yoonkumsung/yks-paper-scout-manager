@@ -509,9 +509,9 @@ class TopicLoopOrchestrator:
 
             dedup = DedupManager(
                 db_manager=self._db,
-                seen_items_path=self._config.sources.get(
-                    "seen_items_path", "data/seen_items.jsonl"
-                ),
+                seen_items_path=self._config.database.get(
+                    "seen_items", {}
+                ).get("path", "data/seen_items.jsonl"),
                 dedup_mode=dedup_mode,
             )
             for sp in summarized_papers:
@@ -689,9 +689,9 @@ class TopicLoopOrchestrator:
 
         dedup = DedupManager(
             db_manager=self._db,
-            seen_items_path=self._config.sources.get(
-                "seen_items_path", "data/seen_items.jsonl"
-            ),
+            seen_items_path=self._config.database.get(
+                "seen_items", {}
+            ).get("path", "data/seen_items.jsonl"),
             dedup_mode=dedup_mode,
         )
         dedup.reset_in_run()
@@ -1008,9 +1008,14 @@ class TopicLoopOrchestrator:
         total_output: int,
     ) -> None:
         """Step 11 (partial): Upsert GitHub Issue if configured."""
-        github_config = self._config.notifications.get("github", {})
-        repo = github_config.get("repo")
-        token = github_config.get("token")
+        github_issue_config = self._config.output.get("github_issue", {})
+        if not github_issue_config.get("enabled", False):
+            logger.debug("GitHub Issue: skipped (not enabled)")
+            return
+
+        import os
+        repo = github_issue_config.get("repo") or os.environ.get("GITHUB_REPOSITORY", "")
+        token = github_issue_config.get("token") or os.environ.get("GITHUB_TOKEN", "")
 
         if not repo or not token:
             logger.debug("GitHub Issue: skipped (no repo/token configured)")

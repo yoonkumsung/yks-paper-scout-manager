@@ -126,12 +126,18 @@ class ArxivSourceAdapter(SourceAdapter):
         # Code detector instance (shared across all papers).
         detector = CodeDetector()
 
+        # Delay between queries to avoid arXiv rate limiting (HTTP 429).
+        query_delay: float = config.get("query_delay_seconds", 4.0)
+
         seen_keys: set[str] = set()
         all_papers: list[Paper] = []
         successful_queries = 0
         skipped_queries = 0
 
-        for query_text in queries:
+        for query_idx, query_text in enumerate(queries):
+            if query_idx > 0 and query_delay > 0:
+                time.sleep(query_delay)
+
             papers, stats = self._execute_query(
                 client=client,
                 query_text=query_text,

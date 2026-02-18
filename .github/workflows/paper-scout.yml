@@ -31,7 +31,6 @@ concurrency:
 permissions:
   contents: write
   issues: write
-  pages: write
 
 jobs:
   paper-scout:
@@ -144,15 +143,6 @@ jobs:
           name: db-backup-${{ github.run_number }}
           path: data/*.db
           retention-days: 30
-
-      - name: Deploy gh-pages
-        if: success() || failure()
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./tmp/reports
-          keep_files: true
-        continue-on-error: true
 
       - name: Upload debug artifacts
         if: failure()
