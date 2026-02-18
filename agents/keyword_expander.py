@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import os
+import tempfile
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -103,6 +104,25 @@ _SYSTEM_PROMPT = (
     "4. From the provided arXiv categories, identify which ones are NOT relevant to "
     "the project and return them in \"exclude_categories\". Keep all categories that "
     "could plausibly contain relevant papers. Only exclude clearly unrelated ones.\n\n"
+    "5. DEDUPLICATION: Each concept must be clearly distinct from all others. "
+    "Do NOT create concepts that overlap significantly.\n"
+    "   - WRONG: 'Autonomous Cinematography' AND 'Autonomous Cinematography System'\n"
+    "   - WRONG: 'Video Enhancement' AND 'Video and Image Enhancement'\n"
+    "   - RIGHT: Keep only ONE concept per distinct idea.\n\n"
+    "6. EXCLUDE KEYWORDS must only contain terms that would bring IRRELEVANT papers. "
+    "Never exclude terms that are CORE to the project description. "
+    "Exclude keywords should filter out papers from unrelated domains "
+    "(e.g., medical imaging when searching for sports vision).\n"
+    "   - WRONG: excluding 'smart camera' when the project IS about smart cameras\n"
+    "   - WRONG: excluding 'social media platform' when the project aims to BUILD one\n"
+    "   - RIGHT: excluding 'medical imaging', 'satellite imagery', 'autonomous driving'\n\n"
+    "7. Generate 8-12 concepts maximum. If concepts overlap, merge them.\n\n"
+    "8. NARROW QUERIES GUIDANCE: Cross-domain and narrow keywords must be specific enough "
+    "to return fewer than ~10,000 papers on arXiv. Never use ultra-generic terms like "
+    "'computer vision', 'machine learning', 'deep learning', 'artificial intelligence' alone. "
+    "Instead combine them with domain-specific qualifiers.\n"
+    "   - WRONG: 'computer vision' (too broad, millions of papers)\n"
+    "   - RIGHT: 'computer vision for sports analysis', 'vision-based pose estimation'\n\n"
     "Also generate a \"topic_embedding_text\" field: a single English paragraph "
     "combining all key concepts and keywords, suitable for semantic similarity "
     "matching against paper abstracts."
@@ -145,11 +165,12 @@ class KeywordExpander(BaseAgent):
     # Public API
     # ------------------------------------------------------------------
 
-    def expand(self, topic: TopicSpec) -> dict:
+    def expand(self, topic: TopicSpec, *, skip_cache: bool = False) -> dict:
         """Main entry point. Returns keyword expansion result.
 
         Args:
             topic: The topic specification to expand.
+            skip_cache: If True, bypass cache and force LLM call.
 
         Returns:
             dict with keys: concepts, cross_domain_keywords,
@@ -159,9 +180,10 @@ class KeywordExpander(BaseAgent):
 
         # --- Cache lookup ---
         cache = self._load_cache()
-        if cache_key in cache and self._is_cache_valid(cache[cache_key]):
-            logger.info("keyword_expander: cache hit for topic '%s'", topic.slug)
-            return cache[cache_key]["result"]
+        if not skip_cache:
+            if cache_key in cache and self._is_cache_valid(cache[cache_key]):
+                logger.info("keyword_expander: cache hit for topic '%s'", topic.slug)
+                return cache[cache_key]["result"]
 
         # --- Chunk categories if too many ---
         chunk_size = self.agent_config.get("chunk_size", 15)
@@ -218,9 +240,15 @@ class KeywordExpander(BaseAgent):
         """Split categories into chunks, call LLM per chunk, merge results."""
         cats = topic.arxiv_categories
         merged: dict | None = None
+        total_chunks = (len(cats) + chunk_size - 1) // chunk_size
 
         for i in range(0, len(cats), chunk_size):
             chunk_cats = cats[i : i + chunk_size]
+            chunk_num = i // chunk_size + 1
+            logger.info(
+                "keyword_expander: chunk %d/%d (%d categories) for '%s' - LLM 호출 중...",
+                chunk_num, total_chunks, len(chunk_cats), topic.slug,
+            )
             # Create a temporary TopicSpec-like object with subset of categories
             chunk_topic = TopicSpec(
                 slug=topic.slug,
@@ -234,10 +262,14 @@ class KeywordExpander(BaseAgent):
             chunk_result = self._expand_single(chunk_topic)
             if chunk_result is None:
                 logger.warning(
-                    "keyword_expander: chunk %d failed for '%s', using fallback for this chunk",
-                    i // chunk_size + 1, topic.slug,
+                    "keyword_expander: chunk %d/%d failed for '%s', using fallback for this chunk",
+                    chunk_num, total_chunks, topic.slug,
                 )
                 continue
+            logger.info(
+                "keyword_expander: chunk %d/%d complete for '%s'",
+                chunk_num, total_chunks, topic.slug,
+            )
 
             if merged is None:
                 merged = chunk_result
@@ -349,12 +381,25 @@ class KeywordExpander(BaseAgent):
             return {}
 
     def _save_cache(self, cache: dict) -> None:
-        """Save cache to file, creating parent directories if needed."""
+        """Save cache to file atomically, creating parent directories if needed."""
         cache_dir = os.path.dirname(self.CACHE_FILE)
         if cache_dir:
             os.makedirs(cache_dir, exist_ok=True)
-        with open(self.CACHE_FILE, "w", encoding="utf-8") as fh:
-            json.dump(cache, fh, indent=2, ensure_ascii=False)
+        try:
+            # Atomic write: write to temp file, then rename
+            fd, tmp_path = tempfile.mkstemp(
+                dir=cache_dir or ".",
+                suffix=".tmp",
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(cache, f, indent=2, ensure_ascii=False)
+                os.replace(tmp_path, self.CACHE_FILE)  # atomic on POSIX
+            except Exception:
+                os.unlink(tmp_path)  # cleanup temp file
+                raise
+        except OSError as exc:
+            logger.warning("Failed to save keyword cache: %s", exc)
 
     def _is_cache_valid(self, entry: dict) -> bool:
         """Check if cache entry is within TTL."""
@@ -468,7 +513,15 @@ class KeywordExpander(BaseAgent):
         concepts = []
         all_keywords: list[str] = []
 
-        for cat in topic.arxiv_categories:
+        categories = topic.arxiv_categories
+        if not categories:
+            logger.warning(
+                "Topic '%s' has no arxiv_categories. Using default CS categories.",
+                topic.slug,
+            )
+            categories = ["cs.AI", "cs.LG", "cs.CV", "cs.CL"]
+
+        for cat in categories:
             kws = _CATEGORY_KEYWORDS.get(cat, [cat.lower()])
             concepts.append(
                 {

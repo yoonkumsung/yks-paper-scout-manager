@@ -68,6 +68,7 @@ def _get_topic_stats(db_path: str, topic_slug: str) -> dict:
     if not os.path.exists(db_path):
         return {"last_run_date": None, "total_collected": 0, "total_output": 0}
 
+    conn = None
     try:
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
@@ -99,7 +100,8 @@ def _get_topic_stats(db_path: str, topic_slug: str) -> dict:
         logger.error(f"Database error getting topic stats: {e}")
         return {"last_run_date": None, "total_collected": 0, "total_output": 0}
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 def _validate_slug(slug: str) -> bool:
@@ -151,12 +153,16 @@ def list_topics():
         topics = get_topics(config_path)
 
         # Enrich with stats and cache status
+        enriched_topics = []
         for topic in topics:
             slug = topic.get("slug", "")
 
-            # Add run stats
+            # Add run stats (flatten into topic for frontend access)
             stats = _get_topic_stats(db_path, slug)
             topic["last_run_stats"] = stats
+            topic["last_run_date"] = stats.get("last_run_date")
+            topic["total_collected"] = stats.get("total_collected", 0)
+            topic["total_output"] = stats.get("total_output", 0)
 
             # Add cache status
             cache_status = _get_cache_status(data_path, slug)
@@ -164,8 +170,9 @@ def list_topics():
 
             # Filter optional fields (only include if set)
             topic = _filter_optional_fields(topic)
+            enriched_topics.append(topic)
 
-        return jsonify(topics), 200
+        return jsonify(enriched_topics), 200
 
     except Exception as e:
         logger.error(f"Error listing topics: {e}")
@@ -182,12 +189,17 @@ def create_topic():
             "name": "string",
             "description": "string",
             "arxiv_categories": ["string"],
-            "notify": {
-                "provider": "discord" | "telegram",
-                "channel_id": "string",
-                "secret_key": "string"
-            }
+            "notify": [
+                {
+                    "provider": "discord" | "telegram",
+                    "secret_key": "string",
+                    "channel_id": "string" (optional, default ""),
+                    "events": ["start", "complete"] (optional, default ["complete"])
+                }
+            ] | null
         }
+
+    Also accepts legacy single-object format for backward compatibility.
 
     Returns:
         201 on success with created topic
@@ -198,7 +210,7 @@ def create_topic():
         data = request.get_json()
 
         # Validate required fields
-        required = ["slug", "name", "description", "arxiv_categories", "notify"]
+        required = ["slug", "name", "description", "arxiv_categories"]
         for field in required:
             if field not in data or not data[field]:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
@@ -227,18 +239,52 @@ def create_topic():
         if not isinstance(data["arxiv_categories"], list) or len(data["arxiv_categories"]) == 0:
             return jsonify({"error": "arxiv_categories must be a non-empty list"}), 400
 
-        # Validate notify structure
-        notify = data["notify"]
-        if not isinstance(notify, dict):
-            return jsonify({"error": "notify must be an object"}), 400
+        # Validate notify structure (optional, supports single object or list)
+        notify = data.get("notify")
+        if notify is not None:
+            # Normalize single object to list for backward compatibility
+            if isinstance(notify, dict):
+                # Single object format: wrap into list with default events
+                entry = dict(notify)
+                entry.setdefault("events", ["complete"])
+                entry.setdefault("channel_id", "")
+                notify = [entry]
+            elif not isinstance(notify, list):
+                return jsonify({"error": "notify must be a list or an object"}), 400
 
-        notify_required = ["provider", "channel_id", "secret_key"]
-        for field in notify_required:
-            if field not in notify or not notify[field]:
-                return jsonify({"error": f"notify.{field} is required"}), 400
+            # Validate each entry in the list
+            valid_providers = {"discord", "telegram"}
+            valid_events = {"start", "complete"}
+            validated = []
+            for i, entry in enumerate(notify):
+                if not isinstance(entry, dict):
+                    return jsonify({"error": f"notify[{i}] must be an object"}), 400
 
-        if notify["provider"] not in ["discord", "telegram"]:
-            return jsonify({"error": "notify.provider must be 'discord' or 'telegram'"}), 400
+                if "provider" not in entry or not entry["provider"]:
+                    return jsonify({"error": f"notify[{i}].provider is required"}), 400
+                if entry["provider"] not in valid_providers:
+                    return jsonify({"error": f"notify[{i}].provider must be 'discord' or 'telegram'"}), 400
+
+                if "secret_key" not in entry or not entry["secret_key"]:
+                    return jsonify({"error": f"notify[{i}].secret_key is required"}), 400
+
+                # channel_id is optional, default to empty string
+                entry.setdefault("channel_id", "")
+
+                # events is optional, default to ["complete"]
+                events = entry.get("events", ["complete"])
+                if not isinstance(events, list) or not events:
+                    events = ["complete"]
+                for ev in events:
+                    if ev not in valid_events:
+                        return jsonify({"error": f"notify[{i}].events contains invalid event '{ev}'. Must be 'start' or 'complete'"}), 400
+                entry["events"] = events
+
+                validated.append(entry)
+
+            data["notify"] = validated if validated else None
+        else:
+            data["notify"] = None
 
         config_path = current_app.config["CONFIG_PATH"]
 
@@ -290,6 +336,43 @@ def update_topic_endpoint(slug: str):
         old_description = current_topic.get("description", "")
         new_description = data.get("description", old_description)
         description_changed = old_description != new_description
+
+        # Prevent slug modification
+        data.pop("slug", None)
+
+        # Validate notify structure if provided
+        notify = data.get("notify")
+        if notify is not None:
+            if isinstance(notify, dict):
+                entry = dict(notify)
+                entry.setdefault("events", ["complete"])
+                entry.setdefault("channel_id", "")
+                notify = [entry]
+            elif not isinstance(notify, list):
+                return jsonify({"error": "notify must be a list or an object"}), 400
+
+            valid_providers = {"discord", "telegram"}
+            valid_events = {"start", "complete"}
+            validated = []
+            for i, entry in enumerate(notify):
+                if not isinstance(entry, dict):
+                    return jsonify({"error": f"notify[{i}] must be an object"}), 400
+                if "provider" not in entry or not entry["provider"]:
+                    return jsonify({"error": f"notify[{i}].provider is required"}), 400
+                if entry["provider"] not in valid_providers:
+                    return jsonify({"error": f"notify[{i}].provider must be 'discord' or 'telegram'"}), 400
+                if "secret_key" not in entry or not entry["secret_key"]:
+                    return jsonify({"error": f"notify[{i}].secret_key is required"}), 400
+                entry.setdefault("channel_id", "")
+                events = entry.get("events", ["complete"])
+                if not isinstance(events, list) or not events:
+                    events = ["complete"]
+                for ev in events:
+                    if ev not in valid_events:
+                        return jsonify({"error": f"notify[{i}].events contains invalid event '{ev}'"}), 400
+                entry["events"] = events
+                validated.append(entry)
+            data["notify"] = validated if validated else None
 
         # Update the topic
         update_topic(config_path, slug, data)

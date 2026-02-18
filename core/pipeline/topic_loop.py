@@ -162,6 +162,9 @@ class TopicLoopOrchestrator:
             date_to=self._run_options.get("date_to"),
         )
 
+        # Send start notifications (best-effort, never blocks pipeline)
+        self._send_start_notifications(topic, window_start, window_end)
+
         # Determine embedding mode
         from core.embeddings.embedding_ranker import EmbeddingRanker
 
@@ -214,7 +217,11 @@ class TopicLoopOrchestrator:
             prompt_versions=prompt_versions,
             status="running",
         )
-        run_id = self._db.create_run(run_meta)
+        try:
+            run_id = self._db.create_run(run_meta)
+        except Exception as exc:
+            logger.warning("DB create_run failed: %s. Continuing without DB tracking.", exc)
+            run_id = -1  # sentinel: DB tracking disabled for this run
         logger.info("Step 1: RunMeta created, run_id=%d", run_id)
 
         try:
@@ -235,9 +242,13 @@ class TopicLoopOrchestrator:
             )
 
             # Save query stats
-            for qs in query_stats_list:
-                qs.run_id = run_id
-                self._db.insert_query_stats(qs)
+            if run_id >= 0:
+                for qs in query_stats_list:
+                    qs.run_id = run_id
+                    try:
+                        self._db.insert_query_stats(qs)
+                    except Exception as exc:
+                        logger.warning("DB insert_query_stats failed: %s", exc)
 
             # Early exit if no papers collected
             if total_collected == 0:
@@ -245,13 +256,17 @@ class TopicLoopOrchestrator:
                     "Step 3: No papers collected for '%s', skipping remaining steps",
                     slug,
                 )
-                self._db.update_run_status(run_id, "completed")
-                self._db.update_run_stats(
-                    run_id,
-                    total_collected=0, total_filtered=0,
-                    total_scored=0, total_discarded=0, total_output=0,
-                    threshold_used=0, threshold_lowered=False,
-                )
+                if run_id >= 0:
+                    try:
+                        self._db.update_run_status(run_id, "completed")
+                        self._db.update_run_stats(
+                            run_id,
+                            total_collected=0, total_filtered=0,
+                            total_scored=0, total_discarded=0, total_output=0,
+                            threshold_used=0, threshold_lowered=False,
+                        )
+                    except Exception as exc:
+                        logger.warning("DB update failed (no-papers path): %s", exc)
                 return {
                     "run_id": run_id,
                     "total_collected": 0, "total_filtered": 0,
@@ -277,13 +292,17 @@ class TopicLoopOrchestrator:
                     "Step 4: No papers passed filter for '%s', skipping remaining steps",
                     slug,
                 )
-                self._db.update_run_status(run_id, "completed")
-                self._db.update_run_stats(
-                    run_id,
-                    total_collected=total_collected, total_filtered=0,
-                    total_scored=0, total_discarded=0, total_output=0,
-                    threshold_used=0, threshold_lowered=False,
-                )
+                if run_id >= 0:
+                    try:
+                        self._db.update_run_status(run_id, "completed")
+                        self._db.update_run_stats(
+                            run_id,
+                            total_collected=total_collected, total_filtered=0,
+                            total_scored=0, total_discarded=0, total_output=0,
+                            threshold_used=0, threshold_lowered=False,
+                        )
+                    except Exception as exc:
+                        logger.warning("DB update failed (no-filter path): %s", exc)
                 return {
                     "run_id": run_id,
                     "total_collected": total_collected, "total_filtered": 0,
@@ -345,6 +364,39 @@ class TopicLoopOrchestrator:
                     paper.has_code_source = merged["has_code_source"]
                     paper.code_url = merged.get("code_url")
 
+            # Check if all papers were discarded
+            non_discarded_count = sum(
+                1 for e in evaluations if not e.get("discard", False)
+            )
+            if non_discarded_count == 0:
+                logger.warning(
+                    "All %d papers were discarded for topic '%s'. "
+                    "Skipping ranking/summarization steps.",
+                    len(evaluations), slug,
+                )
+                if run_id >= 0:
+                    try:
+                        self._db.update_run_status(run_id, "completed")
+                        self._db.update_run_stats(
+                            run_id,
+                            total_collected=total_collected,
+                            total_filtered=total_filtered,
+                            total_scored=total_scored,
+                            total_discarded=total_discarded,
+                            total_output=0,
+                            threshold_used=0, threshold_lowered=False,
+                        )
+                    except Exception as exc:
+                        logger.warning("DB update failed (all-discarded path): %s", exc)
+                return {
+                    "run_id": run_id,
+                    "total_collected": total_collected,
+                    "total_filtered": total_filtered,
+                    "total_scored": total_scored,
+                    "total_discarded": total_discarded,
+                    "total_output": 0, "report_paths": {},
+                }
+
             # ---- Step 6: Ranker ----
             ranked_papers = self._step_rank(
                 evaluations, papers_map, window_end, embedding_mode
@@ -355,11 +407,9 @@ class TopicLoopOrchestrator:
                 total_output, slug,
             )
 
-            # Extract threshold info from ranker
-            from core.scoring.ranker import Ranker
-
-            ranker = Ranker(self._config.scoring)
-            threshold_used = ranker._default_threshold
+            # Extract threshold info from scoring config
+            thresh_cfg = self._config.scoring.get("thresholds", {})
+            threshold_used = thresh_cfg.get("default", 60)
             threshold_lowered = any(
                 p.get("score_lowered", False) for p in ranked_papers
             )
@@ -375,7 +425,7 @@ class TopicLoopOrchestrator:
 
             # ---- Step 8: Agent 3 - Summarization ----
             summarized_papers = self._step_summarize(
-                ranked_papers, topic.description
+                ranked_papers, topic.description, papers_map
             )
             logger.info(
                 "Step 8: Summarization completed for '%s'", slug
@@ -478,17 +528,21 @@ class TopicLoopOrchestrator:
             logger.info("Step 11: Post-run updates done for '%s'", slug)
 
             # ---- Step 12: Mark run completed ----
-            self._db.update_run_status(run_id, "completed")
-            self._db.update_run_stats(
-                run_id,
-                total_collected=total_collected,
-                total_filtered=total_filtered,
-                total_scored=total_scored,
-                total_discarded=total_discarded,
-                total_output=total_output,
-                threshold_used=threshold_used,
-                threshold_lowered=threshold_lowered,
-            )
+            if run_id >= 0:
+                try:
+                    self._db.update_run_status(run_id, "completed")
+                    self._db.update_run_stats(
+                        run_id,
+                        total_collected=total_collected,
+                        total_filtered=total_filtered,
+                        total_scored=total_scored,
+                        total_discarded=total_discarded,
+                        total_output=total_output,
+                        threshold_used=threshold_used,
+                        threshold_lowered=threshold_lowered,
+                    )
+                except Exception as exc:
+                    logger.warning("DB update failed (completion): %s", exc)
             logger.info(
                 "Step 12: Run completed for '%s' (run_id=%d)",
                 slug, run_id,
@@ -507,8 +561,74 @@ class TopicLoopOrchestrator:
         except Exception:
             # Mark run as failed
             error_trace = traceback.format_exc()
-            self._db.update_run_status(run_id, "failed", errors=error_trace)
+            if run_id >= 0:
+                try:
+                    self._db.update_run_status(run_id, "failed", errors=error_trace)
+                except Exception as db_exc:
+                    logger.warning("DB update_run_status(failed) error: %s", db_exc)
             raise
+
+    # ------------------------------------------------------------------
+    # Start notification
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _send_start_notifications(
+        topic: Any,
+        window_start: Any = None,
+        window_end: Any = None,
+    ) -> None:
+        """Send start-event notifications for a topic.
+
+        Best-effort: failures are logged but never block the pipeline.
+        """
+        if not topic.notify:
+            return
+
+        try:
+            from output.notifiers.base import NotifyPayload
+            from output.notifiers.registry import NotifierRegistry
+
+            registry = NotifierRegistry()
+            notifiers = registry.get_notifiers_for_event(topic.notify, "start")
+            if not notifiers:
+                return
+
+            # Build search window string
+            search_window = None
+            if window_start and window_end:
+                fmt = "%Y-%m-%d %H:%M"
+                search_window = f"{window_start.strftime(fmt)} ~ {window_end.strftime(fmt)}"
+
+            # Categories from topic spec
+            categories = getattr(topic, "arxiv_categories", []) or []
+
+            payload = NotifyPayload(
+                topic_slug=topic.slug,
+                topic_name=topic.name,
+                display_date="",
+                keywords=[],
+                total_output=0,
+                event_type="start",
+                categories=categories,
+                search_window=search_window,
+            )
+
+            for notifier in notifiers:
+                try:
+                    notifier.notify(payload)
+                except Exception as exc:
+                    logger.warning(
+                        "Start notification failed for '%s': %s",
+                        topic.slug,
+                        exc,
+                    )
+        except Exception as exc:
+            logger.warning(
+                "Start notification setup failed for '%s': %s",
+                topic.slug,
+                exc,
+            )
 
     # ------------------------------------------------------------------
     # Pipeline step implementations
@@ -706,10 +826,22 @@ class TopicLoopOrchestrator:
         self,
         ranked_papers: List[dict],
         topic_description: str,
+        papers_map: Optional[Dict[str, Paper]] = None,
     ) -> List[dict]:
         """Step 8: Agent 3 - Summarize papers."""
         if not ranked_papers:
             return []
+
+        # Enrich ranked_papers with title/abstract from papers_map
+        if papers_map:
+            for rp in ranked_papers:
+                pk = rp.get("paper_key", "")
+                paper = papers_map.get(pk)
+                if paper and "title" not in rp:
+                    rp["title"] = paper.title
+                    rp["abstract"] = paper.abstract
+                    if "base_score" not in rp:
+                        rp["base_score"] = rp.get("llm_base_score", 0)
 
         from agents.summarizer import Summarizer
         from core.llm.openrouter_client import OpenRouterClient
@@ -875,7 +1007,8 @@ class TopicLoopOrchestrator:
             )
         except Exception:
             logger.warning(
-                "GitHub Issue upsert failed for '%s'",
+                "GitHub Issue creation/update failed for '%s'. "
+                "Check GITHUB_TOKEN and repo permissions.",
                 topic.slug,
                 exc_info=True,
             )

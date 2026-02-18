@@ -106,11 +106,30 @@ class Summarizer(BaseAgent):
             for i in range(0, len(tier1), tier1_batch_size)
         ]
         for batch_idx, batch in enumerate(tier1_batches):
-            batch_results = self._summarize_batch(
-                batch, topic_description, rate_limiter, batch_idx, tier=1
-            )
-            if batch_results is not None:
-                results.extend(batch_results)
+            # Check daily API limit before each batch
+            if rate_limiter.is_daily_limit_reached:
+                logger.warning(
+                    "summarizer: daily API limit reached at tier1 batch %d/%d, "
+                    "returning %d partial results",
+                    batch_idx, len(tier1_batches), len(results),
+                )
+                return results
+
+            try:
+                batch_results = self._summarize_batch(
+                    batch, topic_description, rate_limiter, batch_idx, tier=1
+                )
+                if batch_results is not None:
+                    results.extend(batch_results)
+            except InterruptedError:
+                raise  # Re-raise cancel events
+            except Exception as exc:
+                logger.error(
+                    "summarizer: tier1 batch %d/%d failed unexpectedly: %s. "
+                    "Returning %d partial results.",
+                    batch_idx, len(tier1_batches), exc, len(results),
+                )
+                return results
 
         # Process Tier 2 batches (batch_size=10)
         tier2_batch_size = self.agent_config.get(
@@ -122,15 +141,34 @@ class Summarizer(BaseAgent):
         ]
         tier2_batch_offset = len(tier1_batches)
         for batch_idx, batch in enumerate(tier2_batches):
-            batch_results = self._summarize_batch(
-                batch,
-                topic_description,
-                rate_limiter,
-                tier2_batch_offset + batch_idx,
-                tier=2,
-            )
-            if batch_results is not None:
-                results.extend(batch_results)
+            # Check daily API limit before each batch
+            if rate_limiter.is_daily_limit_reached:
+                logger.warning(
+                    "summarizer: daily API limit reached at tier2 batch %d/%d, "
+                    "returning %d partial results",
+                    batch_idx, len(tier2_batches), len(results),
+                )
+                return results
+
+            try:
+                batch_results = self._summarize_batch(
+                    batch,
+                    topic_description,
+                    rate_limiter,
+                    tier2_batch_offset + batch_idx,
+                    tier=2,
+                )
+                if batch_results is not None:
+                    results.extend(batch_results)
+            except InterruptedError:
+                raise  # Re-raise cancel events
+            except Exception as exc:
+                logger.error(
+                    "summarizer: tier2 batch %d/%d failed unexpectedly: %s. "
+                    "Returning %d partial results.",
+                    batch_idx, len(tier2_batches), exc, len(results),
+                )
+                return results
 
         return results
 

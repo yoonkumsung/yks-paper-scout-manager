@@ -62,7 +62,7 @@ local_ui:
         print("✓ Health check passed")
         print(f"  - App created successfully")
         print(f"  - Routes registered: {len(app.url_map._rules)} routes")
-        print(f"  - Blueprints: topics, pipeline, settings")
+        print(f"  - Blueprints: topics, pipeline, settings, setup, recommend")
         print(f"  - Security: Binds to 127.0.0.1 only")
         return True
 

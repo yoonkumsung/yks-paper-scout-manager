@@ -100,8 +100,11 @@ class ArxivSourceAdapter(SourceAdapter):
         max_results_per_query: int = config.get(
             "max_results_per_query", _DEFAULT_MAX_RESULTS_PER_QUERY
         )
+        # Target number of queries that return at least 1 result.
+        # Once reached, remaining queries are skipped to save API calls.
+        target_successful: int = config.get("target_successful_queries", 30)
 
-        # Build queries.
+        # Build queries (pool of up to 50 candidates).
         builder = ArxivQueryBuilder()
         queries = builder.build_queries(agent1_output, categories)
 
@@ -125,6 +128,8 @@ class ArxivSourceAdapter(SourceAdapter):
 
         seen_keys: set[str] = set()
         all_papers: list[Paper] = []
+        successful_queries = 0
+        skipped_queries = 0
 
         for query_text in queries:
             papers, stats = self._execute_query(
@@ -136,6 +141,17 @@ class ArxivSourceAdapter(SourceAdapter):
                 filter_start=filter_start,
                 filter_end=filter_end,
             )
+
+            if stats.collected == 0:
+                # Skip 0-result queries; record stats but don't count as successful
+                skipped_queries += 1
+                self.query_stats.append(stats)
+                logger.debug(
+                    "Query returned 0 results, skipping: %s", query_text[:80]
+                )
+                continue
+
+            successful_queries += 1
 
             # Apply code detection.
             for paper in papers:
@@ -152,10 +168,24 @@ class ArxivSourceAdapter(SourceAdapter):
 
             self.query_stats.append(stats)
 
+            # Stop early if we've hit the target number of successful queries.
+            if successful_queries >= target_successful:
+                logger.info(
+                    "Reached target of %d successful queries, "
+                    "stopping early (%d skipped, %d remaining)",
+                    target_successful,
+                    skipped_queries,
+                    len(queries) - successful_queries - skipped_queries,
+                )
+                break
+
         logger.info(
-            "arXiv collection complete: %d papers from %d queries",
+            "arXiv collection complete: %d papers from %d queries "
+            "(%d successful, %d skipped/empty)",
             len(all_papers),
             len(queries),
+            successful_queries,
+            skipped_queries,
         )
         return all_papers
 
@@ -213,7 +243,19 @@ class ArxivSourceAdapter(SourceAdapter):
                 )
 
                 # Consume the generator to collect results.
-                raw_results = list(client.results(search))
+                # Wrap in try-except to preserve partial results if
+                # the arXiv server drops the connection mid-iteration.
+                raw_results = []
+                try:
+                    for result in client.results(search):
+                        raw_results.append(result)
+                except Exception as gen_exc:
+                    logger.warning(
+                        "arXiv generator interrupted after %d results: %s",
+                        len(raw_results), gen_exc,
+                    )
+                    if not raw_results:
+                        raise  # Re-raise if zero results
 
                 # Normalize to Paper objects.
                 papers: list[Paper] = []
@@ -228,11 +270,19 @@ class ArxivSourceAdapter(SourceAdapter):
                             exc_info=True,
                         )
 
+                # Ensure timezone-aware comparison
+                if filter_start.tzinfo is None:
+                    filter_start = filter_start.replace(tzinfo=timezone.utc)
+                if filter_end.tzinfo is None:
+                    filter_end = filter_end.replace(tzinfo=timezone.utc)
+
                 # Post-filter by date window (strict, with buffer).
                 papers = [
                     p
                     for p in papers
-                    if filter_start <= p.published_at_utc <= filter_end
+                    if p.published_at_utc is not None
+                    and p.published_at_utc.tzinfo is not None
+                    and filter_start <= p.published_at_utc <= filter_end
                 ]
 
                 elapsed_ms = int((time.monotonic() - start_time) * 1000)

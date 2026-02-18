@@ -16,21 +16,21 @@ llm:
     backoff_max: 18
     jitter: true
   preflight:
-    conservative_rpm: 10
-    conservative_daily: 200
+    conservative_rpm: 20
+    conservative_daily: 2000
 agents:
   common:
     ignore_reasoning: true
     strip_think_blocks: true
     debug_dir: tmp/debug
   keyword_expander:
-    model: deepseek/deepseek-r1-0528:free
+    model: z-ai/glm-4.5-air:free
     effort: medium
     max_tokens: 40000
     temperature: 0.3
     prompt_version: agent1-v3
     cache_ttl_days: 30
-    chunk_size: 15
+    chunk_size: 30
   scorer:
     effort: low
     max_tokens: 40000
@@ -159,7 +159,7 @@ topics:
   notify:
     provider: telegram
     channel_id: '@YKSGM_bot'
-    secret_key: TELEGRAM_BOT_TOKEN
+    secret_key: YKS
 output:
   gh_pages:
     enabled: true

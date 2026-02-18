@@ -142,39 +142,66 @@ def validate_topic(topic_data: dict, index: int) -> TopicSpec:
                 f"got {type(cat).__name__}"
             )
 
-    # --- notify (optional) ---
-    notify: NotifyConfig | None = None
+    # --- notify (optional, single dict or list of dicts) ---
+    notify: list[NotifyConfig] = []
     notify_data = topic_data.get("notify")
-    if notify_data is not None and isinstance(notify_data, dict) and notify_data:
-        provider = notify_data.get("provider", "")
-        if provider and provider in _VALID_NOTIFY_PROVIDERS:
-            _require_notify_field(notify_data, "channel_id", index)
-            _require_notify_field(notify_data, "secret_key", index)
+    if notify_data is not None:
+        # Normalize to list: support both old single-object and new list format
+        if isinstance(notify_data, dict):
+            notify_items = [notify_data] if notify_data else []
+        elif isinstance(notify_data, list):
+            notify_items = notify_data
+        else:
+            notify_items = []
 
-            channel_id = notify_data["channel_id"]
-            if not isinstance(channel_id, str):
+        for ni, item in enumerate(notify_items):
+            if not isinstance(item, dict) or not item:
+                continue
+            provider = item.get("provider", "")
+            if provider and provider in _VALID_NOTIFY_PROVIDERS:
+                _require_notify_field(item, "secret_key", index)
+
+                # channel_id is optional (not used by all providers)
+                channel_id = item.get("channel_id", "")
+                if channel_id and not isinstance(channel_id, str):
+                    raise ConfigError(
+                        f"topics[{index}].notify[{ni}].channel_id: must be a string, "
+                        f"got {type(channel_id).__name__}"
+                    )
+
+                secret_key = item["secret_key"]
+                if not isinstance(secret_key, str):
+                    raise ConfigError(
+                        f"topics[{index}].notify[{ni}].secret_key: must be a string, "
+                        f"got {type(secret_key).__name__}"
+                    )
+
+                # Parse events list (default: ["complete"] for backward compat)
+                events = item.get("events", ["complete"])
+                if isinstance(events, str):
+                    events = [events]
+                if not isinstance(events, list):
+                    events = ["complete"]
+                # Validate event values
+                valid_events = {"start", "complete"}
+                for ev in events:
+                    if ev not in valid_events:
+                        raise ConfigError(
+                            f"topics[{index}].notify[{ni}].events: "
+                            f"invalid event '{ev}', must be one of {sorted(valid_events)}"
+                        )
+
+                notify.append(NotifyConfig(
+                    provider=provider,
+                    channel_id=str(channel_id),
+                    secret_key=str(secret_key),
+                    events=events,
+                ))
+            elif provider and provider not in _VALID_NOTIFY_PROVIDERS:
                 raise ConfigError(
-                    f"topics[{index}].notify.channel_id: must be a string, "
-                    f"got {type(channel_id).__name__}"
+                    f"topics[{index}].notify[{ni}].provider: must be one of "
+                    f"{sorted(_VALID_NOTIFY_PROVIDERS)}, got '{provider}'"
                 )
-
-            secret_key = notify_data["secret_key"]
-            if not isinstance(secret_key, str):
-                raise ConfigError(
-                    f"topics[{index}].notify.secret_key: must be a string, "
-                    f"got {type(secret_key).__name__}"
-                )
-
-            notify = NotifyConfig(
-                provider=provider,
-                channel_id=str(channel_id),
-                secret_key=str(secret_key),
-            )
-        elif provider and provider not in _VALID_NOTIFY_PROVIDERS:
-            raise ConfigError(
-                f"topics[{index}].notify.provider: must be one of "
-                f"{sorted(_VALID_NOTIFY_PROVIDERS)}, got '{provider}'"
-            )
 
     # --- Optional fields type checking ---
     must_concepts_en = _validate_optional_str_list(

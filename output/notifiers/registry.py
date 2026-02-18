@@ -12,10 +12,14 @@ Section refs: DevSpec 11-1.
 
 from __future__ import annotations
 
+import logging
 import os
+from typing import List
 
 from core.models import NotifyConfig
 from output.notifiers.base import NotifierBase
+
+logger = logging.getLogger(__name__)
 
 
 class NotifierRegistry:
@@ -73,3 +77,24 @@ class NotifierRegistry:
             raise ValueError(
                 f"Unknown notification provider: {notify_config.provider}"
             )
+
+    def get_notifiers_for_event(
+        self, notify_configs: List[NotifyConfig], event: str
+    ) -> List[NotifierBase]:
+        """Return notifier instances for configs that include the given event.
+
+        Args:
+            notify_configs: List of notification configurations.
+            event: Event type to filter on ("start" or "complete").
+
+        Returns:
+            List of configured notifier instances matching the event.
+        """
+        result: List[NotifierBase] = []
+        for cfg in notify_configs:
+            if event in cfg.events:
+                try:
+                    result.append(self.get_notifier(cfg))
+                except ValueError as e:
+                    logger.warning("Skipping notifier: %s", e)
+        return result

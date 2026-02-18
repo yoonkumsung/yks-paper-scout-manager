@@ -42,6 +42,9 @@ class NotifyPayload:
     total_output: int
     file_paths: Dict[str, str] = field(default_factory=dict)
     gh_pages_url: Optional[str] = None
+    event_type: str = "complete"  # "start" or "complete"
+    categories: List[str] = field(default_factory=list)
+    search_window: Optional[str] = None  # e.g. "2026-02-17 ~ 2026-02-18"
 
 
 class NotifierBase(ABC):
@@ -70,8 +73,12 @@ class NotifierBase(ABC):
         """
         message = self.build_message(payload)
 
-        # Determine which files to attach (pre-send size check).
-        attachable_files = self._check_file_sizes(payload.file_paths)
+        # Start events are message-only -- no file attachments.
+        if payload.event_type == "start":
+            attachable_files: Dict[str, str] = {}
+        else:
+            # Determine which files to attach (pre-send size check).
+            attachable_files = self._check_file_sizes(payload.file_paths)
 
         for attempt in range(1, 3):  # 1 try + 1 retry
             try:
@@ -116,12 +123,16 @@ class NotifierBase(ABC):
         """Build the notification message text.
 
         Format:
+        - Start event:
+          ``{topic_name} 논문 수집을 시작합니다.``
         - Normal (DevSpec 11-2):
           ``{date}, 오늘의 키워드인 "kw1", "kw2", "kw3" 외 N개에 대한
           arXiv 논문 정리입니다.``
         - Zero-result (DevSpec 11-7):
           ``{date}, 오늘은 {topic_name} 관련 신규 논문이 없습니다.``
         """
+        if payload.event_type == "start":
+            return self._build_start_message(payload)
         if payload.total_output == 0:
             return self._build_zero_result_message(payload)
         return self._build_normal_message(payload)
@@ -152,6 +163,20 @@ class NotifierBase(ABC):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_start_message(payload: NotifyPayload) -> str:
+        """Build start notification message with search context."""
+        lines = [f"[Paper Scout] {payload.topic_name} 논문 수집을 시작합니다."]
+        if payload.search_window:
+            lines.append(f"검색 기간: {payload.search_window}")
+        if payload.categories:
+            if len(payload.categories) <= 4:
+                cats_str = ", ".join(payload.categories)
+            else:
+                cats_str = ", ".join(payload.categories[:3]) + f" 외 {len(payload.categories) - 3}개"
+            lines.append(f"카테고리: {cats_str}")
+        return "\n".join(lines)
 
     def _build_normal_message(self, payload: NotifyPayload) -> str:
         """Build normal message with top-3 keywords (DevSpec 11-2)."""

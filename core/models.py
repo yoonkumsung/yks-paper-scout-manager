@@ -47,11 +47,21 @@ class EvaluationFlags:
 
 @dataclass
 class NotifyConfig:
-    """Notification channel configuration for a topic."""
+    """Notification channel configuration for a topic.
+
+    Attributes:
+        provider: Notification provider ("discord" or "telegram").
+        channel_id: Channel identifier (provider-specific).
+        secret_key: Environment variable suffix for credentials.
+        events: List of event types to notify on.
+            Valid values: "start", "complete".
+            Defaults to ["complete"] for backward compatibility.
+    """
 
     provider: str  # "discord" or "telegram"
     channel_id: str
     secret_key: str
+    events: list[str] = field(default_factory=lambda: ["complete"])
 
 
 # ---------------------------------------------------------------------------
@@ -276,7 +286,7 @@ class TopicSpec:
     name: str
     description: str
     arxiv_categories: list[str]
-    notify: NotifyConfig | None = None
+    notify: list[NotifyConfig] = field(default_factory=list)
 
     must_concepts_en: Optional[list[str]] = None
     should_concepts_en: Optional[list[str]] = None

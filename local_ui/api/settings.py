@@ -176,20 +176,22 @@ def db_status():
         file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
 
         # Get record counts for all tables
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        tables = ["papers", "paper_evaluations", "runs", "query_stats", "remind_tracking"]
+        conn = None
         counts = {}
-        for table in tables:
-            try:
-                cursor.execute(f"SELECT COUNT(*) FROM {table}")
-                counts[table] = cursor.fetchone()[0]
-            except sqlite3.OperationalError:
-                # Table may not exist
-                counts[table] = 0
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
 
-        conn.close()
+            tables = ["papers", "paper_evaluations", "runs", "query_stats", "remind_tracking"]
+            for table in tables:
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    counts[table] = cursor.fetchone()[0]
+                except sqlite3.OperationalError:
+                    counts[table] = 0
+        finally:
+            if conn is not None:
+                conn.close()
 
         # Check for last purge date from weekly_done.flag
         last_purge_date = None

@@ -100,6 +100,35 @@ _KEYWORD_CATEGORY_MAP: dict[str, list[str]] = {
     "rendering": ["cs.GR"],
     "multimedia": ["cs.MM"],
     "editing": ["cs.CV", "cs.MM"],
+    # Hardware / Device
+    "hardware": ["cs.AR", "cs.RO"],
+    "device": ["cs.AR", "cs.RO", "eess.SP"],
+    # Video / Image processing
+    "image processing": ["cs.CV", "eess.IV"],
+    "video processing": ["cs.CV", "eess.IV", "cs.MM"],
+    "image enhancement": ["cs.CV", "eess.IV"],
+    "super resolution": ["cs.CV", "eess.IV"],
+    "short form": ["cs.MM", "cs.CV"],
+    "content creation": ["cs.MM", "cs.CV"],
+    # Generative models
+    "generative": ["cs.CV", "cs.LG", "cs.AI"],
+    "gan": ["cs.CV", "cs.LG"],
+    "diffusion": ["cs.CV", "cs.LG"],
+    # Pose / Activity
+    "pose": ["cs.CV"],
+    # Streaming / Network
+    "streaming": ["cs.MM", "cs.NI"],
+    # Control / Systems
+    "control": ["cs.SY", "eess.SY", "math.OC"],
+    "signal": ["eess.SP"],
+    # Audio / Sound
+    "sound": ["cs.SD", "eess.AS"],
+    # Social / Sharing
+    "sharing": ["cs.SI", "cs.MM"],
+    "advertising": ["cs.IR", "cs.AI"],
+    # Strategy / Game theory
+    "strategy": ["cs.AI", "cs.GT"],
+    "analysis": ["cs.CV", "cs.AI"],
     # HCI
     "interface": ["cs.HC"],
     "interaction": ["cs.HC"],
@@ -111,21 +140,47 @@ _KEYWORD_CATEGORY_MAP: dict[str, list[str]] = {
 _RECOMMEND_SYSTEM_PROMPT = (
     "You are an expert research librarian specializing in arXiv paper categories. "
     "Given a project description, recommend the most relevant arXiv categories.\n\n"
-    "Available arXiv categories:\n"
-    "CS: cs.AI, cs.LG, cs.CL, cs.CV, cs.NE, cs.IR, cs.MA, cs.RO, cs.SE, cs.DC, "
-    "cs.DB, cs.OS, cs.PL, cs.AR, cs.NI, cs.PF, cs.DS, cs.CC, cs.LO, cs.FL, "
-    "cs.DM, cs.IT, cs.NA, cs.SC, cs.GT, cs.CG, cs.CR, cs.HC, cs.CY, cs.CE, "
-    "cs.GR, cs.MM, cs.SD, cs.SI, cs.DL, cs.ET, cs.MS, cs.GL, cs.OH, cs.SY\n"
-    "Stats: stat.ML, stat.ME, stat.TH, stat.AP, stat.CO\n"
-    "EESS: eess.SP, eess.AS, eess.IV, eess.SY\n"
-    "Math: math.OC, math.ST, math.PR\n"
-    "Q-Bio: q-bio.QM, q-bio.NC\n"
-    "Q-Fin: q-fin.ST, q-fin.CP\n"
-    "Physics: physics.data-an\n\n"
+    "IMPORTANT: Think about ALL aspects of the description - hardware, software, "
+    "algorithms, applications, social aspects, signal processing, multimedia, "
+    "networking, user interaction, business models, and more. "
+    "For each functional area mentioned in the description, consider which arXiv "
+    "categories publish papers on that topic.\n\n"
+    "Available arXiv categories (with brief descriptions):\n"
+    "CS categories:\n"
+    "  cs.AI (Artificial Intelligence), cs.LG (Machine Learning), "
+    "cs.CL (NLP/Language Processing), cs.CV (Computer Vision), "
+    "cs.NE (Neural/Evolutionary Computing), cs.IR (Information Retrieval), "
+    "cs.MA (Multi-Agent Systems), cs.RO (Robotics), "
+    "cs.SE (Software Engineering), cs.DC (Distributed Computing), "
+    "cs.DB (Databases), cs.OS (Operating Systems), "
+    "cs.PL (Programming Languages), cs.AR (Hardware Architecture), "
+    "cs.NI (Networking/Internet), cs.PF (Performance), "
+    "cs.DS (Data Structures/Algorithms), cs.CC (Computational Complexity), "
+    "cs.LO (Logic), cs.FL (Formal Languages), "
+    "cs.DM (Discrete Mathematics), cs.IT (Information Theory), "
+    "cs.NA (Numerical Analysis), cs.SC (Symbolic Computation), "
+    "cs.GT (Game Theory/Economics), cs.CG (Computational Geometry), "
+    "cs.CR (Cryptography/Security), cs.HC (Human-Computer Interaction), "
+    "cs.CY (Computers and Society), cs.CE (Computational Engineering), "
+    "cs.GR (Graphics), cs.MM (Multimedia), "
+    "cs.SD (Sound), cs.SI (Social/Information Networks), "
+    "cs.DL (Digital Libraries), cs.ET (Emerging Technologies), "
+    "cs.MS (Mathematical Software), cs.GL (General Literature), "
+    "cs.OH (Other), cs.SY (Systems and Control)\n"
+    "Stats: stat.ML (Machine Learning), stat.ME (Methodology), "
+    "stat.TH (Theory), stat.AP (Applications), stat.CO (Computation)\n"
+    "EESS: eess.SP (Signal Processing), eess.AS (Audio/Speech), "
+    "eess.IV (Image/Video Processing), eess.SY (Systems and Control)\n"
+    "Math: math.OC (Optimization/Control), math.ST (Statistics Theory), "
+    "math.PR (Probability)\n"
+    "Q-Bio: q-bio.QM (Quantitative Methods), q-bio.NC (Neurons and Cognition)\n"
+    "Q-Fin: q-fin.ST (Statistical Finance), q-fin.CP (Computational Finance)\n"
+    "Physics: physics.data-an (Data Analysis)\n\n"
     "Respond with a JSON object containing:\n"
     '  "categories": ["cs.AI", "cs.CV", ...],\n'
     '  "reasoning": "Brief explanation of why these categories are relevant"\n\n'
-    "Select 5-10 most relevant categories. Prioritize precision over recall."
+    "Select 10-20 most relevant categories. Prioritize recall over precision - "
+    "it is better to include a potentially relevant category than to miss one."
 )
 
 

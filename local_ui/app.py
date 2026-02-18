@@ -13,15 +13,6 @@ from typing import Any
 
 from flask import Flask, jsonify, render_template, request
 
-from local_ui.config_io import (
-    add_topic,
-    get_topics,
-    read_config,
-    remove_topic,
-    update_topic,
-    write_config,
-)
-
 logger = logging.getLogger(__name__)
 
 
@@ -67,6 +58,19 @@ def create_app(
     def index() -> str:
         """Render main UI page."""
         return render_template("index.html")
+
+    @app.route("/reports")
+    @app.route("/reports/<path:subpath>")
+    def reports(subpath: str = "") -> Any:
+        """Serve report files from tmp/reports directory."""
+        from flask import send_from_directory, abort
+        reports_dir = Path("tmp/reports")
+        if not reports_dir.exists():
+            abort(404)
+        target = reports_dir / subpath if subpath else reports_dir / "index.html"
+        if target.exists() and target.is_file():
+            return send_from_directory(str(reports_dir), subpath or "index.html")
+        abort(404)
 
     @app.errorhandler(404)
     def not_found(error: Any) -> tuple[dict, int]:

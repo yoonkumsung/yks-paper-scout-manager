@@ -200,18 +200,13 @@ class PostLoopProcessor:
                 if run_meta is None or run_meta.run_id is None:
                     continue
 
-                self._db._conn.execute(
-                    """
-                    UPDATE paper_evaluations
-                       SET multi_topic = ?
-                     WHERE run_id = ? AND paper_key = ?
-                    """,
-                    (multi_topic_value, run_meta.run_id, paper_key),
+                self._db.update_evaluation_multi_topic(
+                    run_meta.run_id, paper_key, multi_topic_value
                 )
 
             tagged_count += 1
 
-        self._db._conn.commit()
+        self._db.commit()
         return tagged_count
 
     # ------------------------------------------------------------------
@@ -315,9 +310,20 @@ class PostLoopProcessor:
                     failed += 1
                     continue
 
-                if topic_spec.notify is None:
+                if not topic_spec.notify:
                     logger.info(
                         "Topic '%s': no notify config, skipping notification",
+                        slug,
+                    )
+                    continue
+
+                # Get notifiers for the "complete" event
+                notifiers = registry.get_notifiers_for_event(
+                    topic_spec.notify, "complete"
+                )
+                if not notifiers:
+                    logger.info(
+                        "Topic '%s': no notifiers for 'complete' event",
                         slug,
                     )
                     continue
@@ -342,15 +348,15 @@ class PostLoopProcessor:
                     total_output=total_output,
                     file_paths=file_paths,
                     gh_pages_url=gh_pages_url,
+                    event_type="complete",
                 )
 
-                notifier = registry.get_notifier(topic_spec.notify)
-                success = notifier.notify(payload)
-
-                if success:
-                    sent += 1
-                else:
-                    failed += 1
+                for notifier in notifiers:
+                    success = notifier.notify(payload)
+                    if success:
+                        sent += 1
+                    else:
+                        failed += 1
 
             except Exception:
                 logger.warning(

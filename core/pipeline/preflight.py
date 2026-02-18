@@ -405,7 +405,7 @@ def _lookup_window_start(
     last_success = _load_last_success()
     if last_success is not None and topic_slug in last_success:
         topic_data = last_success[topic_slug]
-        ts = topic_data.get("window_end_utc")
+        ts = topic_data.get("last_success_window_end_utc") or topic_data.get("window_end_utc")
         if ts is not None:
             try:
                 dt = datetime.fromisoformat(ts)

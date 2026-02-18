@@ -176,7 +176,7 @@ def handle_run_command(args: argparse.Namespace) -> int:
 
 
 def handle_ui_command(args: argparse.Namespace) -> int:
-    """Handle ui subcommand (placeholder for TASK-050).
+    """Handle ui subcommand - launch local web UI.
 
     Args:
         args: Parsed CLI arguments
@@ -184,14 +184,12 @@ def handle_ui_command(args: argparse.Namespace) -> int:
     Returns:
         Exit code (0 = success)
     """
-    print(f"Web UI starting on port {args.port}...")
-    if args.no_browser:
-        print("Browser auto-open disabled.")
-    else:
-        print("Browser will open automatically.")
+    from local_ui.app import start_server
 
-    # Placeholder for Flask server (TASK-050)
-    print("(Flask server implementation pending in TASK-050)")
+    start_server(
+        port=args.port,
+        open_browser=not args.no_browser,
+    )
 
     return 0
 

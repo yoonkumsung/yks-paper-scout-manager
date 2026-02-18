@@ -11,7 +11,7 @@ Flask-based local web interface for managing Paper Scout configuration and runni
 ## Installation
 
 ```bash
-pip install -r requirements-ui.txt
+pip install -r requirements.txt
 ```
 
 ## Usage

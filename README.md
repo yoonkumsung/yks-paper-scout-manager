@@ -121,13 +121,12 @@ cd yks-paper-collector
 
 2. 의존성 설치:
 ```bash
-pip install -r requirements-core.txt
+pip install -r requirements.txt
 ```
 
 3. 선택사항: 추가 기능 설치:
 ```bash
 pip install -r requirements-embed.txt  # Embedding 지원
-pip install -r requirements-ui.txt     # 로컬 웹 UI
 pip install -r requirements-viz.txt    # 주간 시각화
 ```
 

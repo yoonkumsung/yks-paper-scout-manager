@@ -134,7 +134,7 @@
     }
     .paper-card .rank-title {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 0.5rem;
       margin-bottom: 0.5rem;
     }
@@ -256,7 +256,7 @@
     }
     .compact-card .rank-title {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 0.4rem;
     }
     .compact-card .rank { font-weight: 700; color: var(--accent); }
@@ -297,6 +297,69 @@
       border-bottom: 1px solid var(--divider);
     }
     .index-list li:last-child { border-bottom: none; }
+
+    /* Paper checkbox */
+    .paper-checkbox {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .compact-card .paper-links {
+      display: inline-flex;
+      gap: 0.4rem;
+      margin: 0 0 0 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    /* Download toolbar */
+    .download-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      padding: 0.6rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    }
+    .download-toolbar.visible { display: flex; }
+    body.toolbar-active { padding-bottom: 3.5rem; }
+    .toolbar-selects {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar-btn.primary:hover { opacity: 0.9; }
+    .toolbar-btn.primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>

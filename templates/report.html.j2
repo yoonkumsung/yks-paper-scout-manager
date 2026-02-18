@@ -48,6 +48,7 @@
       {% for paper in tier1_papers %}
       <div class="paper-card">
         <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="{{ paper.pdf_url or '' }}" onchange="updateToolbar()">
           <span class="rank">{{ paper.rank }}위</span>
           <span class="paper-title">
             <a href="{{ paper.url }}">{{ paper.title }}</a>
@@ -128,6 +129,7 @@
       {% for paper in tier2_papers %}
       <div class="compact-card">
         <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="2" data-pdf="{{ paper.pdf_url or '' }}" onchange="updateToolbar()">
           <span class="rank">{{ paper.rank }}위</span>
           <span class="paper-title">
             <a href="{{ paper.url }}">{{ paper.title }}</a>
@@ -136,6 +138,9 @@
           <span class="lowered-tag">[완화]</span>
           {% endif %}
           <span class="score-detail">{{ paper.final_score }}</span>
+          {% if paper.pdf_url %}
+          <span class="paper-links"><a href="{{ paper.pdf_url }}">PDF</a></span>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -175,6 +180,16 @@
   </div>
 </div>
 
+<div class="download-toolbar" id="downloadToolbar">
+  <div class="toolbar-selects">
+    <button class="toolbar-btn" onclick="toggleSelect('all')">All</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier1')">Tier 1</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier2')">Tier 2</button>
+    <button class="toolbar-btn" onclick="toggleSelect('none')">Deselect</button>
+  </div>
+  <button class="toolbar-btn primary" id="downloadBtn" onclick="downloadSelected()">Download 0 PDFs</button>
+</div>
+
 <footer>
   <p>이 리포트는 arXiv API를 사용하여 생성되었습니다.</p>
   <p>arXiv 논문의 저작권은 각 저자에게 있습니다.</p>
@@ -182,4 +197,44 @@
   <p>run_id: {{ meta.run_id }} | embedding: {{ meta.embedding_mode }}
     | weights: {{ meta.scoring_weights }}</p>
 </footer>
+
+<script>
+function toggleSelect(filter) {
+  var boxes = document.querySelectorAll('.tab-panel-today .paper-checkbox');
+  boxes.forEach(function(cb) {
+    if (filter === 'none') { cb.checked = false; }
+    else if (filter === 'all') { cb.checked = true; }
+    else if (filter === 'tier1') { cb.checked = cb.dataset.tier === '1'; }
+    else if (filter === 'tier2') { cb.checked = cb.dataset.tier === '2'; }
+  });
+  updateToolbar();
+}
+
+function updateToolbar() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var toolbar = document.getElementById('downloadToolbar');
+  var btn = document.getElementById('downloadBtn');
+  var count = 0;
+  checked.forEach(function(cb) { if (cb.dataset.pdf) count++; });
+  if (checked.length > 0) {
+    toolbar.classList.add('visible');
+    document.body.classList.add('toolbar-active');
+    btn.textContent = 'Download ' + count + ' PDFs';
+    btn.disabled = (count === 0);
+  } else {
+    toolbar.classList.remove('visible');
+    document.body.classList.remove('toolbar-active');
+  }
+}
+
+function downloadSelected() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var urls = [];
+  checked.forEach(function(cb) { if (cb.dataset.pdf) urls.push(cb.dataset.pdf); });
+  if (urls.length === 0) return;
+  urls.forEach(function(url, i) {
+    setTimeout(function() { window.open(url, '_blank'); }, i * 300);
+  });
+}
+</script>
 {% endblock %}

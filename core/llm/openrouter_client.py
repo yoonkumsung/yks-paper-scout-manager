@@ -10,12 +10,14 @@ belongs to the base_agent layer.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import random
 import time
 from typing import Any
 
+import httpx
 import openai
 import requests as _requests_lib
 from openai import OpenAI
@@ -67,6 +69,30 @@ class OpenRouterClient:
         self._backoff_base: float = float(retry_cfg.get("backoff_base", 2))
         self._jitter: bool = retry_cfg.get("jitter", True)
 
+        # Progressive timeout: [600s, 600s] for primary, 900s for fallback
+        # Uses httpx.Timeout with explicit read timeout to prevent
+        # slow-streaming responses from resetting the timer on each byte.
+        timeout_cfg = llm.get("timeout", {})
+        if isinstance(timeout_cfg, (int, float)):
+            t1 = float(timeout_cfg)
+            read_timeouts = [t1, t1 * 1.25, t1 * 2.5]
+        elif isinstance(timeout_cfg, dict):
+            read_timeouts = [
+                float(timeout_cfg.get("attempt_1", 600)),
+                float(timeout_cfg.get("attempt_2", 600)),
+                float(timeout_cfg.get("fallback", 900)),
+            ]
+        else:
+            read_timeouts = [600.0, 600.0, 900.0]
+
+        self._timeouts: list[httpx.Timeout] = [
+            httpx.Timeout(connect=10.0, read=rt, write=30.0, pool=10.0)
+            for rt in read_timeouts
+        ]
+
+        # Create client without global timeout -- per-request timeout
+        # is set via the ``timeout=`` kwarg in each create() call,
+        # avoiding SDK-level timeout conflicts.
         self._client = OpenAI(
             api_key=self._resolve_api_key(),
             base_url=self._base_url,
@@ -126,12 +152,44 @@ class OpenRouterClient:
             )
 
             model_label = f"[{model_idx + 1}/{len(models_to_try)}] {model}"
+            is_fallback = model_idx > 0
+            timeout_consecutive = 0  # Track consecutive timeout failures
 
             for attempt in range(1, self._max_retries + 1):
+                # Progressive timeout: primary model uses timeouts[0], [1];
+                # fallback model uses timeouts[2]
+                if is_fallback:
+                    req_timeout = self._timeouts[2] if len(self._timeouts) > 2 else self._timeouts[-1]
+                else:
+                    idx = min(attempt - 1, len(self._timeouts) - 1)
+                    req_timeout = self._timeouts[idx]
+
                 try:
-                    response = self._client.chat.completions.create(**kwargs)
+                    response = self._client.chat.completions.create(
+                        **kwargs, timeout=req_timeout
+                    )
                     content = response.choices[0].message.content
-                    if model_idx > 0:
+                    # Detect truncated JSON responses
+                    if (
+                        content
+                        and content.strip()
+                        and not (
+                            content.strip().endswith("}")
+                            or content.strip().endswith("]")
+                        )
+                    ):
+                        logger.warning(
+                            "%s: response appears truncated "
+                            "(doesn't end with } or ]), retrying.",
+                            model_label,
+                        )
+                        last_error = ValueError(
+                            f"Truncated response: ...{content[-50:]}"
+                        )
+                        delay = self._retry_delay(attempt)
+                        time.sleep(delay)
+                        continue
+                    if is_fallback:
                         logger.info(
                             "Fallback model %s succeeded", model_label
                         )
@@ -162,6 +220,27 @@ class OpenRouterClient:
                             model_label, status or 0,
                         )
                         break
+                except openai.APITimeoutError as exc:
+                    last_error = exc
+                    timeout_consecutive += 1
+                    logger.warning(
+                        "%s: timeout after %.0fs (attempt %d/%d, "
+                        "consecutive timeouts: %d). ",
+                        model_label, req_timeout.read, attempt,
+                        self._max_retries, timeout_consecutive,
+                    )
+                    # After 2 consecutive timeouts on primary, skip to fallback
+                    if not is_fallback and timeout_consecutive >= 2 and model_idx < len(models_to_try) - 1:
+                        logger.warning(
+                            "%s: 2 consecutive timeouts, switching to fallback model ...",
+                            model_label,
+                        )
+                        break
+                    delay = self._retry_delay(attempt)
+                    logger.warning(
+                        "Retrying in %.1fs ...", delay
+                    )
+                    time.sleep(delay)
                 except openai.APIConnectionError as exc:
                     last_error = exc
                     delay = self._retry_delay(attempt)
@@ -171,13 +250,22 @@ class OpenRouterClient:
                         model_label, attempt, self._max_retries, delay,
                     )
                     time.sleep(delay)
+                except (json.JSONDecodeError, KeyError, IndexError) as exc:
+                    last_error = exc
+                    delay = self._retry_delay(attempt)
+                    logger.warning(
+                        "%s: response parse error (attempt %d/%d): %s. "
+                        "Retrying in %.1fs ...",
+                        model_label, attempt, self._max_retries, exc, delay,
+                    )
+                    time.sleep(delay)
 
             # All retries for this model exhausted
             if model_idx < len(models_to_try) - 1:
                 logger.warning(
-                    "%s: all %d retries exhausted. "
+                    "%s: retries exhausted (or timeout skip). "
                     "Falling back to next model ...",
-                    model_label, self._max_retries,
+                    model_label,
                 )
 
         raise OpenRouterError(

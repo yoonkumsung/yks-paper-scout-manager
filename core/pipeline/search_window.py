@@ -66,8 +66,20 @@ class SearchWindowComputer:
             now = datetime.now(timezone.utc)
 
         if date_from is not None and date_to is not None:
-            # Manual mode: use provided dates with buffer
-            return self._apply_buffer(date_from, date_to)
+            # Manual mode: parse strings to datetime if needed
+            if isinstance(date_from, str):
+                date_from = datetime.fromisoformat(date_from)
+            if isinstance(date_to, str):
+                date_to = datetime.fromisoformat(date_to)
+            # Ensure timezone-aware
+            if date_from.tzinfo is None:
+                date_from = date_from.replace(tzinfo=timezone.utc)
+            if date_to.tzinfo is None:
+                date_to = date_to.replace(tzinfo=timezone.utc)
+            # Manual mode: snap to exact day boundaries (no buffer)
+            date_from = date_from.replace(hour=0, minute=0, second=0, microsecond=0)
+            date_to = date_to.replace(hour=23, minute=59, second=59, microsecond=0)
+            return (date_from, date_to)
 
         # Auto mode: compute window_end from KST 11:00
         window_end = self._compute_window_end(now)

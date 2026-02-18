@@ -133,8 +133,8 @@ def run_pipeline(args: argparse.Namespace) -> int:
         "mode": args.mode,
         "date_from": args.date_from,
         "date_to": args.date_to,
-        "dedup": args.dedup,
-        "topic_slugs": [args.topic] if args.topic else None,
+        "dedup_mode": args.dedup,
+        "topics": [args.topic] if args.topic else None,
     }
 
     # 5. Topic loop
@@ -181,9 +181,26 @@ def run_pipeline(args: argparse.Namespace) -> int:
         except Exception:
             logger.error("Post-loop processing failed (non-fatal)", exc_info=True)
 
-    # 7. Weekly tasks placeholder
-    if _is_sunday_utc():
-        logger.info("Weekly tasks: skipped (not implemented yet)")
+    # 7. Weekly tasks
+    try:
+        from core.pipeline.weekly_guard import is_weekly_due, mark_weekly_done
+        if is_weekly_due():
+            logger.info("Running weekly tasks...")
+            from core.pipeline.weekly_db_maintenance import run_weekly_maintenance
+            maint_summary = run_weekly_maintenance(db_path=db_path)
+            logger.info("Weekly maintenance: %s", maint_summary)
+            try:
+                from core.pipeline.weekly_summary import generate_weekly_summary
+                today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+                generate_weekly_summary(db_path=db_path, date_str=today_str)
+            except Exception:
+                logger.warning("Weekly summary generation failed (non-fatal)", exc_info=True)
+            mark_weekly_done()
+            logger.info("Weekly tasks completed")
+        else:
+            logger.debug("Weekly tasks: not due yet")
+    except Exception:
+        logger.warning("Weekly tasks failed (non-fatal)", exc_info=True)
 
     # 8. Cleanup
     try:
@@ -206,21 +223,25 @@ def main() -> int:
 
     # Check if subcommand syntax is being used
     if len(sys.argv) > 1 and sys.argv[1] in ["topic", "dry-run", "run", "ui"]:
-        # Use new CLI structure
         from cli.commands import main as cli_main
         return cli_main()
 
-    # Backward compatibility: no subcommand, use legacy parser
-    parser = create_parser()
-    args = parser.parse_args()
-    _setup_logging(args.log_level)
-    try:
-        return run_pipeline(args)
-    except KeyboardInterrupt:
-        logger.info("Interrupted by user")
-        return 130
-    except SystemExit as exc:
-        return exc.code if isinstance(exc.code, int) else 1
+    # Check if legacy flags are used (e.g. --mode full)
+    if len(sys.argv) > 1 and sys.argv[1].startswith("--"):
+        parser = create_parser()
+        args = parser.parse_args()
+        _setup_logging(args.log_level)
+        try:
+            return run_pipeline(args)
+        except KeyboardInterrupt:
+            logger.info("Interrupted by user")
+            return 130
+        except SystemExit as exc:
+            return exc.code if isinstance(exc.code, int) else 1
+
+    # Default: launch UI
+    from local_ui.app import start_server
+    start_server()
 
 
 if __name__ == "__main__":

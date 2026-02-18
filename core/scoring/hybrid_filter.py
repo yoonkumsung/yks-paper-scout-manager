@@ -10,8 +10,11 @@ set of candidate papers down to a manageable, high-relevance subset:
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class HybridFilter:
@@ -71,13 +74,19 @@ class HybridFilter:
         tuple[list[Paper], dict]
             ``(filtered_papers, filter_stats)``
         """
-        stats: dict[str, int] = {
+        stats: dict[str, Any] = {
             "total_input": len(papers),
             "after_rule_filter": 0,
             "after_cap": 0,
             "after_embedding_sort": 0,
             "excluded_negative": 0,
             "excluded_no_match": 0,
+            "negative_keyword_hits": {},
+            "excluded_samples": [],
+            "positive_keywords_count": 0,
+            "negative_keywords_count": 0,
+            "categories_used": [],
+            "sort_method": "none",
         }
 
         if not papers:
@@ -88,24 +97,52 @@ class HybridFilter:
         positive_kws = self._collect_positive_keywords(agent1_output)
         categories = self._collect_categories(topic)
 
+        stats["positive_keywords_count"] = len(positive_kws)
+        stats["negative_keywords_count"] = len(negative_kws)
+        stats["categories_used"] = sorted(categories)
+
         # -- Stage 1: Rule filter ----------------------------------------
         rule_passed: list[Any] = []
 
         for paper in papers:
             text = self._searchable_text(paper)
+            has_positive = self._matches_any(text, positive_kws)
 
-            # 1a. Negative keyword check (takes priority)
-            if self._matches_any(text, negative_kws):
+            # 1a. Negative keyword check
+            # Soft exclude: if both negative and positive signals are
+            # present, keep the paper and let downstream scoring decide.
+            if self._matches_any(text, negative_kws) and not has_positive:
                 stats["excluded_negative"] += 1
+                # Find which negative keyword matched
+                matched_kw = ""
+                for kw in negative_kws:
+                    if kw and kw in text:
+                        matched_kw = kw
+                        break
+                if matched_kw:
+                    stats["negative_keyword_hits"][matched_kw] = (
+                        stats["negative_keyword_hits"].get(matched_kw, 0) + 1
+                    )
+                if len(stats["excluded_samples"]) < 5:
+                    sample: dict[str, str] = {
+                        "title": (paper.title or "")[:60],
+                        "reason": "negative_keyword",
+                    }
+                    if matched_kw:
+                        sample["matched_keyword"] = matched_kw
+                    stats["excluded_samples"].append(sample)
                 continue
 
             # 1b. Positive match: category OR keyword
-            if self._category_match(paper, categories) or self._matches_any(
-                text, positive_kws
-            ):
+            if self._category_match(paper, categories) or has_positive:
                 rule_passed.append(paper)
             else:
                 stats["excluded_no_match"] += 1
+                if len(stats["excluded_samples"]) < 5:
+                    stats["excluded_samples"].append({
+                        "title": (paper.title or "")[:60],
+                        "reason": "no_match",
+                    })
 
         stats["after_rule_filter"] = len(rule_passed)
 
@@ -125,8 +162,10 @@ class HybridFilter:
             result = self._embedding_sort(
                 rule_passed, embedding_ranker, topic_embedding_text
             )
+            stats["sort_method"] = "embedding"
         else:
             result = self._recency_sort(rule_passed)
+            stats["sort_method"] = "recency"
 
         result = result[: self._max_filter_output]
         stats["after_embedding_sort"] = len(result)
@@ -165,6 +204,8 @@ class HybridFilter:
             kws.extend(concept.get("keywords", []))
         # Also include cross_domain_keywords if present
         kws.extend(agent1_output.get("cross_domain_keywords", []))
+        # User-selected must keywords (if provided)
+        kws.extend(agent1_output.get("query_must_keywords", []))
         return [kw.lower() for kw in kws]
 
     @staticmethod
@@ -213,6 +254,15 @@ class HybridFilter:
         scores = embedding_ranker.compute_similarity(
             texts, topic_embedding_text
         )
+
+        # Validate score count matches paper count
+        if len(scores) != len(papers):
+            logger.warning(
+                "Embedding score count mismatch: %d scores for %d papers. "
+                "Falling back to recency sort.",
+                len(scores), len(papers),
+            )
+            return self._recency_sort(papers)
 
         # Attach embed_score to each paper's evaluation (if present)
         for paper, score in zip(papers, scores):

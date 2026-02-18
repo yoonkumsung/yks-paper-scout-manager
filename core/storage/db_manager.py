@@ -625,6 +625,29 @@ class DBManager:
         ).fetchall()
         return [dict(r) for r in rows]
 
+    def update_evaluation_multi_topic(
+        self, run_id: int, paper_key: str, multi_topic: str
+    ) -> None:
+        """Update the multi_topic field for an evaluation.
+
+        Args:
+            run_id: Run ID
+            paper_key: Paper key
+            multi_topic: Comma-separated topic slugs
+        """
+        self._conn.execute(
+            """
+            UPDATE paper_evaluations
+               SET multi_topic = ?
+             WHERE run_id = ? AND paper_key = ?
+            """,
+            (multi_topic, run_id, paper_key),
+        )
+
+    def commit(self) -> None:
+        """Commit pending database changes."""
+        self._conn.commit()
+
     # ==================================================================
     # Purge operations (Section 12-5)
     # ==================================================================

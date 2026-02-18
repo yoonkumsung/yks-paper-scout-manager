@@ -40,9 +40,9 @@ class Ranker:
         self._cfg = scoring_config
 
         # Weights
-        weights = scoring_config["weights"]
-        self._w_emb_on = weights["embedding_on"]
-        self._w_emb_off = weights["embedding_off"]
+        weights = scoring_config.get("weights", {})
+        self._w_emb_on = weights.get("embedding_on", {})
+        self._w_emb_off = weights.get("embedding_off", {})
 
         # Bonus values
         bonus_cfg = scoring_config.get("bonus", {})
@@ -197,10 +197,10 @@ class Ranker:
         if embedding_mode != "disabled" and embed_score is not None:
             w = self._w_emb_on
             return (
-                w["llm"] * llm_adjusted
-                + w["embed"] * (embed_score * 100)
-                + w["recency"] * recency
+                w.get("llm", 0.5) * llm_adjusted
+                + w.get("embed", 0.3) * (embed_score * 100)
+                + w.get("recency", 0.2) * recency
             )
         else:
             w = self._w_emb_off
-            return w["llm"] * llm_adjusted + w["recency"] * recency
+            return w.get("llm", 0.7) * llm_adjusted + w.get("recency", 0.3) * recency

@@ -29,7 +29,13 @@ class ArxivQueryBuilder:
 
     # Target query count bounds
     _MIN_QUERIES = 15
-    _MAX_QUERIES = 25
+    _MAX_QUERIES = 50
+
+    _STOP_WORDS = frozenset({
+        "a", "an", "the", "and", "or", "of", "in", "on", "for", "to",
+        "with", "by", "from", "at", "is", "are", "was", "were", "be",
+        "been", "as", "its", "it", "that", "this", "not", "but",
+    })
 
     def build_queries(
         self,
@@ -52,6 +58,10 @@ class ArxivQueryBuilder:
         concepts = agent1_output.get("concepts", [])
         cross_domain_keywords = agent1_output.get("cross_domain_keywords", [])
         exclude_keywords = agent1_output.get("exclude_keywords", [])
+        exclude_mode = str(agent1_output.get("exclude_mode", "soft")).lower()
+        query_must_keywords = self._normalize_keywords(
+            agent1_output.get("query_must_keywords", [])
+        )
 
         # Filter out concepts with empty or missing keywords
         valid_concepts = [
@@ -59,6 +69,23 @@ class ArxivQueryBuilder:
         ]
 
         queries: list[str] = []
+
+        # Explicit must-keyword queries (user-selected).
+        # Placed first so they survive truncation.
+        must_queries = self._build_must_keyword_queries(
+            query_must_keywords,
+            categories,
+        )
+        queries.extend(must_queries)
+
+        # Concept coverage queries:
+        # Ensure each concept contributes at least one explicit query
+        # before any phase-level truncation.
+        coverage = self._build_concept_coverage_queries(
+            valid_concepts,
+            categories,
+        )
+        queries.extend(coverage)
 
         # Phase 1: Broad category queries (5-8)
         phase1 = self._build_broad_queries(valid_concepts, categories)
@@ -99,7 +126,7 @@ class ArxivQueryBuilder:
             queries = queries[: self._MAX_QUERIES]
 
         # Append exclusion clauses to all queries
-        if exclude_keywords:
+        if exclude_keywords and exclude_mode == "strict":
             queries = [
                 self._append_exclusions(q, exclude_keywords) for q in queries
             ]
@@ -117,45 +144,47 @@ class ArxivQueryBuilder:
     ) -> list[str]:
         """Phase 1: Broad category queries (recall-first).
 
-        For each category, combine with top concept keywords.
-        Target: 5-8 queries.
+        Distributes queries across ALL concepts using round-robin.
+        Target: 5-9 queries.
         """
         queries: list[str] = []
 
         if not categories and not concepts:
             return queries
 
-        # If no concepts, generate category-only queries
         if not concepts:
             for cat in categories:
                 queries.append(f"cat:{cat}")
             return queries
 
-        # If no categories, generate concept-keyword-only broad queries
         if not categories:
-            for concept in concepts[:4]:
+            for concept in concepts:
                 kws = concept.get("keywords", [])[:3]
                 if kws:
                     or_clause = " OR ".join(
-                        f'abs:"{self._escape(k)}"' for k in kws
+                        self._kw_to_abs(k) for k in kws
                     )
                     queries.append(f"({or_clause})")
+                if len(queries) >= 9:
+                    return queries
             return queries
 
-        # Normal case: category + concept keywords
-        for cat in categories:
-            # Each category gets 1-2 queries depending on concept count
-            for concept in concepts[:3]:
-                kws = concept.get("keywords", [])[:3]
-                if not kws:
-                    continue
-                or_clause = " OR ".join(
-                    f'abs:"{self._escape(k)}"' for k in kws
-                )
-                queries.append(f"cat:{cat} AND ({or_clause})")
+        # Round-robin: distribute categories across ALL concepts
+        cat_idx = 0
+        for concept in concepts:
+            if cat_idx >= len(categories):
+                cat_idx = 0
+            kws = concept.get("keywords", [])[:3]
+            if not kws:
+                continue
+            or_clause = " OR ".join(
+                self._kw_to_abs(k) for k in kws
+            )
+            queries.append(f"cat:{categories[cat_idx]} AND ({or_clause})")
+            cat_idx += 1
 
-                if len(queries) >= 8:
-                    return queries
+            if len(queries) >= 9:
+                return queries
 
         return queries
 
@@ -168,7 +197,59 @@ class ArxivQueryBuilder:
 
         For each concept, combine its keywords with AND.
         Also include title-based queries.
-        Target: 5-8 queries.
+        Ensures ALL concepts get at least one query.
+        Target: 5-10 queries.
+        """
+        queries: list[str] = []
+        cat_clause = self._build_cat_clause(categories)
+
+        # Pass 1: One keyword-based query per concept (ensures coverage)
+        # Split concept name into meaningful words and use all: field
+        # instead of exact title match which returns 0 results.
+        for concept in concepts:
+            name_en = concept.get("name_en", "")
+            if name_en:
+                words = name_en.strip().split()
+                meaningful = [
+                    w.lower() for w in words
+                    if len(w) >= 3 and w.lower() not in self._STOP_WORDS
+                ]
+                if len(meaningful) < 2:
+                    continue
+                selected = meaningful[:3]
+                q = "(" + " AND ".join(
+                    f"all:{self._escape(w)}" for w in selected
+                ) + ")"
+                if cat_clause:
+                    q = f"{q} AND {cat_clause}"
+                queries.append(q)
+
+        # Pass 2: Keyword AND combinations sampled across ALL concepts
+        # (instead of only the first concept).
+        for concept in concepts:
+            kws = concept.get("keywords", [])
+            if len(kws) < 2:
+                continue
+
+            q = self._kws_to_abs_merged(kws[:2])
+            if cat_clause:
+                q = f"{q} AND {cat_clause}"
+            queries.append(q)
+
+            if len(queries) >= 10:
+                return queries
+
+        return queries
+
+    def _build_concept_coverage_queries(
+        self,
+        concepts: list[dict],
+        categories: list[str],
+    ) -> list[str]:
+        """Build one high-priority query per concept.
+
+        This makes manual concept edits visible in final query output
+        even when later phase queries are deduplicated/truncated.
         """
         queries: list[str] = []
         cat_clause = self._build_cat_clause(categories)
@@ -176,27 +257,43 @@ class ArxivQueryBuilder:
         for concept in concepts:
             name_en = concept.get("name_en", "")
             kws = concept.get("keywords", [])
+            if not kws:
+                continue
 
-            # Title-based query
+            # Include both head and tail keywords so manually added terms
+            # at the end of the list are also reflected in query text.
+            selected_kws = self._select_coverage_keywords(kws, max_count=12)
+            kw_clause = " OR ".join(
+                self._kw_to_abs(kw) for kw in selected_kws
+            )
             if name_en:
-                q = f'ti:"{self._escape(name_en)}"'
-                if cat_clause:
-                    q = f"{q} AND {cat_clause}"
-                queries.append(q)
+                q = (
+                    f'(ti:"{self._escape(name_en)}" OR '
+                    f'({kw_clause}))'
+                )
+            else:
+                q = f"({kw_clause})"
 
-            # Keyword AND combinations (pairs)
-            if len(kws) >= 2:
-                for kw1, kw2 in combinations(kws[:4], 2):
-                    q = (
-                        f'(abs:"{self._escape(kw1)}" AND '
-                        f'abs:"{self._escape(kw2)}")'
-                    )
-                    if cat_clause:
-                        q = f"{q} AND {cat_clause}"
-                    queries.append(q)
+            if cat_clause:
+                q = f"{q} AND {cat_clause}"
+            queries.append(q)
 
-                    if len(queries) >= 8:
-                        return queries
+        return queries
+
+    def _build_must_keyword_queries(
+        self,
+        must_keywords: list[str],
+        categories: list[str],
+    ) -> list[str]:
+        """Build explicit queries for user-selected must keywords."""
+        queries: list[str] = []
+        cat_clause = self._build_cat_clause(categories)
+
+        for kw in must_keywords[:8]:
+            q = self._kw_to_abs(kw)
+            if cat_clause:
+                q = f"{q} AND {cat_clause}"
+            queries.append(q)
 
         return queries
 
@@ -209,22 +306,24 @@ class ArxivQueryBuilder:
         """Phase 3: Cross-domain queries (interdisciplinary discovery).
 
         Cross-combine keywords from different concepts and use
-        cross_domain_keywords.
+        cross_domain_keywords. Samples from across all concepts.
         Target: 3-5 queries.
         """
         queries: list[str] = []
         cat_clause = self._build_cat_clause(categories)
 
-        # Cross-combine keywords from different concepts
+        # Cross-combine keywords from different concepts (sample broadly)
         if len(concepts) >= 2:
-            for i, j in combinations(range(min(len(concepts), 4)), 2):
+            # Use evenly spaced concept pairs to cover all concepts
+            step = max(1, len(concepts) // 4)
+            sampled_indices = list(range(0, len(concepts), step))[:6]
+            for i, j in combinations(sampled_indices, 2):
+                if i >= len(concepts) or j >= len(concepts):
+                    continue
                 kws_a = concepts[i].get("keywords", [])
                 kws_b = concepts[j].get("keywords", [])
                 if kws_a and kws_b:
-                    q = (
-                        f'abs:"{self._escape(kws_a[0])}" AND '
-                        f'abs:"{self._escape(kws_b[0])}"'
-                    )
+                    q = f"({self._kw_to_abs(kws_a[0])} OR {self._kw_to_abs(kws_b[0])})"
                     queries.append(q)
 
                     if len(queries) >= 3:
@@ -232,7 +331,7 @@ class ArxivQueryBuilder:
 
         # cross_domain_keywords with categories
         for kw in cross_domain_keywords[:3]:
-            q = f'abs:"{self._escape(kw)}"'
+            q = self._kw_to_abs(kw)
             if cat_clause:
                 q = f"{q} AND {cat_clause}"
             queries.append(q)
@@ -249,37 +348,34 @@ class ArxivQueryBuilder:
     ) -> list[str]:
         """Phase 4: Narrow precision queries (tight keyword matching).
 
+        Samples from across all concepts for even coverage.
         Combine title and abstract fields with category.
-        Target: 2-4 queries.
+        Target: 2-5 queries.
         """
         queries: list[str] = []
 
-        for concept in concepts[:3]:
+        # Sample evenly across all concepts
+        step = max(1, len(concepts) // 4)
+        sampled = concepts[::step][:5]
+
+        for concept in sampled:
             kws = concept.get("keywords", [])
             if not kws:
                 continue
 
-            kw = kws[0]
-            for cat in categories[:2]:
-                q = (
-                    f'ti:"{self._escape(kw)}" AND '
-                    f'abs:"{self._escape(kw)}" AND cat:{cat}'
-                )
-                queries.append(q)
+            cat = categories[0] if categories else None
+            if len(kws) >= 2:
+                # Use 2 different keywords in abs: field
+                q = f"{self._kw_to_abs(kws[0])} AND {self._kw_to_abs(kws[1])}"
+            else:
+                # Single keyword: just abs: with category
+                q = self._kw_to_abs(kws[0])
+            if cat:
+                q = f"{q} AND cat:{cat}"
+            queries.append(q)
 
-                if len(queries) >= 4:
-                    return queries
-
-            # If no categories, title+abstract only
-            if not categories:
-                q = (
-                    f'ti:"{self._escape(kw)}" AND '
-                    f'abs:"{self._escape(kw)}"'
-                )
-                queries.append(q)
-
-                if len(queries) >= 4:
-                    return queries
+            if len(queries) >= 5:
+                return queries
 
         return queries
 
@@ -308,7 +404,7 @@ class ArxivQueryBuilder:
         # Strategy 1: Single keyword + category combinations
         for concept in concepts:
             for kw in concept.get("keywords", []):
-                q = f'abs:"{self._escape(kw)}"'
+                q = self._kw_to_abs(kw)
                 if cat_clause:
                     q = f"{q} AND {cat_clause}"
                 if q not in existing_set:
@@ -317,13 +413,12 @@ class ArxivQueryBuilder:
                 if len(padding) >= needed:
                     return padding
 
-        # Strategy 2: Cross-domain keyword pairs
+        # Strategy 2: Cross-domain keyword pairs (OR for broader recall)
         if len(cross_domain_keywords) >= 2:
             for kw1, kw2 in combinations(cross_domain_keywords[:6], 2):
-                q = (
-                    f'abs:"{self._escape(kw1)}" AND '
-                    f'abs:"{self._escape(kw2)}"'
-                )
+                q = f"({self._kw_to_abs(kw1)} OR {self._kw_to_abs(kw2)})"
+                if cat_clause:
+                    q = f"{q} AND {cat_clause}"
                 if q not in existing_set:
                     padding.append(q)
                     existing_set.add(q)
@@ -334,7 +429,7 @@ class ArxivQueryBuilder:
         for concept in concepts:
             name_en = concept.get("name_en", "")
             if name_en:
-                q = f'abs:"{self._escape(name_en)}"'
+                q = self._kw_to_abs(name_en)
                 if cat_clause:
                     q = f"{q} AND {cat_clause}"
                 if q not in existing_set:
@@ -354,7 +449,7 @@ class ArxivQueryBuilder:
 
         # Strategy 5: Individual cross_domain_keywords without category
         for kw in cross_domain_keywords:
-            q = f'abs:"{self._escape(kw)}"'
+            q = self._kw_to_abs(kw)
             if q not in existing_set:
                 padding.append(q)
                 existing_set.add(q)
@@ -375,7 +470,7 @@ class ArxivQueryBuilder:
         for concept in concepts:
             for kw in concept.get("keywords", []):
                 for cat in categories:
-                    q = f'abs:"{self._escape(kw)}" AND cat:{cat}'
+                    q = f'{self._kw_to_abs(kw)} AND cat:{cat}'
                     if q not in existing_set:
                         padding.append(q)
                         existing_set.add(q)
@@ -389,7 +484,7 @@ class ArxivQueryBuilder:
                 if name_en and name_en != kw:
                     q = (
                         f'ti:"{self._escape(name_en)}" AND '
-                        f'abs:"{self._escape(kw)}"'
+                        f'{self._kw_to_abs(kw)}'
                     )
                     if q not in existing_set:
                         padding.append(q)
@@ -403,10 +498,7 @@ class ArxivQueryBuilder:
             all_kws.extend(concept.get("keywords", []))
         if len(all_kws) >= 2:
             for kw1, kw2 in combinations(all_kws[:8], 2):
-                q = (
-                    f'abs:"{self._escape(kw1)}" OR '
-                    f'abs:"{self._escape(kw2)}"'
-                )
+                q = f'{self._kw_to_abs(kw1)} OR {self._kw_to_abs(kw2)}'
                 if q not in existing_set:
                     padding.append(q)
                     existing_set.add(q)
@@ -426,6 +518,56 @@ class ArxivQueryBuilder:
     # ------------------------------------------------------------------
     # Utility methods
     # ------------------------------------------------------------------
+
+    @classmethod
+    def _kw_to_abs(cls, keyword: str) -> str:
+        """Convert a keyword phrase to abs search clause.
+
+        Single word: abs:word
+        Multi-word: (abs:word1 AND abs:word2 AND ...) with stop words removed and dedup.
+        """
+        words = keyword.strip().split()
+        meaningful = [w for w in words if w.lower() not in cls._STOP_WORDS]
+        if not meaningful:
+            meaningful = words  # fallback if all stop words
+        seen: set[str] = set()
+        unique: list[str] = []
+        for w in meaningful:
+            wl = w.lower()
+            if wl not in seen:
+                seen.add(wl)
+                unique.append(wl)
+        if not unique:
+            return ''
+        if len(unique) == 1:
+            return f'abs:{cls._escape(unique[0])}'
+        return "(" + " AND ".join(f"abs:{cls._escape(w)}" for w in unique) + ")"
+
+    @classmethod
+    def _kws_to_abs_merged(cls, keywords: list[str]) -> str:
+        """Merge multiple keyword phrases, deduplicate all words, AND together.
+
+        Example: ["sports event detection", "sports video enhancement"]
+        -> (abs:sports AND abs:event AND abs:detection AND abs:video AND abs:enhancement)
+        """
+        all_words: list[str] = []
+        for kw in keywords:
+            all_words.extend(kw.strip().split())
+        meaningful = [w for w in all_words if w.lower() not in cls._STOP_WORDS]
+        if not meaningful:
+            meaningful = all_words
+        seen: set[str] = set()
+        unique: list[str] = []
+        for w in meaningful:
+            wl = w.lower()
+            if wl not in seen:
+                seen.add(wl)
+                unique.append(wl)
+        if not unique:
+            return ''
+        if len(unique) == 1:
+            return f'abs:{cls._escape(unique[0])}'
+        return "(" + " AND ".join(f"abs:{cls._escape(w)}" for w in unique) + ")"
 
     def _build_cat_clause(self, categories: list[str]) -> str:
         """Build a category clause joining multiple categories with OR.
@@ -452,4 +594,44 @@ class ArxivQueryBuilder:
             if q not in seen:
                 seen.add(q)
                 result.append(q)
+        return result
+
+    @staticmethod
+    def _select_coverage_keywords(
+        keywords: list[str],
+        max_count: int = 12,
+    ) -> list[str]:
+        """Pick keywords from both head and tail for coverage queries."""
+        if len(keywords) <= max_count:
+            return keywords
+
+        half = max_count // 2
+        head = keywords[:half]
+        tail = keywords[-(max_count - half):]
+
+        merged: list[str] = []
+        seen: set[str] = set()
+        for kw in head + tail:
+            k = kw.lower()
+            if k not in seen:
+                seen.add(k)
+                merged.append(kw)
+        return merged[:max_count]
+
+    @staticmethod
+    def _normalize_keywords(values: list[str]) -> list[str]:
+        """Normalize keyword list: trim and deduplicate case-insensitively."""
+        result: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            if not isinstance(value, str):
+                continue
+            kw = value.strip()
+            if not kw:
+                continue
+            key = kw.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append(kw)
         return result

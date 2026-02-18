@@ -98,11 +98,30 @@ class Scorer(BaseAgent):
         ]
 
         for batch_idx, batch in enumerate(batches):
-            batch_results = self._score_batch(
-                batch, topic_description, rate_limiter, batch_idx
-            )
-            if batch_results is not None:
-                all_results.extend(batch_results)
+            # Check daily API limit before each batch
+            if rate_limiter.is_daily_limit_reached:
+                logger.warning(
+                    "scorer: daily API limit reached at batch %d/%d, "
+                    "returning %d partial results",
+                    batch_idx, len(batches), len(all_results),
+                )
+                break
+
+            try:
+                batch_results = self._score_batch(
+                    batch, topic_description, rate_limiter, batch_idx
+                )
+                if batch_results is not None:
+                    all_results.extend(batch_results)
+            except InterruptedError:
+                raise  # Re-raise cancel events
+            except Exception as exc:
+                logger.error(
+                    "scorer: batch %d/%d failed unexpectedly: %s. "
+                    "Returning %d partial results.",
+                    batch_idx, len(batches), exc, len(all_results),
+                )
+                break
 
         return all_results
 
