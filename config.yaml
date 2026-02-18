@@ -43,6 +43,7 @@ agents:
     batch_timeout_seconds: 500
     prompt_version: agent2-v2
   summarizer:
+    model: qwen/qwen3-235b-a22b-thinking-2507
     effort: low
     max_tokens: 40000
     temperature: 0.4
