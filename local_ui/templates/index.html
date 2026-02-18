@@ -488,6 +488,14 @@
                                     <span id="dryrunProgressPct" style="color: #818cf8; font-family: 'SF Mono', monospace; font-size: 0.875rem; font-weight: 600;">0%</span>
                                 </div>
                             </div>
+                            <div class="mt-2">
+                                <button id="toggleDryRunLogBtn" class="btn btn-sm" onclick="toggleDryRunLog()"
+                                        style="background: transparent; color: #9ca3af; border: 1px solid #374151; font-size: 0.75rem; padding: 2px 8px;">
+                                    &#9660; 상세 로그 접기
+                                </button>
+                                <div id="dryrunLog" style="display: block; margin-top: 8px; max-height: 300px; overflow-y: auto; background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px 12px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.75rem; line-height: 1.6; color: #c9d1d9;">
+                                </div>
+                            </div>
                         </div>
 
                         <div id="dryrunResults" class="mt-3" style="display: none;">
@@ -1222,6 +1230,13 @@
         // Render a single field input based on value type
         function renderField(name, value, label) {
             const escaped = String(value).replace(/"/g, '&quot;');
+            if (name.endsWith('.effort')) {
+                const current = String(value || '').toLowerCase();
+                const options = ['low', 'medium', 'high']
+                    .map(opt => `<option value="${opt}" ${current === opt ? 'selected' : ''}>${opt}</option>`)
+                    .join('');
+                return `<div class="mb-2"><label class="form-label">${label}</label><select class="form-select form-select-sm" name="${name}" data-type="string">${options}</select></div>`;
+            }
             if (typeof value === 'boolean') {
                 const checked = value ? 'checked' : '';
                 return `<div class="form-check setting-bool"><input class="form-check-input" type="checkbox" name="${name}" ${checked} data-type="bool"><label class="form-check-label">${label}</label></div>`;
@@ -1286,20 +1301,20 @@
             const form = document.getElementById('settingsForm');
             const result = {};
 
-            // Collect all inputs
-            form.querySelectorAll('input').forEach(input => {
-                const parts = input.name.split('.');
-                const dataType = input.dataset.type;
+            // Collect all editable controls
+            form.querySelectorAll('input, select, textarea').forEach(control => {
+                const parts = control.name.split('.');
+                const dataType = control.dataset.type;
                 let value;
 
                 if (dataType === 'bool') {
-                    value = input.checked;
+                    value = control.checked;
                 } else if (dataType === 'number') {
-                    value = Number(input.value);
+                    value = Number(control.value);
                 } else if (dataType === 'array') {
-                    try { value = JSON.parse(input.value); } catch { value = input.value; }
+                    try { value = JSON.parse(control.value); } catch { value = control.value; }
                 } else {
-                    value = input.value;
+                    value = control.value;
                 }
 
                 // Build nested object
@@ -1583,6 +1598,8 @@
 
         let dryRunElapsedTimer = null;
         let dryRunStartTime = null;
+        let dryRunLogVisible = true;
+        let dryRunLastProgress = 0;
 
         function startElapsedTimer() {
             dryRunStartTime = Date.now();
@@ -1610,6 +1627,49 @@
             }
         }
 
+        function clearDryRunLog() {
+            const logEl = document.getElementById('dryrunLog');
+            if (logEl) logEl.innerHTML = '';
+        }
+
+        function toggleDryRunLog() {
+            const container = document.getElementById('dryrunLog');
+            const btn = document.getElementById('toggleDryRunLogBtn');
+            dryRunLogVisible = !dryRunLogVisible;
+            container.style.display = dryRunLogVisible ? 'block' : 'none';
+            btn.innerHTML = dryRunLogVisible ? '&#9660; 상세 로그 접기' : '&#9654; 상세 로그 보기';
+        }
+
+        function formatDryRunStep(step) {
+            const labels = {
+                init: '초기화',
+                llm_init: 'LLM 연결',
+                keyword_cache: '키워드 캐시',
+                keyword_expansion: '키워드 생성',
+                keyword_done: '키워드 완료',
+                query_building: '쿼리 생성',
+                query_done: '쿼리 완료',
+                complete: '완료'
+            };
+            return labels[step] || '진행';
+        }
+
+        function appendDryRunLog(message, step = '') {
+            const logEl = document.getElementById('dryrunLog');
+            if (!logEl || !message) return;
+
+            const ts = new Date().toTimeString().slice(0, 8);
+            const line = document.createElement('div');
+            line.style.color = getLogLineColor(message, step);
+            const stepPrefix = step ? `[${formatDryRunStep(step)}] ` : '';
+            line.textContent = `[${ts}] ${stepPrefix}${message}`;
+            logEl.appendChild(line);
+            while (logEl.childElementCount > 200) {
+                logEl.removeChild(logEl.firstChild);
+            }
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
         function stopDryRun(completed = false) {
             if (dryRunAbortController) {
                 dryRunAbortController.abort();
@@ -1629,6 +1689,7 @@
         document.getElementById('cancelDryRunBtn').addEventListener('click', () => {
             stopDryRun();
             document.getElementById('dryrunProgress').style.display = 'none';
+            appendDryRunLog('사용자가 키워드 생성을 취소했습니다.', 'complete');
         });
 
         async function startDryRun(skipCache = false, preserveResults = false) {
@@ -1656,7 +1717,11 @@
             progressBar.style.width = '0%';
             progressMsg.textContent = '초기화 중...';
             progressPct.textContent = '0%';
+            dryRunLastProgress = 0;
             document.getElementById('dryrunElapsed').textContent = '';
+            clearDryRunLog();
+            if (!dryRunLogVisible) toggleDryRunLog();
+            appendDryRunLog(`키워드 생성 시작 (${topicSlug || '전체 토픽'})`, 'init');
             if (!preserveResults) {
                 resultsDiv.style.display = 'none';
             }
@@ -1691,11 +1756,14 @@
                                 const data = JSON.parse(jsonStr);
 
                                 if (currentEvent === 'log') {
-                                    progressMsg.textContent = data.message || '';
-                                    if (data.progress !== undefined) {
-                                        progressBar.style.width = data.progress + '%';
-                                        progressPct.textContent = data.progress + '%';
+                                    const stepLabel = formatDryRunStep(data.step);
+                                    progressMsg.textContent = `[${stepLabel}] ${data.message || ''}`;
+                                    if (typeof data.progress === 'number') {
+                                        dryRunLastProgress = Math.max(dryRunLastProgress, data.progress);
+                                        progressBar.style.width = dryRunLastProgress + '%';
+                                        progressPct.textContent = dryRunLastProgress + '%';
                                     }
+                                    appendDryRunLog(data.message || '진행 업데이트', data.step || '');
                                     // Pulse during LLM call (keyword_expansion step)
                                     if (data.step === 'keyword_expansion') {
                                         setPulsingState(true);
@@ -1705,12 +1773,14 @@
                                 } else if (currentEvent === 'result') {
                                     renderDryRunResults(data);
                                     markKeywordsReady();
+                                    appendDryRunLog('키워드 생성이 완료되었습니다.', 'complete');
                                     stopDryRun(true);
                                     return;
                                 } else if (currentEvent === 'error') {
                                     const resultsContent = document.getElementById('dryrunResultsContent');
                                     resultsContent.innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
                                     resultsDiv.style.display = 'block';
+                                    appendDryRunLog(`오류: ${data.message}`, 'error');
                                     stopDryRun(true);
                                     return;
                                 }
@@ -1725,6 +1795,7 @@
                 const resultsContent = document.getElementById('dryrunResultsContent');
                 resultsContent.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
                 resultsDiv.style.display = 'block';
+                appendDryRunLog(`오류: ${err.message}`, 'error');
                 stopDryRun(true);
             }
         }

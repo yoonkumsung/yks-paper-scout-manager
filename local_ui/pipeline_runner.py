@@ -259,6 +259,11 @@ class PipelineRunner:
             results = []
             total_topics = len(topics)
 
+            def _topic_progress(base: int, ratio: float) -> int:
+                """Map per-topic phase ratio (0.0~1.0) to absolute progress."""
+                topic_span = max(1, int(round(75 / max(total_topics, 1))))
+                return min(99, base + int(round(topic_span * ratio)))
+
             for i, topic in enumerate(topics):
                 base_progress = 15 + int((i / total_topics) * 75)
 
@@ -291,8 +296,12 @@ class PipelineRunner:
                         # Show chunking info if categories exceed chunk_size
                         chunk_size = kw_agent_cfg.get("chunk_size", 15)
                         n_cats = len(topic.arxiv_categories)
+                        n_chunks = (
+                            (n_cats + chunk_size - 1) // chunk_size
+                            if n_cats > chunk_size
+                            else 1
+                        )
                         if n_cats > chunk_size:
-                            n_chunks = (n_cats + chunk_size - 1) // chunk_size
                             yield ("log", {
                                 "step": "keyword_expansion",
                                 "message": f"LLM 키워드 생성 중 ({topic.slug}) - {model_name} | 카테고리 {n_cats}개 → {n_chunks}회 분할 호출...",
@@ -306,21 +315,93 @@ class PipelineRunner:
                                 "topic": topic.slug,
                                 "progress": base_progress,
                             })
-                        agent1_output = keyword_expander.expand(topic, skip_cache=skip_cache)
+
+                        # Run keyword expansion in a worker thread so we can
+                        # continuously stream progress/log heartbeats.
+                        holder: Dict[str, Any] = {"result": None, "error": None}
+                        done = threading.Event()
+
+                        def _expand_worker() -> None:
+                            try:
+                                holder["result"] = keyword_expander.expand(
+                                    topic, skip_cache=skip_cache
+                                )
+                            except Exception as ex:  # noqa: BLE001
+                                holder["error"] = ex
+                            finally:
+                                done.set()
+
+                        threading.Thread(target=_expand_worker, daemon=True).start()
+
+                        # Keep progress moving during long LLM waits:
+                        # fast rise to ~48%, then slow creep up to ~72% until done.
+                        keyword_progress_fast_cap = _topic_progress(base_progress, 0.48)
+                        keyword_progress_slow_cap = _topic_progress(base_progress, 0.72)
+                        heartbeat_progress = base_progress
+                        start_t = time.monotonic()
+                        while not done.wait(timeout=1.0):
+                            elapsed = int(time.monotonic() - start_t)
+                            if elapsed <= 30:
+                                target_progress = base_progress + int(
+                                    round(
+                                        (keyword_progress_fast_cap - base_progress)
+                                        * (elapsed / 30.0)
+                                    )
+                                )
+                            else:
+                                slow_ratio = min(1.0, (elapsed - 30) / 120.0)
+                                target_progress = keyword_progress_fast_cap + int(
+                                    round(
+                                        (keyword_progress_slow_cap - keyword_progress_fast_cap)
+                                        * slow_ratio
+                                    )
+                                )
+                            heartbeat_progress = min(
+                                keyword_progress_slow_cap,
+                                max(heartbeat_progress, target_progress),
+                            )
+
+                            if n_chunks > 1:
+                                est_chunk = min(
+                                    n_chunks,
+                                    max(1, elapsed // max(2, 10 // n_chunks) + 1),
+                                )
+                                msg = (
+                                    f"키워드 생성(LLM) 진행 중 - 토픽:{topic.slug} | "
+                                    f"모델:{model_name} | 카테고리:{n_cats} | "
+                                    f"청크(예상):{est_chunk}/{n_chunks} | 경과:{elapsed}s"
+                                )
+                            else:
+                                msg = (
+                                    f"키워드 생성(LLM) 진행 중 - 토픽:{topic.slug} | "
+                                    f"모델:{model_name} | 카테고리:{n_cats} | "
+                                    f"단일 호출 | 경과:{elapsed}s"
+                                )
+
+                            yield ("log", {
+                                "step": "keyword_expansion",
+                                "message": msg,
+                                "topic": topic.slug,
+                                "progress": heartbeat_progress,
+                            })
+
+                        if holder["error"] is not None:
+                            raise holder["error"]
+                        agent1_output = holder["result"]
 
                     n_concepts = len(agent1_output.get("concepts", []))
                     yield ("log", {
                         "step": "keyword_done",
                         "message": f"키워드 {n_concepts}개 컨셉 생성 완료 ({topic.slug})",
                         "topic": topic.slug,
-                        "progress": base_progress + int(37 / total_topics),
+                        "progress": _topic_progress(base_progress, 0.5),
                     })
 
                     yield ("log", {
                         "step": "query_building",
                         "message": f"검색 쿼리 생성 중 ({topic.slug})...",
                         "topic": topic.slug,
-                        "progress": base_progress + int(56 / total_topics),
+                        "progress": _topic_progress(base_progress, 0.75),
                     })
 
                     queries = query_builder.build_queries(
@@ -332,7 +413,7 @@ class PipelineRunner:
                         "step": "query_done",
                         "message": f"쿼리 {len(queries)}개 생성 완료 ({topic.slug})",
                         "topic": topic.slug,
-                        "progress": base_progress + int(75 / total_topics),
+                        "progress": _topic_progress(base_progress, 1.0),
                     })
 
                     results.append({
@@ -645,22 +726,62 @@ class PipelineRunner:
             original_step_agent1 = orchestrator._step_agent1
 
             def _logged_step_agent1(topic_arg: Any) -> dict:
+                _check_cancel("agent1")
                 with self._lock:
                     self._status["step_progress"] = 5
                     self._status["step_name"] = "키워드 확장"
-                self._write_log(run_id, "agent1", f"Keyword expansion starting for {topic_arg.slug}", {
-                    "topic": topic_arg.slug,
+
+                # Get model info
+                agent1_cfg = config.agents.get("keyword_expander", {})
+                model_name = agent1_cfg.get("model", config.llm.get("model", "unknown"))
+                n_cats = len(getattr(topic_arg, "arxiv_categories", []))
+                chunk_size = agent1_cfg.get("chunk_size", 15)
+                n_chunks = (n_cats + chunk_size - 1) // chunk_size if n_cats > chunk_size else 1
+
+                self._write_log(run_id, "agent1",
+                    f"LLM 키워드 생성 시작: {topic_arg.slug} | 모델: {model_name} | 카테고리 {n_cats}개 ({n_chunks}청크)", {
+                    "topic": topic_arg.slug, "model": model_name,
+                    "n_categories": n_cats, "n_chunks": n_chunks,
                 })
+
+                # Progress timer thread
                 t0 = time.time()
-                result = original_step_agent1(topic_arg)
+                stop_timer = threading.Event()
+
+                def _progress_timer():
+                    interval = 15  # seconds
+                    while not stop_timer.is_set():
+                        stop_timer.wait(interval)
+                        if stop_timer.is_set():
+                            break
+                        elapsed = time.time() - t0
+                        with self._lock:
+                            self._status["step_name"] = f"LLM 응답 대기 ({int(elapsed)}s)"
+                        self._write_log(run_id, "agent1",
+                            f"  ├ LLM 응답 대기 중... ({int(elapsed)}s 경과)", {})
+
+                timer_thread = threading.Thread(target=_progress_timer, daemon=True)
+                timer_thread.start()
+
+                try:
+                    result = original_step_agent1(topic_arg)
+                finally:
+                    stop_timer.set()
+                    timer_thread.join(timeout=2)
+
                 elapsed = time.time() - t0
                 n_concepts = len(result.get("concepts", []))
                 n_cross = len(result.get("cross_domain_keywords", []))
-                self._write_log(run_id, "agent1", f"Keyword expansion complete: {n_concepts} concepts, {n_cross} cross-domain keywords ({elapsed:.1f}s)", {
+                n_exclude = len(result.get("exclude_keywords", []))
+
+                self._write_log(run_id, "agent1",
+                    f"키워드 생성 완료: 컨셉 {n_concepts}개, 교차키워드 {n_cross}개, 제외키워드 {n_exclude}개 ({elapsed:.1f}s)", {
                     "topic": topic_arg.slug,
                     "n_concepts": n_concepts,
                     "n_cross_domain": n_cross,
+                    "n_exclude": n_exclude,
                     "elapsed_s": round(elapsed, 1),
+                    "model": model_name,
                 })
                 return result
 

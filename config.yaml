@@ -4,10 +4,10 @@ app:
 llm:
   provider: openrouter
   base_url: https://openrouter.ai/api/v1
-  model: z-ai/glm-4.5-air:free
+  model: deepseek/deepseek-r1-0528:free
   fallback_models:
-    - deepseek/deepseek-r1-0528:free
-    - qwen/qwen3-235b-a22b-thinking-2507
+  - qwen/qwen3-235b-a22b-thinking-2507
+  - z-ai/glm-4.5-air:free
   app_url: https://github.com/user/paper-scout
   app_title: Paper Scout
   retry:
@@ -24,7 +24,7 @@ agents:
     strip_think_blocks: true
     debug_dir: tmp/debug
   keyword_expander:
-    model: z-ai/glm-4.5-air:free
+    model: deepseek/deepseek-r1-0528:free
     effort: medium
     max_tokens: 40000
     temperature: 0.3
@@ -94,72 +94,48 @@ clustering:
 topics:
 - slug: cappic-ai
   name: CAPP!C_AI
-  description: 자동으로 스포츠 경기 또는 운동, 훈련 장면을 촬영하고 주요 장면 및 개인별 하이라이트 편집을 하는 AI 촬영 디바이스다.
-    생성한 영상을 보정하거나 사진처럼 만들어 이미지를 보정할 수 있다. 또한 영상이나 이미지를 토대로 자세나 동작, 경기 전략 분석 등을 할 수
-    있다. 이렇게 만든 경기나 하이라이트 영상이나 숏폼, 이미지 등을 SNS처럼 공유하고 광고나 마켓 등을 갖춘 플랫폼을 만들고자 한다. 나아가
-    모든 스포츠 활동과 상호작용하는 피지컬 AI 하드웨어를 만들고자 한다.
+  description: 자동으로 스포츠 경기 또는 운동, 훈련 장면을 촬영하고 주요 장면 및 개인별 하이라이트 편집을 하는 AI 촬영 edge
+    디바이스다(rk3588 사용). 생성한 영상을 보정하거나 사진처럼 만들어 이미지를 보정할 수 있다. 또한 영상이나 이미지를 토대로 자세나 동작,
+    경기 전략 분석 등을 할 수 있다. 이렇게 만든 경기나 하이라이트 영상이나 숏폼, 이미지 등을 SNS처럼 공유하고 광고나 마켓 등을 갖춘 플랫폼을
+    만들고자 한다. 나아가 모든 스포츠 활동과 상호작용하는 피지컬 AI 하드웨어를 만들고자 한다.
   arxiv_categories:
   - cs.AI
   - cs.LG
   - cs.CL
   - cs.CV
   - cs.NE
-  - cs.IR
   - cs.MA
   - cs.RO
   - cs.SE
   - cs.DC
   - cs.DB
-  - cs.OS
-  - cs.PL
   - cs.AR
   - cs.NI
-  - cs.PF
   - cs.DS
-  - cs.CC
-  - cs.LO
-  - cs.FL
-  - cs.DM
-  - cs.IT
-  - cs.NA
-  - cs.SC
-  - cs.GT
-  - cs.CG
   - cs.CR
   - cs.HC
-  - cs.CY
-  - cs.CE
   - cs.GR
   - cs.MM
   - cs.SD
   - cs.SI
   - cs.DL
   - cs.ET
-  - cs.MS
-  - cs.GL
-  - cs.OH
   - cs.SY
   - stat.ML
-  - stat.ME
-  - stat.TH
-  - stat.AP
-  - stat.CO
   - eess.SP
   - eess.AS
   - eess.IV
   - eess.SY
   - math.OC
-  - math.ST
-  - math.PR
-  - q-bio.QM
   - q-bio.NC
-  - q-fin.ST
-  - q-fin.CP
   - physics.data-an
   notify:
-    provider: telegram
-    channel_id: '@YKSGM_bot'
+  - provider: telegram
+    channel_id: ''
     secret_key: YKS
+    events:
+    - start
+    - complete
 output:
   gh_pages:
     enabled: true
