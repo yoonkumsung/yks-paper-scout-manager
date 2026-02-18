@@ -64,12 +64,20 @@ def create_app(
     def reports(subpath: str = "") -> Any:
         """Serve report files from tmp/reports directory."""
         from flask import send_from_directory, abort
-        reports_dir = Path("tmp/reports")
+        reports_dir = Path("tmp/reports").resolve()
         if not reports_dir.exists():
             abort(404)
-        target = reports_dir / subpath if subpath else reports_dir / "index.html"
+        filename = subpath or "index.html"
+        target = reports_dir / filename
         if target.exists() and target.is_file():
-            return send_from_directory(str(reports_dir), subpath or "index.html")
+            return send_from_directory(str(reports_dir), filename)
+        # If no specific file requested, list available reports
+        if not subpath:
+            html_files = sorted(reports_dir.glob("**/*.html"), reverse=True)
+            if html_files:
+                # Serve the most recent report
+                rel = html_files[0].relative_to(reports_dir)
+                return send_from_directory(str(reports_dir), str(rel))
         abort(404)
 
     @app.errorhandler(404)
