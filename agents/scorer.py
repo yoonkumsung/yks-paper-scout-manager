@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import time
 from typing import Any
 
 from agents.base_agent import BaseAgent
@@ -89,7 +90,12 @@ class Scorer(BaseAgent):
             return []
 
         batch_size = self.agent_config.get("batch_size", 10)
+        batch_timeout = float(self.agent_config.get("batch_timeout_seconds", 500))
         all_results: list[dict] = []
+
+        # Sticky fallback: once triggered, all subsequent batches use
+        # the fallback model to avoid repeating slow primary calls.
+        active_model_override: str | None = None
 
         # Split into batches
         batches = [
@@ -108,9 +114,38 @@ class Scorer(BaseAgent):
                 break
 
             try:
+                t0 = time.monotonic()
                 batch_results = self._score_batch(
-                    batch, topic_description, rate_limiter, batch_idx
+                    batch, topic_description, rate_limiter, batch_idx,
+                    model_override=active_model_override,
                 )
+                elapsed = time.monotonic() - t0
+
+                # Batch timeout check: if too slow or failed, switch model
+                is_slow = elapsed > batch_timeout
+                is_failed = batch_results is None or len(batch_results) == 0
+
+                if (is_slow or is_failed) and active_model_override is None:
+                    fallbacks = self.fallback_models
+                    if fallbacks:
+                        active_model_override = fallbacks[0]
+                        logger.warning(
+                            "scorer: batch %d/%d was %s "
+                            "(%.1fs, timeout=%.0fs). "
+                            "Switching to fallback model: %s",
+                            batch_idx + 1, len(batches),
+                            "slow" if is_slow else "failed",
+                            elapsed, batch_timeout,
+                            active_model_override,
+                        )
+                        # Retry this batch with fallback if it failed
+                        if is_failed:
+                            batch_results = self._score_batch(
+                                batch, topic_description, rate_limiter,
+                                batch_idx,
+                                model_override=active_model_override,
+                            )
+
                 if batch_results is not None:
                     all_results.extend(batch_results)
             except InterruptedError:
@@ -119,7 +154,7 @@ class Scorer(BaseAgent):
                 logger.error(
                     "scorer: batch %d/%d failed unexpectedly: %s. "
                     "Returning %d partial results.",
-                    batch_idx, len(batches), exc, len(all_results),
+                    batch_idx + 1, len(batches), exc, len(all_results),
                 )
                 break
 
@@ -182,11 +217,19 @@ class Scorer(BaseAgent):
         topic_description: str,
         rate_limiter: RateLimiter,
         batch_idx: int,
+        model_override: str | None = None,
     ) -> list[dict] | None:
         """Score a single batch of papers.
 
         Returns list of evaluation dicts, or None if the batch was skipped
         (2x parse failure).
+
+        Args:
+            batch: Papers to score.
+            topic_description: Topic description for the prompt.
+            rate_limiter: Rate limiter instance.
+            batch_idx: Batch index for logging.
+            model_override: Override model for this batch (fallback).
         """
         indices = list(range(1, len(batch) + 1))
         messages = self.build_messages(
@@ -197,7 +240,9 @@ class Scorer(BaseAgent):
 
         # --- First LLM call ---
         rate_limiter.wait()
-        raw = self.call_llm(messages, batch_index=batch_idx)
+        raw = self.call_llm(
+            messages, batch_index=batch_idx, model_override=model_override,
+        )
         rate_limiter.record_call()
 
         if raw is None or not isinstance(raw, list):
@@ -206,7 +251,10 @@ class Scorer(BaseAgent):
                 "scorer: parse failure 1/2 for batch %d", batch_idx
             )
             rate_limiter.wait()
-            raw = self.call_llm(messages, batch_index=batch_idx)
+            raw = self.call_llm(
+                messages, batch_index=batch_idx,
+                model_override=model_override,
+            )
             rate_limiter.record_call()
 
             if raw is None or not isinstance(raw, list):
@@ -234,7 +282,10 @@ class Scorer(BaseAgent):
             )
 
             rate_limiter.wait()
-            retry_raw = self.call_llm(retry_messages, batch_index=batch_idx)
+            retry_raw = self.call_llm(
+                retry_messages, batch_index=batch_idx,
+                model_override=model_override,
+            )
             rate_limiter.record_call()
 
             if retry_raw is not None and isinstance(retry_raw, list):

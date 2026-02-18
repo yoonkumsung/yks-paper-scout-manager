@@ -117,10 +117,10 @@ def run_pipeline(args: argparse.Namespace) -> int:
     # 3. Initialize shared resources
     try:
         from core.pipeline.search_window import SearchWindowComputer
-        from core.storage.db_manager import DBManager
         from core.storage.usage_tracker import UsageTracker
         db_path = config.database.get("path", "data/paper_scout.db")
-        db_manager = DBManager(db_path)
+        # Reuse the DB connection from preflight (avoids connection leak)
+        db_manager = preflight_result.db
         rate_limiter = preflight_result.rate_limiter
         search_window = SearchWindowComputer(db_manager=db_manager)
         usage_tracker = UsageTracker()

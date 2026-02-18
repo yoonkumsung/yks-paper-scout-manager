@@ -251,8 +251,9 @@ class ArxivSourceAdapter(SourceAdapter):
                         raw_results.append(result)
                 except Exception as gen_exc:
                     logger.warning(
-                        "arXiv generator interrupted after %d results: %s",
-                        len(raw_results), gen_exc,
+                        "arXiv generator interrupted after %d results "
+                        "(max_results=%d, partial data returned): %s",
+                        len(raw_results), max_results, gen_exc,
                     )
                     if not raw_results:
                         raise  # Re-raise if zero results

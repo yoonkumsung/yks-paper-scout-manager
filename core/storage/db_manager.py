@@ -193,8 +193,14 @@ class DBManager:
     # Papers CRUD
     # ==================================================================
 
-    def insert_paper(self, paper: Paper) -> None:
-        """Insert a paper record.  Ignores duplicates on paper_key."""
+    def insert_paper(self, paper: Paper, *, commit: bool = True) -> None:
+        """Insert a paper record.  Ignores duplicates on paper_key.
+
+        Args:
+            paper: Paper to insert.
+            commit: If True (default), commit immediately.  Set to False
+                when inserting in a loop, then call ``commit()`` once after.
+        """
         created_at = paper.created_at or datetime.now(timezone.utc).isoformat()
         self._conn.execute(
             """
@@ -226,7 +232,8 @@ class DBManager:
                 created_at,
             ),
         )
-        self._conn.commit()
+        if commit:
+            self._conn.commit()
 
     def get_paper(self, paper_key: str) -> Paper | None:
         """Retrieve a paper by its primary key."""
@@ -697,8 +704,31 @@ class DBManager:
         return cur.rowcount
 
     def purge_old_papers(self, days: int = 365) -> int:
-        """Delete papers older than *days* days."""
+        """Delete papers older than *days* days.
+
+        Also removes orphaned paper_evaluations and remind_tracking
+        entries referencing the deleted papers.
+        """
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        # Delete dependent records first to prevent orphans
+        self._conn.execute(
+            """
+            DELETE FROM paper_evaluations
+             WHERE paper_key IN (
+                SELECT paper_key FROM papers WHERE created_at < ?
+             )
+            """,
+            (cutoff,),
+        )
+        self._conn.execute(
+            """
+            DELETE FROM remind_tracking
+             WHERE paper_key IN (
+                SELECT paper_key FROM papers WHERE created_at < ?
+             )
+            """,
+            (cutoff,),
+        )
         cur = self._conn.execute(
             "DELETE FROM papers WHERE created_at < ?", (cutoff,)
         )

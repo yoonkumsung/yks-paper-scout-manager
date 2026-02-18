@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 BUFFER_MINUTES = 30
 FALLBACK_HOURS = 72
-KST_OFFSET = timezone(timedelta(hours=9))
 
 
 class SearchWindowComputer:
@@ -32,7 +31,7 @@ class SearchWindowComputer:
       2. data/last_success.json: topic-specific last_success_window_end_utc
       3. 72-hour fallback: window_end - 72h
 
-    window_end is always today KST 11:00 converted to UTC (= today UTC 02:00).
+    window_end is always today UTC 00:00.
     Both sides get +-30min buffer added.
     """
 
@@ -81,7 +80,7 @@ class SearchWindowComputer:
             date_to = date_to.replace(hour=23, minute=59, second=59, microsecond=0)
             return (date_from, date_to)
 
-        # Auto mode: compute window_end from KST 11:00
+        # Auto mode: compute window_end from UTC 00:00
         window_end = self._compute_window_end(now)
 
         # Compute window_start from fallback chain
@@ -90,11 +89,9 @@ class SearchWindowComputer:
         return self._apply_buffer(window_start, window_end)
 
     def _compute_window_end(self, now: datetime) -> datetime:
-        """KST 11:00 today -> UTC."""
-        # Convert 'now' to KST date
-        kst_now = now.astimezone(KST_OFFSET)
-        kst_today_11 = kst_now.replace(hour=11, minute=0, second=0, microsecond=0)
-        return kst_today_11.astimezone(timezone.utc)
+        """Today UTC 00:00."""
+        utc_now = now.astimezone(timezone.utc)
+        return utc_now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     def _compute_window_start(
         self, topic_slug: str, window_end: datetime
@@ -103,13 +100,17 @@ class SearchWindowComputer:
         # Level 1: DB RunMeta
         if self._db is not None:
             run = self._db.get_latest_completed_run(topic_slug)
-            if run is not None:
+            if run is not None and run.window_end_utc is not None:
+                ws = run.window_end_utc
+                # Ensure timezone-aware for safe comparison
+                if ws.tzinfo is None:
+                    ws = ws.replace(tzinfo=timezone.utc)
                 logger.info(
                     "Window start from DB for %s: %s",
                     topic_slug,
-                    run.window_end_utc,
+                    ws,
                 )
-                return run.window_end_utc
+                return ws
 
         # Level 2: last_success.json
         last_success = self._load_last_success()
@@ -125,6 +126,8 @@ class SearchWindowComputer:
                         ts,
                     )
                 else:
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
                     logger.info(
                         "Window start from last_success.json for %s: %s",
                         topic_slug,

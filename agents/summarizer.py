@@ -10,6 +10,7 @@ Section 7-3 of the devspec covers the full specification.
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from agents.base_agent import BaseAgent
@@ -91,6 +92,12 @@ class Summarizer(BaseAgent):
         if not papers:
             return []
 
+        batch_timeout = float(self.agent_config.get("batch_timeout_seconds", 500))
+
+        # Sticky fallback: once triggered, all subsequent batches use
+        # the fallback model to avoid repeating slow primary calls.
+        active_model_override: str | None = None
+
         # Split into tiers
         tier1 = [p for p in papers if p.get("rank", 0) <= _TIER1_MAX_RANK]
         tier2 = [p for p in papers if p.get("rank", 0) > _TIER1_MAX_RANK]
@@ -116,9 +123,36 @@ class Summarizer(BaseAgent):
                 return results
 
             try:
+                t0 = time.monotonic()
                 batch_results = self._summarize_batch(
-                    batch, topic_description, rate_limiter, batch_idx, tier=1
+                    batch, topic_description, rate_limiter, batch_idx, tier=1,
+                    model_override=active_model_override,
                 )
+                elapsed = time.monotonic() - t0
+
+                is_slow = elapsed > batch_timeout
+                is_failed = batch_results is None or len(batch_results) == 0
+
+                if (is_slow or is_failed) and active_model_override is None:
+                    fallbacks = self.fallback_models
+                    if fallbacks:
+                        active_model_override = fallbacks[0]
+                        logger.warning(
+                            "summarizer: tier1 batch %d/%d was %s "
+                            "(%.1fs, timeout=%.0fs). "
+                            "Switching to fallback model: %s",
+                            batch_idx + 1, len(tier1_batches),
+                            "slow" if is_slow else "failed",
+                            elapsed, batch_timeout,
+                            active_model_override,
+                        )
+                        if is_failed:
+                            batch_results = self._summarize_batch(
+                                batch, topic_description, rate_limiter,
+                                batch_idx, tier=1,
+                                model_override=active_model_override,
+                            )
+
                 if batch_results is not None:
                     results.extend(batch_results)
             except InterruptedError:
@@ -127,7 +161,7 @@ class Summarizer(BaseAgent):
                 logger.error(
                     "summarizer: tier1 batch %d/%d failed unexpectedly: %s. "
                     "Returning %d partial results.",
-                    batch_idx, len(tier1_batches), exc, len(results),
+                    batch_idx + 1, len(tier1_batches), exc, len(results),
                 )
                 return results
 
@@ -151,13 +185,40 @@ class Summarizer(BaseAgent):
                 return results
 
             try:
+                t0 = time.monotonic()
                 batch_results = self._summarize_batch(
                     batch,
                     topic_description,
                     rate_limiter,
                     tier2_batch_offset + batch_idx,
                     tier=2,
+                    model_override=active_model_override,
                 )
+                elapsed = time.monotonic() - t0
+
+                is_slow = elapsed > batch_timeout
+                is_failed = batch_results is None or len(batch_results) == 0
+
+                if (is_slow or is_failed) and active_model_override is None:
+                    fallbacks = self.fallback_models
+                    if fallbacks:
+                        active_model_override = fallbacks[0]
+                        logger.warning(
+                            "summarizer: tier2 batch %d/%d was %s "
+                            "(%.1fs, timeout=%.0fs). "
+                            "Switching to fallback model: %s",
+                            batch_idx + 1, len(tier2_batches),
+                            "slow" if is_slow else "failed",
+                            elapsed, batch_timeout,
+                            active_model_override,
+                        )
+                        if is_failed:
+                            batch_results = self._summarize_batch(
+                                batch, topic_description, rate_limiter,
+                                tier2_batch_offset + batch_idx, tier=2,
+                                model_override=active_model_override,
+                            )
+
                 if batch_results is not None:
                     results.extend(batch_results)
             except InterruptedError:
@@ -166,7 +227,7 @@ class Summarizer(BaseAgent):
                 logger.error(
                     "summarizer: tier2 batch %d/%d failed unexpectedly: %s. "
                     "Returning %d partial results.",
-                    batch_idx, len(tier2_batches), exc, len(results),
+                    batch_idx + 1, len(tier2_batches), exc, len(results),
                 )
                 return results
 
@@ -255,11 +316,20 @@ class Summarizer(BaseAgent):
         rate_limiter: RateLimiter,
         batch_idx: int,
         tier: int,
+        model_override: str | None = None,
     ) -> list[dict] | None:
         """Summarize a single batch of papers.
 
         Returns list of enriched paper dicts, or None if the batch was
         skipped (2x parse failure).
+
+        Args:
+            batch: Papers to summarize.
+            topic_description: Topic description for the prompt.
+            rate_limiter: Rate limiter instance.
+            batch_idx: Batch index for logging.
+            tier: Summary tier (1 or 2).
+            model_override: Override model for this batch (fallback).
         """
         indices = list(range(1, len(batch) + 1))
         messages = self.build_messages(
@@ -271,7 +341,9 @@ class Summarizer(BaseAgent):
 
         # --- First LLM call ---
         rate_limiter.wait()
-        raw = self.call_llm(messages, batch_index=batch_idx)
+        raw = self.call_llm(
+            messages, batch_index=batch_idx, model_override=model_override,
+        )
         rate_limiter.record_call()
 
         if raw is None or not isinstance(raw, list):
@@ -282,7 +354,10 @@ class Summarizer(BaseAgent):
                 tier,
             )
             rate_limiter.wait()
-            raw = self.call_llm(messages, batch_index=batch_idx)
+            raw = self.call_llm(
+                messages, batch_index=batch_idx,
+                model_override=model_override,
+            )
             rate_limiter.record_call()
 
             if raw is None or not isinstance(raw, list):
@@ -316,7 +391,8 @@ class Summarizer(BaseAgent):
 
             rate_limiter.wait()
             retry_raw = self.call_llm(
-                retry_messages, batch_index=batch_idx
+                retry_messages, batch_index=batch_idx,
+                model_override=model_override,
             )
             rate_limiter.record_call()
 

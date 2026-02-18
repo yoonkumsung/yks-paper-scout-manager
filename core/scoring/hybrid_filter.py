@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -150,7 +151,7 @@ class HybridFilter:
         if len(rule_passed) > self._pre_embed_cap:
             rule_passed = sorted(
                 rule_passed,
-                key=lambda p: p.published_at_utc,
+                key=lambda p: p.published_at_utc or datetime.min.replace(tzinfo=timezone.utc),
                 reverse=True,
             )
             rule_passed = rule_passed[: self._pre_embed_cap]
@@ -290,6 +291,6 @@ class HybridFilter:
         """Sort papers by published_at_utc descending (newest first)."""
         return sorted(
             papers,
-            key=lambda p: p.published_at_utc,
+            key=lambda p: p.published_at_utc or datetime.min.replace(tzinfo=timezone.utc),
             reverse=True,
         )

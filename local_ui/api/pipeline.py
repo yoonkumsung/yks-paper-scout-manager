@@ -11,6 +11,7 @@ import hashlib
 import json
 import logging
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,17 +25,21 @@ logger = logging.getLogger(__name__)
 pipeline_bp = Blueprint("pipeline", __name__)
 
 # Module-level pipeline runner instance
-# Initialized lazily on first request
+# Initialized lazily on first request, protected by lock
 _pipeline_runner: PipelineRunner | None = None
+_runner_lock = threading.Lock()
 
 
 def _get_pipeline_runner() -> PipelineRunner:
-    """Get or create the pipeline runner instance."""
+    """Get or create the pipeline runner instance (thread-safe)."""
     global _pipeline_runner
-    if _pipeline_runner is None:
-        config_path = current_app.config.get("CONFIG_PATH", "config.yaml")
-        db_path = current_app.config.get("DB_PATH", "data/paper_scout.db")
-        _pipeline_runner = PipelineRunner(config_path=config_path, db_path=db_path)
+    if _pipeline_runner is not None:
+        return _pipeline_runner
+    with _runner_lock:
+        if _pipeline_runner is None:
+            config_path = current_app.config.get("CONFIG_PATH", "config.yaml")
+            db_path = current_app.config.get("DB_PATH", "data/paper_scout.db")
+            _pipeline_runner = PipelineRunner(config_path=config_path, db_path=db_path)
     return _pipeline_runner
 
 
@@ -265,6 +270,39 @@ def cancel():
 
     except Exception as e:
         logger.error(f"Error cancelling pipeline: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@pipeline_bp.route("/reset", methods=["POST"])
+def reset():
+    """Force-reset pipeline state without restarting the server.
+
+    Clears the running flag and cancel event so the pipeline
+    can accept new runs.  Use when the UI is stuck showing
+    'running' after an abnormal termination.
+
+    Returns:
+        200: {"success": true, "message": "..."}
+    """
+    try:
+        runner = _get_pipeline_runner()
+        with runner._lock:
+            was_running = runner._status["running"]
+            runner._status["running"] = False
+            runner._status["error"] = None
+            runner._status["progress"] = "Reset by user"
+            runner._cancel_event.clear()
+        logger.info(
+            "Pipeline state force-reset by user (was_running=%s)", was_running
+        )
+        return jsonify({
+            "success": True,
+            "message": "파이프라인 상태가 초기화되었습니다.",
+            "was_running": was_running,
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error resetting pipeline: {e}")
         return jsonify({"error": str(e)}), 500
 
 

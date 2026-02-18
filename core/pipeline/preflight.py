@@ -16,7 +16,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from core.config import AppConfig, ConfigError, load_config
 from core.llm.openrouter_client import OpenRouterClient, OpenRouterError
@@ -26,7 +25,6 @@ from core.storage.db_manager import DBManager
 
 logger = logging.getLogger(__name__)
 
-KST = ZoneInfo("Asia/Seoul")
 UTC = timezone.utc
 _BUFFER_MINUTES = 30
 _FALLBACK_HOURS = 72
@@ -286,28 +284,27 @@ def _check_notifications(config: AppConfig) -> list[str]:
     warnings_list: list[str] = []
 
     for topic in config.topics:
-        notify = topic.notify
-        if notify is None:
-            continue
-        provider = notify.provider
+        notify_items = topic.notify or []
+        for notify in notify_items:
+            provider = notify.provider
 
-        if provider == "discord":
-            if not _DISCORD_WEBHOOK_PATTERN.match(notify.secret_key):
+            if provider == "discord":
+                if not _DISCORD_WEBHOOK_PATTERN.match(notify.secret_key):
+                    warnings_list.append(
+                        f"Topic '{topic.slug}': Discord webhook URL "
+                        f"format looks invalid"
+                    )
+            elif provider == "telegram":
+                if not _TELEGRAM_TOKEN_PATTERN.match(notify.secret_key):
+                    warnings_list.append(
+                        f"Topic '{topic.slug}': Telegram bot token "
+                        f"format looks invalid"
+                    )
+            else:
                 warnings_list.append(
-                    f"Topic '{topic.slug}': Discord webhook URL "
-                    f"format looks invalid"
+                    f"Topic '{topic.slug}': Unknown notification "
+                    f"provider '{provider}'"
                 )
-        elif provider == "telegram":
-            if not _TELEGRAM_TOKEN_PATTERN.match(notify.secret_key):
-                warnings_list.append(
-                    f"Topic '{topic.slug}': Telegram bot token "
-                    f"format looks invalid"
-                )
-        else:
-            warnings_list.append(
-                f"Topic '{topic.slug}': Unknown notification "
-                f"provider '{provider}'"
-            )
 
     return warnings_list
 
@@ -346,7 +343,7 @@ def _compute_topic_window(
         Use provided values with +-30min buffer.
 
     Automatic mode:
-        window_end = today KST 11:00 -> UTC (02:00 UTC)
+        window_end = today UTC 00:00
         window_start lookup chain:
             1. DB: get_latest_completed_run(topic_slug) -> window_end_utc
             2. File: data/last_success.json -> topic's window_end_utc
@@ -359,12 +356,9 @@ def _compute_topic_window(
         # Manual mode: apply buffer to both
         return (date_from - buffer, date_to + buffer)
 
-    # Automatic mode: compute window_end
-    now_kst = datetime.now(KST)
-    today_kst_11 = now_kst.replace(
-        hour=11, minute=0, second=0, microsecond=0
-    )
-    window_end = today_kst_11.astimezone(UTC)
+    # Automatic mode: compute window_end as today UTC 00:00
+    now_utc = datetime.now(UTC)
+    window_end = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 
     # If manual date_to provided, use it instead
     if date_to is not None:

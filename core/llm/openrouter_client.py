@@ -113,6 +113,7 @@ class OpenRouterClient:
         agent_config: dict[str, Any],
         response_format_supported: bool = False,
         extra_body: dict[str, Any] | None = None,
+        model_override: str | None = None,
     ) -> str:
         """Call the OpenRouter chat-completion endpoint with model fallback.
 
@@ -127,6 +128,8 @@ class OpenRouterClient:
                 includes ``response_format: {"type": "json_object"}``.
             extra_body: Extra body params forwarded to OpenRouter
                 (e.g. reasoning configuration).
+            model_override: When set, use this model as primary,
+                bypassing agent_config and default model selection.
 
         Returns:
             The raw ``content`` string from the first choice.
@@ -134,8 +137,8 @@ class OpenRouterClient:
         Raises:
             OpenRouterError: After all models and retry attempts are exhausted.
         """
-        # Build model chain: agent-specific model (if set) > primary > fallbacks
-        primary = agent_config.get("model", self._model)
+        # Build model chain: model_override > agent-specific > primary > fallbacks
+        primary = model_override or agent_config.get("model", self._model)
         models_to_try = [primary] + [
             m for m in self._fallback_models if m != primary
         ]
@@ -170,25 +173,24 @@ class OpenRouterClient:
                     )
                     content = response.choices[0].message.content
                     # Detect truncated JSON responses
-                    if (
-                        content
-                        and content.strip()
-                        and not (
-                            content.strip().endswith("}")
-                            or content.strip().endswith("]")
-                        )
-                    ):
-                        logger.warning(
-                            "%s: response appears truncated "
-                            "(doesn't end with } or ]), retrying.",
-                            model_label,
-                        )
-                        last_error = ValueError(
-                            f"Truncated response: ...{content[-50:]}"
-                        )
-                        delay = self._retry_delay(attempt)
-                        time.sleep(delay)
-                        continue
+                    stripped = (content or "").strip()
+                    if stripped and response_format_supported:
+                        # When JSON mode is on, response must end with } or ]
+                        if not (
+                            stripped.endswith("}")
+                            or stripped.endswith("]")
+                        ):
+                            logger.warning(
+                                "%s: response appears truncated "
+                                "(doesn't end with } or ]), retrying.",
+                                model_label,
+                            )
+                            last_error = ValueError(
+                                f"Truncated response: ...{stripped[-50:]}"
+                            )
+                            delay = self._retry_delay(attempt)
+                            time.sleep(delay)
+                            continue
                     if is_fallback:
                         logger.info(
                             "Fallback model %s succeeded", model_label

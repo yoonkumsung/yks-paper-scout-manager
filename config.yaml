@@ -10,6 +10,10 @@ llm:
   - z-ai/glm-4.5-air:free
   app_url: https://github.com/user/paper-scout
   app_title: Paper Scout
+  timeout:
+    attempt_1: 180
+    attempt_2: 240
+    fallback: 300
   retry:
     max_retries: 3
     backoff_base: 2
@@ -35,7 +39,8 @@ agents:
     effort: low
     max_tokens: 40000
     temperature: 0.2
-    batch_size: 10
+    batch_size: 5
+    batch_timeout_seconds: 500
     prompt_version: agent2-v2
   summarizer:
     effort: low

@@ -8,6 +8,7 @@ mode-dependent (skip_recent or none).
 from __future__ import annotations
 
 import json
+import tempfile
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -75,10 +76,12 @@ class DedupManager:
             if entry_date < cutoff:
                 continue
 
+            paper_key = entry.get("paper_key")
+            topic_slug = entry.get("topic_slug")
+            if not paper_key or not topic_slug:
+                continue
             self._seen_items.append(entry)
-            self._seen_set.add(
-                (entry["paper_key"], entry["topic_slug"])
-            )
+            self._seen_set.add((paper_key, topic_slug))
 
     def reset_in_run(self) -> None:
         """Reset the in-run set for a new topic/run."""
@@ -161,12 +164,28 @@ class DedupManager:
         # Create parent directory if needed
         self._seen_items_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Write all items as JSONL
+        # Atomic write: write to temp file, then rename
         lines = [json.dumps(item, ensure_ascii=False) for item in all_items]
-        self._seen_items_path.write_text(
-            "\n".join(lines) + "\n" if lines else "",
-            encoding="utf-8",
-        )
+        content = "\n".join(lines) + "\n" if lines else ""
+        try:
+            fd, tmp_path = tempfile.mkstemp(
+                dir=str(self._seen_items_path.parent),
+                suffix=".tmp",
+            )
+            try:
+                with open(fd, "w", encoding="utf-8") as f:
+                    f.write(content)
+                Path(tmp_path).replace(self._seen_items_path)
+            except Exception:
+                Path(tmp_path).unlink(missing_ok=True)
+                raise
+        except OSError as oe:
+            # Fallback: direct write if atomic write fails (not atomic)
+            logger.warning(
+                "Atomic write failed for %s, falling back to direct write: %s",
+                self._seen_items_path, oe,
+            )
+            self._seen_items_path.write_text(content, encoding="utf-8")
 
     @property
     def in_run_count(self) -> int:

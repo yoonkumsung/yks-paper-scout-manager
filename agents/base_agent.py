@@ -86,12 +86,18 @@ class BaseAgent:
     # Public API
     # ------------------------------------------------------------------
 
+    @property
+    def fallback_models(self) -> list[str]:
+        """Return the list of fallback models from the client."""
+        return list(self._client._fallback_models)
+
     def call_llm(
         self,
         messages: list[dict[str, Any]],
         *,
         extra_body: dict[str, Any] | None = None,
         batch_index: int = 0,
+        model_override: str | None = None,
     ) -> dict | list | None:
         """Call the LLM and parse the response as JSON.
 
@@ -106,6 +112,7 @@ class BaseAgent:
             messages: OpenAI-format messages.
             extra_body: Additional params for OpenRouter.
             batch_index: For debug dump filenames.
+            model_override: When set, override the model for this call.
 
         Returns:
             Parsed JSON dict/list, or ``None`` on parse failure.
@@ -115,6 +122,7 @@ class BaseAgent:
             agent_config=self.agent_config,
             response_format_supported=self._response_format_supported,
             extra_body=extra_body,
+            model_override=model_override,
         )
 
         return self._parser.parse(
@@ -129,6 +137,7 @@ class BaseAgent:
         messages: list[dict[str, Any]],
         *,
         extra_body: dict[str, Any] | None = None,
+        model_override: str | None = None,
     ) -> str:
         """Call the LLM and return raw content (with think blocks removed).
 
@@ -142,6 +151,7 @@ class BaseAgent:
         Args:
             messages: OpenAI-format messages.
             extra_body: Additional params for OpenRouter.
+            model_override: When set, override the model for this call.
 
         Returns:
             Cleaned text with think blocks removed.
@@ -151,6 +161,7 @@ class BaseAgent:
             agent_config=self.agent_config,
             response_format_supported=self._response_format_supported,
             extra_body=extra_body,
+            model_override=model_override,
         )
 
         return self._parser.remove_think_blocks(raw)

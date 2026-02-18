@@ -462,6 +462,7 @@ class PipelineRunner:
                 return {"error": "Pipeline already running", "run_id": self._status["run_id"]}
 
             run_id = str(uuid.uuid4())[:8]
+            self._cancel_event.clear()
 
             # Clean up previous log files
             for old_log in glob_module.glob("/tmp/pipeline_run_*.log"):
@@ -539,7 +540,7 @@ class PipelineRunner:
             entry["detail"] = detail
         try:
             with open(log_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                f.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
             with self._lock:
                 self._status["log_lines"] = self._status.get("log_lines", 0) + 1
         except OSError:
@@ -612,17 +613,16 @@ class PipelineRunner:
                 self._status["progress"] = "Initializing..."
 
             from core.pipeline.search_window import SearchWindowComputer
-            from core.storage.db_manager import DBManager
             from core.storage.usage_tracker import UsageTracker
 
-            db_path = config.database.get("path", str(self._db_path))
-            db_manager = DBManager(db_path)
+            # Reuse the DB connection from preflight (avoids connection leak)
+            db_manager = preflight_result.db
             rate_limiter = preflight_result.rate_limiter
             search_window = SearchWindowComputer(db_manager=db_manager)
             usage_tracker = UsageTracker()
 
             self._write_log(run_id, "init", "DB/rate limiter/search window initialized", {
-                "db_path": db_path,
+                "db_path": str(self._db_path),
                 "dedup_mode": dedup,
             })
 
@@ -773,16 +773,97 @@ class PipelineRunner:
                 n_concepts = len(result.get("concepts", []))
                 n_cross = len(result.get("cross_domain_keywords", []))
                 n_exclude = len(result.get("exclude_keywords", []))
+                n_must = len(result.get("query_must_keywords", []))
+
+                # Flatten and deduplicate concept keywords for readable logs.
+                concept_keywords: list[str] = []
+                seen_kw: set[str] = set()
+                for concept in result.get("concepts", []):
+                    for kw in concept.get("keywords", []) or []:
+                        if not isinstance(kw, str):
+                            continue
+                        norm = kw.strip()
+                        if not norm:
+                            continue
+                        key = norm.lower()
+                        if key in seen_kw:
+                            continue
+                        seen_kw.add(key)
+                        concept_keywords.append(norm)
 
                 self._write_log(run_id, "agent1",
-                    f"키워드 생성 완료: 컨셉 {n_concepts}개, 교차키워드 {n_cross}개, 제외키워드 {n_exclude}개 ({elapsed:.1f}s)", {
+                    f"키워드 생성 완료: 컨셉 {n_concepts}개, 컨셉키워드 {len(concept_keywords)}개, 교차키워드 {n_cross}개, 필수키워드 {n_must}개, 제외키워드 {n_exclude}개 ({elapsed:.1f}s)", {
                     "topic": topic_arg.slug,
                     "n_concepts": n_concepts,
+                    "n_concept_keywords": len(concept_keywords),
                     "n_cross_domain": n_cross,
+                    "n_query_must": n_must,
                     "n_exclude": n_exclude,
                     "elapsed_s": round(elapsed, 1),
                     "model": model_name,
                 })
+
+                # Detailed keyword lines for observability (truncate for readability).
+                if concept_keywords:
+                    preview = ", ".join(concept_keywords[:40])
+                    suffix = " ..." if len(concept_keywords) > 40 else ""
+                    self._write_log(
+                        run_id,
+                        "agent1",
+                        f"컨셉 키워드: {preview}{suffix}",
+                        {
+                            "topic": topic_arg.slug,
+                            "concept_keywords": concept_keywords,
+                        },
+                    )
+
+                cross_keywords = [
+                    k.strip()
+                    for k in result.get("cross_domain_keywords", [])
+                    if isinstance(k, str) and k.strip()
+                ]
+                if cross_keywords:
+                    self._write_log(
+                        run_id,
+                        "agent1",
+                        "교차 키워드: " + ", ".join(cross_keywords[:30]) + (" ..." if len(cross_keywords) > 30 else ""),
+                        {
+                            "topic": topic_arg.slug,
+                            "cross_domain_keywords": cross_keywords,
+                        },
+                    )
+
+                must_keywords = [
+                    k.strip()
+                    for k in result.get("query_must_keywords", [])
+                    if isinstance(k, str) and k.strip()
+                ]
+                if must_keywords:
+                    self._write_log(
+                        run_id,
+                        "agent1",
+                        "필수 키워드: " + ", ".join(must_keywords[:30]) + (" ..." if len(must_keywords) > 30 else ""),
+                        {
+                            "topic": topic_arg.slug,
+                            "query_must_keywords": must_keywords,
+                        },
+                    )
+
+                exclude_keywords = [
+                    k.strip()
+                    for k in result.get("exclude_keywords", [])
+                    if isinstance(k, str) and k.strip()
+                ]
+                if exclude_keywords:
+                    self._write_log(
+                        run_id,
+                        "agent1",
+                        "제외 키워드: " + ", ".join(exclude_keywords[:30]) + (" ..." if len(exclude_keywords) > 30 else ""),
+                        {
+                            "topic": topic_arg.slug,
+                            "exclude_keywords": exclude_keywords,
+                        },
+                    )
                 return result
 
             orchestrator._step_agent1 = _logged_step_agent1
@@ -891,35 +972,45 @@ class PipelineRunner:
                 t0 = time.time()
                 from agents.scorer import Scorer
                 _orig_score_batch = Scorer._score_batch
-                _batch_counter = {"done": 0}
+                _score_state = {"done": 0, "active": True}
                 _runner_self = self
 
-                def _logged_score_batch(scorer_instance, batch, topic_description, rate_limiter, batch_idx):
+                def _logged_score_batch(scorer_instance, batch, topic_description, rate_limiter, batch_idx, model_override=None):
+                    # Guard: if scoring phase is done, pass through to original
+                    if not _score_state["active"]:
+                        return _orig_score_batch(scorer_instance, batch, topic_description, rate_limiter, batch_idx, model_override=model_override)
+
                     # Cancel check before each batch
                     if _runner_self._cancel_event.is_set():
                         raise InterruptedError("Pipeline cancelled by user during scoring")
 
                     bt0 = time.time()
-                    result = _orig_score_batch(scorer_instance, batch, topic_description, rate_limiter, batch_idx)
+                    result = _orig_score_batch(scorer_instance, batch, topic_description, rate_limiter, batch_idx, model_override=model_override)
                     bt_elapsed = time.time() - bt0
-                    _batch_counter["done"] += 1
-                    batch_pct = int(25 + (_batch_counter["done"] / total_batches * 40)) if total_batches > 0 else 65
+                    _score_state["done"] += 1
+                    display_num = min(_score_state["done"], total_batches)
+                    batch_pct = int(25 + (display_num / total_batches * 40)) if total_batches > 0 else 65
                     with _runner_self._lock:
                         _runner_self._status["step_progress"] = batch_pct
-                        _runner_self._status["step_name"] = f"LLM 평가 ({_batch_counter['done']}/{total_batches})"
+                        _runner_self._status["step_name"] = f"LLM 평가 ({display_num}/{total_batches})"
                     n_ok = len(result) if result else 0
+                    is_retry = model_override is not None
+                    label = f"Batch {batch_idx + 1}/{total_batches}"
+                    if is_retry:
+                        label += " [fallback]"
                     _runner_self._write_log(run_id, "score_batch",
-                        f"Batch {_batch_counter['done']}/{total_batches}: {n_ok} scored ({bt_elapsed:.1f}s)", {
-                        "batch_idx": _batch_counter["done"],
+                        f"{label}: {n_ok} scored ({bt_elapsed:.1f}s)", {
+                        "batch_idx": batch_idx + 1,
                         "total_batches": total_batches,
                         "n_scored": n_ok,
                         "elapsed_s": round(bt_elapsed, 1),
+                        "is_retry": is_retry,
                     })
 
                     # Checkpoint after each successful score batch
                     _runner_self._save_checkpoint(run_id, {
                         "step_completed": "score_batch",
-                        "score_batches_done": _batch_counter["done"],
+                        "score_batches_done": display_num,
                         "score_batches_total": total_batches,
                         "topic_slug": _runner_self._status.get("current_topic", ""),
                     })
@@ -930,6 +1021,7 @@ class PipelineRunner:
                 try:
                     result = original_step_score(papers, topic_desc)
                 finally:
+                    _score_state["active"] = False
                     Scorer._score_batch = _orig_score_batch
 
                 elapsed = time.time() - t0
@@ -1020,37 +1112,48 @@ class PipelineRunner:
                 t0 = time.time()
                 from agents.summarizer import Summarizer
                 _orig_summ_batch = Summarizer._summarize_batch
-                _summ_counter = {"done": 0}
+                _summ_state = {"done": 0, "active": True}
+                _summ_total = total_batches  # Capture summarization total (different from scoring)
                 _runner_self = self
 
-                def _logged_summ_batch(summ_instance, batch, topic_description, rate_limiter, batch_idx, tier=1):
+                def _logged_summ_batch(summ_instance, batch, topic_description, rate_limiter, batch_idx, tier=1, model_override=None):
+                    # Guard: if summarization phase is done, pass through
+                    if not _summ_state["active"]:
+                        return _orig_summ_batch(summ_instance, batch, topic_description, rate_limiter, batch_idx, tier=tier, model_override=model_override)
+
                     # Cancel check before each batch
                     if _runner_self._cancel_event.is_set():
                         raise InterruptedError("Pipeline cancelled by user during summarization")
 
                     bt0 = time.time()
-                    result = _orig_summ_batch(summ_instance, batch, topic_description, rate_limiter, batch_idx, tier=tier)
+                    result = _orig_summ_batch(summ_instance, batch, topic_description, rate_limiter, batch_idx, tier=tier, model_override=model_override)
                     bt_elapsed = time.time() - bt0
-                    _summ_counter["done"] += 1
-                    batch_pct = int(75 + (_summ_counter["done"] / total_batches * 20)) if total_batches > 0 else 95
+                    _summ_state["done"] += 1
+                    display_num = min(_summ_state["done"], _summ_total)
+                    batch_pct = int(75 + (display_num / _summ_total * 20)) if _summ_total > 0 else 95
                     with _runner_self._lock:
                         _runner_self._status["step_progress"] = batch_pct
-                        _runner_self._status["step_name"] = f"LLM 요약 ({_summ_counter['done']}/{total_batches})"
+                        _runner_self._status["step_name"] = f"LLM 요약 ({display_num}/{_summ_total})"
                     n_ok = len(result) if result else 0
+                    is_retry = model_override is not None
+                    label = f"[요약] Batch {batch_idx + 1}/{_summ_total} (tier{tier})"
+                    if is_retry:
+                        label += " [fallback]"
                     _runner_self._write_log(run_id, "summarize_batch",
-                        f"Batch {_summ_counter['done']}/{total_batches} (tier{tier}): {n_ok} summarized ({bt_elapsed:.1f}s)", {
-                        "batch_idx": _summ_counter["done"],
-                        "total_batches": total_batches,
+                        f"{label}: {n_ok} summarized ({bt_elapsed:.1f}s)", {
+                        "batch_idx": batch_idx + 1,
+                        "total_batches": _summ_total,
                         "tier": tier,
                         "n_summarized": n_ok,
                         "elapsed_s": round(bt_elapsed, 1),
+                        "is_retry": is_retry,
                     })
 
                     # Checkpoint after each successful summarize batch
                     _runner_self._save_checkpoint(run_id, {
                         "step_completed": "summarize_batch",
-                        "summarize_batches_done": _summ_counter["done"],
-                        "summarize_batches_total": total_batches,
+                        "summarize_batches_done": display_num,
+                        "summarize_batches_total": _summ_total,
                         "topic_slug": _runner_self._status.get("current_topic", ""),
                     })
 
@@ -1060,6 +1163,7 @@ class PipelineRunner:
                 try:
                     result = original_step_summarize(ranked, desc, pmap)
                 finally:
+                    _summ_state["active"] = False
                     Summarizer._summarize_batch = _orig_summ_batch
 
                 elapsed = time.time() - t0
@@ -1140,7 +1244,16 @@ class PipelineRunner:
                     pass  # Non-critical, don't break pipeline
 
                 t0 = time.time()
-                result = original_run_single(topic)
+                try:
+                    result = original_run_single(topic)
+                except Exception as exc:
+                    elapsed = time.time() - t0
+                    self._write_log(run_id, "topic_error", f"Topic {topic.slug} failed ({elapsed:.1f}s): {exc}", {
+                        "topic": topic.slug,
+                        "error": str(exc),
+                        "elapsed_s": round(elapsed, 1),
+                    })
+                    raise
                 elapsed = time.time() - t0
 
                 with self._lock:

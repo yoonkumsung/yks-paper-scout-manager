@@ -176,9 +176,11 @@ class Ranker:
 
     @staticmethod
     def _calculate_recency(
-        published_at_utc: datetime, window_end: datetime
+        published_at_utc: Optional[datetime], window_end: datetime
     ) -> int:
         """Calculate recency score based on days elapsed."""
+        if published_at_utc is None:
+            return _RECENCY_DEFAULT
         delta = window_end - published_at_utc
         total_seconds = delta.total_seconds()
         days_elapsed = int(math.floor(total_seconds / 86400))  # 24 * 60 * 60

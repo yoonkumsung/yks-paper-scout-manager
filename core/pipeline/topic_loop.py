@@ -325,13 +325,14 @@ class TopicLoopOrchestrator:
                 total_scored, total_discarded, slug,
             )
 
-            # Insert papers and evaluations into DB
+            # Insert papers into DB (batch commit for efficiency)
             papers_map: Dict[str, Paper] = {}
             for paper in filtered_papers:
                 if not self._db.paper_exists(paper.paper_key):
                     paper.first_seen_run_id = run_id
-                    self._db.insert_paper(paper)
+                    self._db.insert_paper(paper, commit=False)
                 papers_map[paper.paper_key] = paper
+            self._db.commit()
 
             # Merge code detection with LLM output
             from core.scoring.code_detector import CodeDetector
@@ -804,7 +805,15 @@ class TopicLoopOrchestrator:
             mapped_evals.append(mapped)
 
         ranker = Ranker(self._config.scoring)
-        return ranker.rank(mapped_evals, papers_map, window_end, embedding_mode)
+        ranked = ranker.rank(mapped_evals, papers_map, window_end, embedding_mode)
+
+        # Convert EvaluationFlags back to plain dict for JSON serialization
+        for item in ranked:
+            flags_obj = item.get("flags")
+            if isinstance(flags_obj, EvaluationFlags):
+                item["flags"] = flags_obj.to_dict()
+
+        return ranked
 
     def _step_cluster(
         self,
@@ -832,16 +841,30 @@ class TopicLoopOrchestrator:
         if not ranked_papers:
             return []
 
-        # Enrich ranked_papers with title/abstract from papers_map
+        # Enrich ranked_papers with fields from papers_map for reports
         if papers_map:
             for rp in ranked_papers:
                 pk = rp.get("paper_key", "")
                 paper = papers_map.get(pk)
-                if paper and "title" not in rp:
+                if paper is None:
+                    continue
+                if "title" not in rp:
                     rp["title"] = paper.title
                     rp["abstract"] = paper.abstract
                     if "base_score" not in rp:
                         rp["base_score"] = rp.get("llm_base_score", 0)
+                # Add report-essential fields from Paper
+                if "url" not in rp:
+                    rp["url"] = paper.url
+                    rp["pdf_url"] = paper.pdf_url
+                    rp["categories"] = paper.categories
+                    rp["code_url"] = paper.code_url
+                    if paper.published_at_utc is not None:
+                        rp["published_at_utc"] = paper.published_at_utc.strftime(
+                            "%Y-%m-%d"
+                        )
+                    else:
+                        rp["published_at_utc"] = ""
 
         from agents.summarizer import Summarizer
         from core.llm.openrouter_client import OpenRouterClient

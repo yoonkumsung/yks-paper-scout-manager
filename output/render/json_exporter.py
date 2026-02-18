@@ -12,9 +12,19 @@ from __future__ import annotations
 import json
 import logging
 import os
+from dataclasses import asdict
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+
+class _DataclassEncoder(json.JSONEncoder):
+    """JSON encoder that handles dataclass instances."""
+
+    def default(self, o: Any) -> Any:
+        if hasattr(o, "__dataclass_fields__"):
+            return asdict(o)
+        return super().default(o)
 
 
 def export_json(
@@ -104,7 +114,7 @@ def export_json(
 
     # Write JSON with UTF-8 encoding (ensure_ascii=False for Korean text)
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+        json.dump(payload, f, ensure_ascii=False, indent=2, cls=_DataclassEncoder)
 
     abs_path = os.path.abspath(filepath)
     logger.info("JSON report written to %s", abs_path)

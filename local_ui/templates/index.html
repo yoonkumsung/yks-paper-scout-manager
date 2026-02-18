@@ -531,14 +531,15 @@
                             <div class="col-md-6">
                                 <label class="form-label">시작일</label>
                                 <input type="date" class="form-control" id="dateFrom">
-                                <small class="text-muted">비워두면 자동 설정</small>
+                                <small class="text-muted">비워두면 이전 실행 이후만 수집합니다 (첫 실행은 최근 72시간).</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">종료일</label>
                                 <input type="date" class="form-control" id="dateTo">
-                                <small class="text-muted">비워두면 자동 설정</small>
+                                <small class="text-muted">비워두면 오늘 UTC 00:00 기준으로 처리됩니다.</small>
                             </div>
                         </div>
+                        <div class="mb-3"></div>
 
                         <div class="mb-3">
                             <label class="form-label">중복 제거</label>
@@ -558,6 +559,7 @@
                             <button class="btn btn-success" id="startSearchBtn">논문 검색 시작</button>
                             <button class="btn btn-outline-secondary" id="cancelSearchBtn" style="display: none;">취소</button>
                             <button class="btn btn-outline-success" id="rerunSearchBtn" style="display: none;">다시 실행</button>
+                            <button class="btn btn-outline-warning btn-sm" id="resetPipelineBtn" title="파이프라인 상태를 강제 초기화합니다">상태 초기화</button>
                         </div>
 
                         <!-- Progress bar -->
@@ -1574,17 +1576,22 @@
 
                             <hr>
 
-                            <!-- Queries section (collapsible) -->
+                            <!-- Queries section (collapsible, hidden by default) -->
                             <div>
-                                <div class="d-flex justify-content-between align-items-center mb-2"
-                                     style="cursor: pointer;"
+                                <div class="d-flex justify-content-between align-items-center"
+                                     style="cursor: pointer; user-select: none;"
                                      data-bs-toggle="collapse"
-                                     data-bs-target="#queries_${topicId}">
-                                    <strong style="font-size: 0.9rem;">arXiv Queries</strong>
+                                     data-bs-target="#queries_${topicId}"
+                                     aria-expanded="false"
+                                     aria-controls="queries_${topicId}">
+                                    <div>
+                                        <span class="query-toggle-arrow" style="display: inline-block; transition: transform 0.2s; transform: rotate(0deg); font-size: 0.7rem; margin-right: 4px;">&#9654;</span>
+                                        <strong style="font-size: 0.9rem;">arXiv Queries</strong>
+                                    </div>
                                     <span class="badge bg-primary">${totalQ}개</span>
                                 </div>
-                                <div class="collapse show" id="queries_${topicId}">
-                                    ${queriesHtml}
+                                <div class="collapse" id="queries_${topicId}">
+                                    <div class="mt-2">${queriesHtml}</div>
                                 </div>
                             </div>
                         </div>
@@ -1594,6 +1601,20 @@
 
             resultsContent.innerHTML = html;
             resultsDiv.style.display = 'block';
+
+            // Rotate arrow on query collapse toggle
+            resultsContent.querySelectorAll('[data-bs-toggle="collapse"]').forEach(toggle => {
+                const target = document.querySelector(toggle.getAttribute('data-bs-target'));
+                if (target) {
+                    const arrow = toggle.querySelector('.query-toggle-arrow');
+                    target.addEventListener('show.bs.collapse', () => {
+                        if (arrow) arrow.style.transform = 'rotate(90deg)';
+                    });
+                    target.addEventListener('hide.bs.collapse', () => {
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    });
+                }
+            });
         }
 
         let dryRunElapsedTimer = null;
@@ -1845,6 +1866,24 @@
             // Keep progress bar and log visible after cancel (don't hide searchProgress)
             const progressMsg = document.getElementById('searchProgressMsg');
             if (progressMsg) progressMsg.textContent = '취소 요청됨... 현재 단계 완료 후 중단됩니다.';
+        });
+
+        document.getElementById('resetPipelineBtn').addEventListener('click', async () => {
+            if (!confirm('파이프라인 상태를 강제 초기화하시겠습니까?\n실행 중인 작업이 있으면 중단됩니다.')) return;
+            try {
+                const resp = await fetch('/api/pipeline/reset', { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    stopSearch();
+                    const progressDiv = document.getElementById('searchProgress');
+                    if (progressDiv) progressDiv.style.display = 'none';
+                    alert(data.message + (data.was_running ? ' (실행 중이던 작업이 초기화됨)' : ''));
+                } else {
+                    alert('초기화 실패: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('초기화 요청 실패: ' + e.message);
+            }
         });
 
         async function startSearch() {
