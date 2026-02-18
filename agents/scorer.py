@@ -213,6 +213,33 @@ class Scorer(BaseAgent):
         ]
 
     # ------------------------------------------------------------------
+    # Response normalization
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _normalize_to_list(raw: dict | list | None) -> list | None:
+        """Ensure LLM response is a list of evaluation dicts.
+
+        Handles two common non-list patterns from response_format
+        json_object mode:
+          - Single dict with scoring keys -> wrap in list
+          - Wrapper dict like {"results": [...]} -> unwrap
+        """
+        if raw is None:
+            return None
+        if isinstance(raw, list):
+            return raw
+        if isinstance(raw, dict):
+            # Check for wrapper pattern: {"results": [...]}
+            for key in ("results", "evaluations", "scores", "papers"):
+                if key in raw and isinstance(raw[key], list):
+                    return raw[key]
+            # Single evaluation dict -> wrap in list
+            if "arxiv_id" in raw or "base_score" in raw:
+                return [raw]
+        return None
+
+    # ------------------------------------------------------------------
     # Internal batch processing
     # ------------------------------------------------------------------
 
@@ -250,6 +277,11 @@ class Scorer(BaseAgent):
         )
         rate_limiter.record_call()
 
+        # Normalize: response_format json_object may return a dict
+        # instead of the expected list.  Also handle {"results": [...]}
+        # wrapper pattern.
+        raw = self._normalize_to_list(raw)
+
         if raw is None or not isinstance(raw, list):
             # First parse failure -- retry once
             logger.warning(
@@ -261,6 +293,7 @@ class Scorer(BaseAgent):
                 model_override=model_override,
             )
             rate_limiter.record_call()
+            raw = self._normalize_to_list(raw)
 
             if raw is None or not isinstance(raw, list):
                 logger.warning(

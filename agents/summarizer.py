@@ -325,6 +325,33 @@ class Summarizer(BaseAgent):
         ]
 
     # ------------------------------------------------------------------
+    # Response normalization
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _normalize_to_list(raw: dict | list | None) -> list | None:
+        """Ensure LLM response is a list of summary dicts.
+
+        Handles two common non-list patterns from response_format
+        json_object mode:
+          - Single dict with summary keys -> wrap in list
+          - Wrapper dict like {"results": [...]} -> unwrap
+        """
+        if raw is None:
+            return None
+        if isinstance(raw, list):
+            return raw
+        if isinstance(raw, dict):
+            # Check for wrapper pattern
+            for key in ("results", "summaries", "papers"):
+                if key in raw and isinstance(raw[key], list):
+                    return raw[key]
+            # Single summary dict -> wrap in list
+            if "arxiv_id" in raw or "summary_ko" in raw:
+                return [raw]
+        return None
+
+    # ------------------------------------------------------------------
     # Internal batch processing
     # ------------------------------------------------------------------
 
@@ -365,6 +392,9 @@ class Summarizer(BaseAgent):
         )
         rate_limiter.record_call()
 
+        # Normalize: response_format json_object may return a dict
+        raw = self._normalize_to_list(raw)
+
         if raw is None or not isinstance(raw, list):
             # First parse failure -- retry once
             logger.warning(
@@ -378,6 +408,7 @@ class Summarizer(BaseAgent):
                 model_override=model_override,
             )
             rate_limiter.record_call()
+            raw = self._normalize_to_list(raw)
 
             if raw is None or not isinstance(raw, list):
                 logger.warning(
