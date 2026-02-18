@@ -50,6 +50,9 @@ class NotifierRegistry:
             env_key = f"DISCORD_WEBHOOK_{notify_config.secret_key}"
             webhook_url = os.environ.get(env_key, "")
             if not webhook_url:
+                # Fallback: try DISCORD_WEBHOOK_URL (common convention)
+                webhook_url = os.environ.get("DISCORD_WEBHOOK_URL", "")
+            if not webhook_url:
                 raise ValueError(f"Environment variable {env_key} not set")
             # Import here to avoid circular imports
             from output.notifiers.discord import DiscordNotifier

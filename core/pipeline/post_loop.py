@@ -394,8 +394,8 @@ class PostLoopProcessor:
             "data/seen_items.jsonl",
             "data/issue_map.json",
             "data/usage/",
-            "data/keyword_cache/",
-            "data/model_caps/",
+            "data/keyword_cache.json",
+            "data/model_caps.json",
             "data/weekly_done.flag",
             "data/last_success.json",
         ]
@@ -407,6 +407,17 @@ class PostLoopProcessor:
             return True
 
         try:
+            # Ensure git user config is set (needed in CI)
+            subprocess.run(
+                ["git", "config", "user.name", "paper-scout[bot]"],
+                capture_output=True, text=True, timeout=5,
+            )
+            subprocess.run(
+                ["git", "config", "user.email",
+                 "paper-scout[bot]@users.noreply.github.com"],
+                capture_output=True, text=True, timeout=5,
+            )
+
             # Stage files
             cmd_add = ["git", "add"] + existing
             result = subprocess.run(

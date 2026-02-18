@@ -274,6 +274,7 @@ def sync_data_secrets(config_path: str = "config.yaml", data_dir: str = "data") 
         "PAPER_SCOUT_CONFIG": Path(config_path),
         "PAPER_SCOUT_KEYWORD_CACHE": Path(data_dir) / "keyword_cache.json",
         "PAPER_SCOUT_LAST_SUCCESS": Path(data_dir) / "last_success.json",
+        "PAPER_SCOUT_MODEL_CAPS": Path(data_dir) / "model_caps.json",
     }
 
     # Build secrets dict: base64-encode each file that exists
