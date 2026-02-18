@@ -184,8 +184,14 @@ def _detect_limits(
         (detected_rpm, detected_daily_limit)
     """
     preflight_cfg = config.llm.get("preflight", {})
-    fallback_rpm = preflight_cfg.get("fallback_rpm", _DEFAULT_FALLBACK_RPM)
-    fallback_daily = preflight_cfg.get("fallback_daily", _DEFAULT_FALLBACK_DAILY)
+    fallback_rpm = preflight_cfg.get(
+        "conservative_rpm",
+        preflight_cfg.get("fallback_rpm", _DEFAULT_FALLBACK_RPM),
+    )
+    fallback_daily = preflight_cfg.get(
+        "conservative_daily",
+        preflight_cfg.get("fallback_daily", _DEFAULT_FALLBACK_DAILY),
+    )
 
     try:
         data = key_info.get("data", key_info)
