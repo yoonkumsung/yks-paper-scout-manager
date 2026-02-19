@@ -1496,9 +1496,11 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    const details = (result.results || [])
-                        .map(r => `${r.secret}: ${r.status}`)
-                        .join('\n');
+                    const raw = result.results || {};
+                    const details = (Array.isArray(raw)
+                        ? raw.map(r => `${r.secret}: ${r.status}`)
+                        : Object.entries(raw).map(([k, v]) => `${k}: ${v}`)
+                    ).join('\n');
 
                     // Check schedule_enabled from current settings
                     const scheduleEnabled = window.currentSettings?.app?.schedule_enabled !== false;
@@ -1517,11 +1519,11 @@
                 } else if (result.error) {
                     alert(`배포 오류: ${result.error}\n\nGITHUB_TOKEN이 설정되어 있는지 확인해주세요.`);
                 } else {
-                    const errors = (result.results || [])
-                        .filter(r => r.status !== 'ok')
-                        .map(r => `${r.secret}: ${r.error || r.status}`)
-                        .join('\n');
-                    alert('일부 항목 배포에 실패했습니다.\n\n' + errors);
+                    const rawErr = result.results || {};
+                    const errors = Array.isArray(rawErr)
+                        ? rawErr.filter(r => r.status !== 'ok').map(r => `${r.secret}: ${r.error || r.status}`).join('\n')
+                        : Object.entries(rawErr).filter(([,v]) => !String(v).startsWith('ok')).map(([k,v]) => `${k}: ${v}`).join('\n');
+                    alert('일부 항목 배포에 실패했습니다.\n\n' + (errors || result.error || 'Unknown error'));
                 }
             } catch (error) {
                 alert(`배포 오류: ${error.message}`);
