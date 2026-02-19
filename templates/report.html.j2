@@ -6,10 +6,10 @@
 <div class="header">
   <h1>{{ meta.display_title }}</h1>
   <div class="stats">
-    <span>수집 {{ meta.total_collected }}편</span>
-    <span>필터 {{ meta.total_filtered }}편</span>
-    <span>제외 {{ meta.total_discarded }}편</span>
-    <span>선정 {{ meta.total_output }}편</span>
+    <span title="arXiv에서 수집된 총 논문 수">수집 {{ meta.total_collected }}편</span>
+    <span title="키워드 필터 통과">필터 {{ meta.total_filtered }}편</span>
+    <span title="LLM 평가 후 제외">제외 {{ meta.total_discarded }}편</span>
+    <span title="최종 선정된 논문">선정 {{ meta.total_output }}편</span>
   </div>
   <div class="window-info">
     <span class="window-label">검색 윈도우</span>
@@ -51,7 +51,7 @@
       {% endfor %}
 
       {% for paper in tier1_papers %}
-      <div class="paper-card">
+      <div class="paper-card{% if loop.index > 5 %} paper-card--collapsed{% endif %}">
         <div class="rank-title">
           <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="{{ paper.pdf_url or '' }}" onchange="updateToolbar()">
           <span class="rank">{{ paper.rank }}위</span>
@@ -59,7 +59,7 @@
             <a href="{{ paper.url }}">{{ paper.title }}</a>
           </span>
           {% if paper.score_lowered %}
-          <span class="lowered-tag">[완화]</span>
+          <span class="lowered-tag" title="필터 기준을 낮춰 포함된 논문">기준완화</span>
           {% endif %}
         </div>
 
@@ -97,10 +97,15 @@
         {% endif %}
 
         {% if paper.summary_ko %}
-        <details>
-          <summary>개요</summary>
-          <div class="details-content">{{ paper.summary_ko }}</div>
-        </details>
+        <div class="abstract-section">
+          <p class="abstract-preview">{{ paper.summary_ko | truncate_sentences(2) }}</p>
+          {% if paper.summary_ko | truncate_sentences(2) != paper.summary_ko %}
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">{{ paper.summary_ko }}</div>
+          </details>
+          {% endif %}
+        </div>
         {% endif %}
 
         {% if paper.reason_ko %}
@@ -128,6 +133,12 @@
       </div>
       {% endfor %}
 
+      {% if tier1_papers | length > 5 %}
+      <button class="show-more-btn" id="showMoreBtn" onclick="showAllTier1()">
+        나머지 {{ tier1_papers | length - 5 }}편 더 보기
+      </button>
+      {% endif %}
+
       {% if tier1_papers and tier2_papers %}
       <div class="tier-divider">Tier 2</div>
       {% endif %}
@@ -141,7 +152,7 @@
             <a href="{{ paper.url }}">{{ paper.title }}</a>
           </span>
           {% if paper.score_lowered %}
-          <span class="lowered-tag">[완화]</span>
+          <span class="lowered-tag" title="필터 기준을 낮춰 포함된 논문">기준완화</span>
           {% endif %}
           <span class="compact-meta">
             <span class="score-detail">{{ paper.final_score }}</span>
@@ -240,6 +251,14 @@
 </footer>
 
 <script>
+function showAllTier1() {
+  document.querySelectorAll('.paper-card--collapsed').forEach(function(el) {
+    el.classList.remove('paper-card--collapsed');
+  });
+  var btn = document.getElementById('showMoreBtn');
+  if (btn) btn.style.display = 'none';
+}
+
 function toggleSelect(filter) {
   var boxes = document.querySelectorAll('.tab-panel-today .paper-checkbox');
   boxes.forEach(function(cb) {
