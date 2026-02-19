@@ -402,16 +402,34 @@ def _lookup_window_start(
     Priority 2: data/last_success.json
     Priority 3: 72-hour fallback (window_end - 72h)
     """
-    # Priority 1: DB
+    # Priority 1: DB (with sanity check against window_end)
     latest_run = db.get_latest_completed_run(topic_slug)
     if latest_run is not None and latest_run.window_end_utc is not None:
-        logger.info(
-            "Topic '%s': window_start from DB (run_id=%s): %s",
-            topic_slug,
-            latest_run.run_id,
-            latest_run.window_end_utc,
-        )
-        return latest_run.window_end_utc
+        ws = latest_run.window_end_utc
+        # Ensure timezone-aware
+        if ws.tzinfo is None:
+            ws = ws.replace(tzinfo=timezone.utc)
+        we = window_end
+        if we.tzinfo is None:
+            we = we.replace(tzinfo=timezone.utc)
+        # Sanity check: skip stale DB dates (>90 days old)
+        if (we - ws).days > 90:
+            logger.warning(
+                "Topic '%s': DB window_start is stale (run_id=%s, %s, %d days old). "
+                "Falling through to last_success.json.",
+                topic_slug,
+                latest_run.run_id,
+                ws,
+                (we - ws).days,
+            )
+        else:
+            logger.info(
+                "Topic '%s': window_start from DB (run_id=%s): %s",
+                topic_slug,
+                latest_run.run_id,
+                ws,
+            )
+            return ws
 
     # Priority 2: last_success.json
     last_success = _load_last_success()

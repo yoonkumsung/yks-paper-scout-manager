@@ -97,7 +97,7 @@ class SearchWindowComputer:
         self, topic_slug: str, window_end: datetime
     ) -> datetime:
         """3-level fallback chain for window_start."""
-        # Level 1: DB RunMeta
+        # Level 1: DB RunMeta (with sanity check against window_end)
         if self._db is not None:
             run = self._db.get_latest_completed_run(topic_slug)
             if run is not None and run.window_end_utc is not None:
@@ -105,12 +105,24 @@ class SearchWindowComputer:
                 # Ensure timezone-aware for safe comparison
                 if ws.tzinfo is None:
                     ws = ws.replace(tzinfo=timezone.utc)
-                logger.info(
-                    "Window start from DB for %s: %s",
-                    topic_slug,
-                    ws,
-                )
-                return ws
+                # Sanity check: DB date should not be more than 90 days
+                # before window_end.  Stale test runs can leave old dates
+                # (e.g. 2025 instead of 2026) that corrupt the search window.
+                if (window_end - ws).days > 90:
+                    logger.warning(
+                        "DB window_start for %s is stale (%s, %d days old). "
+                        "Falling through to last_success.json.",
+                        topic_slug,
+                        ws,
+                        (window_end - ws).days,
+                    )
+                else:
+                    logger.info(
+                        "Window start from DB for %s: %s",
+                        topic_slug,
+                        ws,
+                    )
+                    return ws
 
         # Level 2: last_success.json
         last_success = self._load_last_success()

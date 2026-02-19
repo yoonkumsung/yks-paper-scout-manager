@@ -179,10 +179,10 @@ class Summarizer(BaseAgent):
             except Exception as exc:
                 logger.error(
                     "summarizer: tier1 batch %d/%d failed unexpectedly: %s. "
-                    "Returning %d partial results.",
-                    batch_idx + 1, len(tier1_batches), exc, len(results),
+                    "Skipping batch, continuing with remaining.",
+                    batch_idx + 1, len(tier1_batches), exc,
                 )
-                return results
+                continue
 
         # Process Tier 2 batches (batch_size=10)
         tier2_batch_size = self.agent_config.get(
@@ -245,10 +245,10 @@ class Summarizer(BaseAgent):
             except Exception as exc:
                 logger.error(
                     "summarizer: tier2 batch %d/%d failed unexpectedly: %s. "
-                    "Returning %d partial results.",
-                    batch_idx + 1, len(tier2_batches), exc, len(results),
+                    "Skipping batch, continuing with remaining.",
+                    batch_idx + 1, len(tier2_batches), exc,
                 )
-                return results
+                continue
 
         return results
 
