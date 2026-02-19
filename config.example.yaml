@@ -148,6 +148,10 @@ output:
     - paper-report
   attachments:
     enabled: true
+    formats:
+    - html
+    - md
+    include_read_sync: true
 notifications:
   weekly_summary:
     provider: ''

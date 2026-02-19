@@ -43,6 +43,7 @@ class NotifyPayload:
     file_paths: Dict[str, str] = field(default_factory=dict)
     gh_pages_url: Optional[str] = None
     notify_mode: str = "file"  # "file" = attach HTML, "link" = send URL only
+    allowed_formats: List[str] = field(default_factory=lambda: ["html", "md"])
     event_type: str = "complete"  # "start" or "complete"
     categories: List[str] = field(default_factory=list)
     search_window: Optional[str] = None  # e.g. "2026-02-17 ~ 2026-02-18"
@@ -110,6 +111,12 @@ class NotifierBase(ABC):
         else:
             # Determine which files to attach (pre-send size check).
             attachable_files = self._check_file_sizes(payload.file_paths)
+            # Filter by configured formats (exclude json by default).
+            if payload.allowed_formats:
+                attachable_files = {
+                    k: v for k, v in attachable_files.items()
+                    if k in payload.allowed_formats
+                }
 
         for attempt in range(1, 3):  # 1 try + 1 retry
             try:

@@ -287,7 +287,11 @@ class PostLoopProcessor:
                 report_data=latest_report_data,
                 output_dir=report_dir,
                 template_dir=template_dir,
-                read_sync=self._config.read_sync or None,
+                read_sync=(self._config.read_sync or None)
+                if self._config.output.get("attachments", {}).get(
+                    "include_read_sync", True
+                )
+                else None,
             )
 
     # ------------------------------------------------------------------
@@ -366,6 +370,7 @@ class PostLoopProcessor:
                     gh_pages_url = f"{base_url}/latest.html"
                     notify_mode = gh_pages_cfg.get("notify_mode", "file")
 
+                attachments_cfg = self._config.output.get("attachments", {})
                 payload = NotifyPayload(
                     topic_slug=slug,
                     topic_name=topic_spec.name,
@@ -375,6 +380,7 @@ class PostLoopProcessor:
                     file_paths=file_paths,
                     gh_pages_url=gh_pages_url,
                     notify_mode=notify_mode,
+                    allowed_formats=attachments_cfg.get("formats", ["html", "md"]),
                     event_type="complete",
                 )
 

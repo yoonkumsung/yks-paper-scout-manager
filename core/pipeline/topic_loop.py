@@ -1080,7 +1080,10 @@ class TopicLoopOrchestrator:
 
         # HTML
         template_dir = self._config.output.get("template_dir", "templates")
-        read_sync = self._config.read_sync or None
+        include_read_sync = self._config.output.get("attachments", {}).get(
+            "include_read_sync", True
+        )
+        read_sync = (self._config.read_sync or None) if include_read_sync else None
         html_path = generate_report_html(
             report_data=report_data,
             output_dir=date_subdir,
