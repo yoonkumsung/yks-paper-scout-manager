@@ -5,12 +5,13 @@ Provides CRUD operations for topic management.
 
 from __future__ import annotations
 
-import glob
+import hashlib
+import json
 import logging
 import os
 import re
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, request
@@ -22,37 +23,62 @@ logger = logging.getLogger(__name__)
 topics_bp = Blueprint("topics", __name__)
 
 
-def _get_cache_status(data_path: str, topic_slug: str) -> dict:
+def _get_cache_status(data_path: str, topic: dict) -> dict:
     """Get cache status for a topic.
 
+    Reads ``data/keyword_cache.json`` and looks up the entry whose key
+    matches the SHA-256 hash of the topic's description (plus optional
+    constraint fields), mirroring ``KeywordExpander._compute_cache_key``.
+
     Args:
-        data_path: Path to data directory containing keyword_cache
-        topic_slug: Topic slug
+        data_path: Path to data directory containing keyword_cache.json
+        topic: Topic dict with at least ``description``.
 
     Returns:
         Dictionary with exists (bool) and expires_in_days (int | None)
     """
-    cache_dir = os.path.join(data_path, "keyword_cache")
-    if not os.path.exists(cache_dir):
+    cache_file = os.path.join(data_path, "keyword_cache.json")
+    if not os.path.exists(cache_file):
         return {"exists": False, "expires_in_days": None}
 
-    # Look for cache files matching pattern: {slug}_*.json
-    pattern = os.path.join(cache_dir, f"{topic_slug}_*.json")
-    cache_files = glob.glob(pattern)
-
-    if not cache_files:
+    try:
+        with open(cache_file, "r", encoding="utf-8") as f:
+            cache = json.load(f)
+    except (json.JSONDecodeError, OSError):
         return {"exists": False, "expires_in_days": None}
 
-    # Get most recent cache file
-    latest_cache = max(cache_files, key=os.path.getmtime)
-    cache_mtime = os.path.getmtime(latest_cache)
-    cache_age_days = (datetime.now().timestamp() - cache_mtime) / (24 * 3600)
+    # Compute cache key the same way as KeywordExpander._compute_cache_key
+    parts = [topic.get("description", "")]
+    must = topic.get("must_concepts_en") or []
+    should = topic.get("should_concepts_en") or []
+    must_not = topic.get("must_not_en") or []
+    if must:
+        parts.append("|must:" + ",".join(sorted(must)))
+    if should:
+        parts.append("|should:" + ",".join(sorted(should)))
+    if must_not:
+        parts.append("|not:" + ",".join(sorted(must_not)))
+    cache_key = hashlib.sha256("".join(parts).encode("utf-8")).hexdigest()
 
-    # Cache expires after 30 days
-    CACHE_EXPIRY_DAYS = 30
-    remaining_days = int(CACHE_EXPIRY_DAYS - cache_age_days)
+    entry = cache.get(cache_key)
+    if not entry or not entry.get("cached_at"):
+        return {"exists": False, "expires_in_days": None}
 
-    return {"exists": True, "expires_in_days": max(0, remaining_days)}
+    try:
+        cached_at = datetime.fromisoformat(entry["cached_at"])
+        if cached_at.tzinfo is None:
+            cached_at = cached_at.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return {"exists": False, "expires_in_days": None}
+
+    ttl_days = 30
+    age = datetime.now(timezone.utc) - cached_at
+    remaining_days = int(ttl_days - age.total_seconds() / 86400)
+
+    if remaining_days <= 0:
+        return {"exists": False, "expires_in_days": 0}
+
+    return {"exists": True, "expires_in_days": remaining_days}
 
 
 def _get_topic_stats(db_path: str, topic_slug: str) -> dict:
@@ -165,7 +191,7 @@ def list_topics():
             topic["total_output"] = stats.get("total_output", 0)
 
             # Add cache status
-            cache_status = _get_cache_status(data_path, slug)
+            cache_status = _get_cache_status(data_path, topic)
             topic["cache_status"] = cache_status
 
             # Filter optional fields (only include if set)

@@ -8,7 +8,7 @@ Handles all work after the per-topic loop completes (DevSpec Section 9-4):
 5. tmp/ cleanup
 
 GitHub Issue upsert is handled per-topic in step 11 and skipped here.
-gh-pages deploy and cache save are handled by CI, not Python.
+gh-pages deploy is handled in step 2.5 via git worktree push.
 """
 
 from __future__ import annotations
