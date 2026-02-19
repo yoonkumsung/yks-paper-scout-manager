@@ -192,11 +192,29 @@ def validate_topic(topic_data: dict, index: int) -> TopicSpec:
                             f"invalid event '{ev}', must be one of {sorted(valid_events)}"
                         )
 
+                # Per-channel send modes (default: ["link"])
+                channel_send = item.get("send", ["link"])
+                if isinstance(channel_send, str):
+                    channel_send = [channel_send]  # allow single string
+                if not isinstance(channel_send, list):
+                    raise ConfigError(
+                        f"topics[{index}].notify[{ni}].send: "
+                        f"must be a list or string, got {type(channel_send).__name__}"
+                    )
+                valid_send = {"link", "readonly_link", "md"}
+                for s in channel_send:
+                    if s not in valid_send:
+                        raise ConfigError(
+                            f"topics[{index}].notify[{ni}].send: "
+                            f"invalid value '{s}', must be one of {sorted(valid_send)}"
+                        )
+
                 notify.append(NotifyConfig(
                     provider=provider,
                     channel_id=str(channel_id),
                     secret_key=str(secret_key),
                     events=events,
+                    send=channel_send,
                 ))
             elif provider and provider not in _VALID_NOTIFY_PROVIDERS:
                 raise ConfigError(

@@ -128,6 +128,8 @@ topics:
     events:
     - start
     - complete
+    send:
+    - link  # "link" | "readonly_link" | "md" (multi-select list)
 
 read_sync:
   enabled: false  # true to enable cross-device read tracking
@@ -140,7 +142,6 @@ output:
     base_url: https://USERNAME.github.io/REPO_NAME
     keep_files: true
     retention_days: 90
-    notify_mode: link  # "link" = send URL only, "file" = attach HTML file
   github_issue:
     enabled: false
     body_max_chars: 60000
@@ -148,10 +149,6 @@ output:
     - paper-report
   attachments:
     enabled: true
-    formats:
-    - html
-    - md
-    include_read_sync: true
 notifications:
   weekly_summary:
     provider: ''

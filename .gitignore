@@ -125,6 +125,7 @@ data/last_success.json
 data/paper_scout.db-shm
 data/paper_scout.db-wal
 data/usage/
+data/.deploy_hashes.json
 
 # ===========================================
 # Backups

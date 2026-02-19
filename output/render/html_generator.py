@@ -43,6 +43,7 @@ def generate_report_html(
     output_dir: str = "tmp/reports",
     template_dir: str = "templates",
     read_sync: Optional[dict] = None,
+    filename: Optional[str] = None,
 ) -> str:
     """Generate an HTML report page.
 
@@ -51,6 +52,11 @@ def generate_report_html(
             ``clusters``, and ``remind_papers``.
         output_dir: Directory to write the report file to.
         template_dir: Directory containing Jinja2 template files.
+        read_sync: Supabase read-sync configuration dict, or None to
+            exclude read tracking JS from the rendered HTML.
+        filename: Optional override for the output filename.  When None
+            (the default), the filename is derived from report metadata
+            via ``_build_filename()``.
 
     Returns:
         Absolute path to the written ``.html`` file.
@@ -85,7 +91,8 @@ def generate_report_html(
 
     # Write output file.
     os.makedirs(output_dir, exist_ok=True)
-    filename = _build_filename(meta)
+    if filename is None:
+        filename = _build_filename(meta)
     filepath = os.path.join(output_dir, filename)
 
     with open(filepath, "w", encoding="utf-8") as fh:
@@ -133,19 +140,23 @@ def generate_latest_html(
     output_dir: str = "tmp/reports",
     template_dir: str = "templates",
     read_sync: Optional[dict] = None,
+    filename: str = "latest.html",
 ) -> str:
     """Generate latest.html that always overwrites for bookmarking.
 
-    Uses the same report template but always writes to ``latest.html``.
+    Uses the same report template but always writes to the given filename.
 
     Args:
         report_data: Dict from JSON exporter containing ``meta``, ``papers``,
             ``clusters``, and ``remind_papers``.
-        output_dir: Directory to write latest.html into.
+        output_dir: Directory to write the file into.
         template_dir: Directory containing Jinja2 template files.
+        read_sync: Supabase read-sync configuration dict, or None to
+            exclude read tracking JS from the rendered HTML.
+        filename: Output filename.  Defaults to ``"latest.html"``.
 
     Returns:
-        Absolute path to the written ``latest.html``.
+        Absolute path to the written HTML file.
     """
     env = _create_env(template_dir)
     template = env.get_template("report.html.j2")
@@ -173,7 +184,7 @@ def generate_latest_html(
     )
 
     os.makedirs(output_dir, exist_ok=True)
-    filepath = os.path.join(output_dir, "latest.html")
+    filepath = os.path.join(output_dir, filename)
 
     with open(filepath, "w", encoding="utf-8") as fh:
         fh.write(rendered)

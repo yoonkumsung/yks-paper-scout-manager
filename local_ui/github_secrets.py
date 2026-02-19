@@ -9,6 +9,7 @@ Supports three strategies in priority order:
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import logging
 import os
@@ -277,9 +278,19 @@ def sync_data_secrets(config_path: str = "config.yaml", data_dir: str = "data") 
         "PAPER_SCOUT_MODEL_CAPS": Path(data_dir) / "model_caps.json",
     }
 
+    # Load previous deploy hashes to detect actual changes
+    hash_file = Path(data_dir) / ".deploy_hashes.json"
+    prev_hashes: dict[str, str] = {}
+    if hash_file.exists():
+        try:
+            prev_hashes = json.loads(hash_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     # Build secrets dict: base64-encode each file that exists
     secrets: dict[str, str] = {}
     file_status: dict[str, str] = {}
+    current_hashes: dict[str, str] = {}
     warnings: list[str] = []
 
     for secret_name, file_path in file_map.items():
@@ -319,8 +330,16 @@ def sync_data_secrets(config_path: str = "config.yaml", data_dir: str = "data") 
             )
             continue
 
+        # Compare hash to detect actual changes
+        file_hash = hashlib.sha256(raw).hexdigest()
+        current_hashes[secret_name] = file_hash
+        changed = file_hash != prev_hashes.get(secret_name)
+
         secrets[secret_name] = encoded
-        file_status[secret_name] = f"ok ({raw_size:,} bytes)"
+        file_status[secret_name] = (
+            f"updated ({raw_size:,} bytes)" if changed
+            else f"unchanged ({raw_size:,} bytes)"
+        )
 
     if not secrets:
         return {
@@ -331,9 +350,19 @@ def sync_data_secrets(config_path: str = "config.yaml", data_dir: str = "data") 
             "repo": repo_info,
         }
 
+    def _save_hashes() -> None:
+        """Save current file hashes after successful deploy."""
+        try:
+            hash_file.write_text(
+                json.dumps(current_hashes, indent=2), encoding="utf-8"
+            )
+        except Exception:
+            pass
+
     # Try gh CLI first
     result = _try_gh_cli(owner, repo, secrets)
     if result.get("available") and result.get("success"):
+        _save_hashes()
         return {
             "success": True,
             "method": "gh_cli",
@@ -348,6 +377,7 @@ def sync_data_secrets(config_path: str = "config.yaml", data_dir: str = "data") 
     if token:
         api_result = _try_api(owner, repo, secrets, token)
         if api_result.get("available") and api_result.get("success"):
+            _save_hashes()
             return {
                 "success": True,
                 "method": "api",

@@ -281,17 +281,24 @@ class PostLoopProcessor:
                 template_dir=template_dir,
             )
 
-        # Generate latest.html from the last completed topic
+        # Generate latest.html (with Supabase JS read tracking) and
+        # latest_readonly.html (without Supabase JS) for gh-pages.
+        # Channels choose which variant to link via their ``send`` list.
         if latest_report_data is not None:
+            # Primary latest.html with Supabase JS
             generate_latest_html(
                 report_data=latest_report_data,
                 output_dir=report_dir,
                 template_dir=template_dir,
-                read_sync=(self._config.read_sync or None)
-                if self._config.output.get("attachments", {}).get(
-                    "include_read_sync", True
-                )
-                else None,
+                read_sync=(self._config.read_sync or None),
+            )
+            # Read-only latest_readonly.html without Supabase JS
+            generate_latest_html(
+                report_data=latest_report_data,
+                output_dir=report_dir,
+                template_dir=template_dir,
+                read_sync=None,
+                filename="latest_readonly.html",
             )
 
     # ------------------------------------------------------------------
@@ -303,8 +310,10 @@ class PostLoopProcessor:
     ) -> tuple[int, int]:
         """Send notifications for each completed topic.
 
-        Failures are isolated: a failed notification for one topic does
-        not block notifications for other topics.
+        Dispatches per-channel: each NotifyConfig entry gets its own
+        payload based on the channel's ``send`` list.  Failures are
+        isolated: a failed notification for one channel does not block
+        notifications for other channels.
 
         Args:
             completed: List of dicts with ``slug`` and ``total_output``.
@@ -318,6 +327,12 @@ class PostLoopProcessor:
         registry = NotifierRegistry()
         sent = 0
         failed = 0
+
+        # Build common gh_pages base URL once
+        gh_pages_cfg = self._config.output.get("gh_pages", {})
+        gh_pages_base_url: Optional[str] = None
+        if gh_pages_cfg.get("enabled") and gh_pages_cfg.get("base_url"):
+            gh_pages_base_url = gh_pages_cfg["base_url"].rstrip("/")
 
         for topic_info in completed:
             slug = topic_info["slug"]
@@ -341,50 +356,74 @@ class PostLoopProcessor:
                     )
                     continue
 
-                # Get notifiers for the "complete" event
-                notifiers = registry.get_notifiers_for_event(
-                    topic_spec.notify, "complete"
-                )
-                if not notifiers:
-                    logger.info(
-                        "Topic '%s': no notifiers for 'complete' event",
-                        slug,
-                    )
-                    continue
-
-                # Build display date
+                # Build common fields once per topic
                 display_date = self._get_display_date(slug)
-
-                # Extract keywords from latest run
                 keywords = self._get_keywords_for_topic(slug)
-
-                # Find report file paths
                 file_paths = self._find_report_files(slug, self._report_dir)
 
-                # Build gh_pages URL if configured
-                gh_pages_cfg = self._config.output.get("gh_pages", {})
-                gh_pages_url = None
-                notify_mode = "file"
-                if gh_pages_cfg.get("enabled") and gh_pages_cfg.get("base_url"):
-                    base_url = gh_pages_cfg["base_url"].rstrip("/")
-                    gh_pages_url = f"{base_url}/latest.html"
-                    notify_mode = gh_pages_cfg.get("notify_mode", "file")
+                # Per-channel dispatch based on send list
+                for notify_cfg in topic_spec.notify:
+                    if "complete" not in notify_cfg.events:
+                        continue
 
-                attachments_cfg = self._config.output.get("attachments", {})
-                payload = NotifyPayload(
-                    topic_slug=slug,
-                    topic_name=topic_spec.name,
-                    display_date=display_date,
-                    keywords=keywords,
-                    total_output=total_output,
-                    file_paths=file_paths,
-                    gh_pages_url=gh_pages_url,
-                    notify_mode=notify_mode,
-                    allowed_formats=attachments_cfg.get("formats", ["html", "md"]),
-                    event_type="complete",
-                )
+                    try:
+                        notifier = registry.get_notifier(notify_cfg)
+                    except ValueError as e:
+                        logger.warning("Skipping notifier: %s", e)
+                        failed += 1
+                        continue
 
-                for notifier in notifiers:
+                    send_modes = notify_cfg.send or ["link"]
+
+                    # Determine which link URL to use (if any)
+                    has_link = "link" in send_modes and gh_pages_base_url
+                    has_readonly_link = (
+                        "readonly_link" in send_modes and gh_pages_base_url
+                    )
+                    has_md = "md" in send_modes and "md" in file_paths
+
+                    # Choose the gh_pages URL for the message
+                    channel_gh_pages_url: Optional[str] = None
+                    if has_link:
+                        channel_gh_pages_url = (
+                            f"{gh_pages_base_url}/latest.html"
+                        )
+                    elif has_readonly_link:
+                        channel_gh_pages_url = (
+                            f"{gh_pages_base_url}/latest_readonly.html"
+                        )
+
+                    if not has_link and not has_readonly_link and not has_md:
+                        logger.warning(
+                            "Channel %s/%s has no actionable send modes "
+                            "(gh_pages not configured or md not available)",
+                            notify_cfg.provider,
+                            notify_cfg.secret_key,
+                        )
+                        continue
+
+                    # Build per-channel file_paths (only MD if requested)
+                    channel_file_paths: Dict[str, str] = {}
+                    if has_md:
+                        channel_file_paths["md"] = file_paths["md"]
+
+                    # Always use "file" notify_mode so that the normal
+                    # _send path handles both message text and attachments.
+                    # The link URL (if any) is included in the message text
+                    # by _build_normal_message via gh_pages_url.
+                    payload = NotifyPayload(
+                        topic_slug=slug,
+                        topic_name=topic_spec.name,
+                        display_date=display_date,
+                        keywords=keywords,
+                        total_output=total_output,
+                        file_paths=channel_file_paths,
+                        gh_pages_url=channel_gh_pages_url,
+                        notify_mode="file",
+                        allowed_formats=["md"] if has_md else [],
+                        event_type="complete",
+                    )
+
                     success = notifier.notify(payload)
                     if success:
                         sent += 1
@@ -400,6 +439,83 @@ class PostLoopProcessor:
                 failed += 1
 
         return sent, failed
+
+    def _get_readonly_html(
+        self, slug: str, original_html_path: str
+    ) -> Optional[str]:
+        """Generate a read-only HTML (no Supabase JS) for shared channels.
+
+        Re-renders the report HTML with ``read_sync=None`` to exclude
+        Supabase read-tracking JavaScript.  The result is cached so
+        multiple read-only channels reuse the same file.
+
+        Args:
+            slug: Topic slug for locating the JSON report.
+            original_html_path: Path to the original (full) HTML report.
+
+        Returns:
+            Absolute path to the read-only HTML file, or None on failure.
+        """
+        if not os.path.exists(original_html_path):
+            return None
+
+        # Cache path: same directory, with _readonly suffix
+        report_dir = os.path.dirname(original_html_path)
+        readonly_filename = os.path.basename(original_html_path).replace(
+            ".html", "_readonly.html"
+        )
+        readonly_path = os.path.join(report_dir, readonly_filename)
+        if os.path.exists(readonly_path):
+            return readonly_path
+
+        # Find JSON report in the same directory
+        json_files = [
+            f for f in os.listdir(report_dir) if f.endswith(".json") and slug in f
+        ]
+        if not json_files:
+            logger.warning(
+                "No JSON report found for read-only HTML generation "
+                "(slug=%s, dir=%s)",
+                slug,
+                report_dir,
+            )
+            return None
+
+        import json
+
+        json_path = os.path.join(report_dir, json_files[0])
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                report_data = json.load(f)
+        except Exception:
+            logger.warning(
+                "Failed to load report JSON for read-only HTML",
+                exc_info=True,
+            )
+            return None
+
+        from output.render.html_generator import generate_report_html
+
+        template_dir = self._config.output.get("template_dir", "templates")
+        try:
+            result_path = generate_report_html(
+                report_data=report_data,
+                output_dir=report_dir,
+                template_dir=template_dir,
+                read_sync=None,  # No Supabase JS
+                filename=readonly_filename,
+            )
+            logger.info(
+                "Generated read-only HTML for '%s': %s", slug, result_path
+            )
+            return result_path
+        except Exception:
+            logger.warning(
+                "Failed to generate read-only HTML for '%s'",
+                slug,
+                exc_info=True,
+            )
+            return None
 
     # ------------------------------------------------------------------
     # Step 4: Git commit metadata

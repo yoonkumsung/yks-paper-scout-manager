@@ -56,12 +56,20 @@ class NotifyConfig:
         events: List of event types to notify on.
             Valid values: "start", "complete".
             Defaults to ["complete"] for backward compatibility.
+        send: List of delivery modes for this channel.
+            Valid values: "link", "readonly_link", "md".
+            - "link": GitHub Pages URL (latest.html with Supabase JS).
+            - "readonly_link": GitHub Pages URL (latest_readonly.html,
+              no Supabase JS).
+            - "md": Markdown file attachment.
+            Defaults to ["link"] for backward compatibility.
     """
 
     provider: str  # "discord" or "telegram"
     channel_id: str
     secret_key: str
     events: list[str] = field(default_factory=lambda: ["complete"])
+    send: list[str] = field(default_factory=lambda: ["link"])
 
 
 # ---------------------------------------------------------------------------

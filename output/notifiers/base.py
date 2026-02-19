@@ -217,7 +217,12 @@ class NotifierBase(ABC):
         return "\n".join(lines)
 
     def _build_normal_message(self, payload: NotifyPayload) -> str:
-        """Build normal message with top-3 keywords (DevSpec 11-2)."""
+        """Build normal message with top-3 keywords (DevSpec 11-2).
+
+        When ``gh_pages_url`` is set, appends the link to the message
+        so that channels receiving both a link and a file attachment
+        get the URL inline.
+        """
         top3 = payload.keywords[:3]
         remaining = len(payload.keywords) - 3
 
@@ -228,11 +233,16 @@ class NotifierBase(ABC):
         else:
             keywords_part = quoted
 
-        return (
+        msg = (
             f"{payload.display_date}, "
             f"오늘의 키워드인 {keywords_part}에 대한 "
             f"arXiv 논문 정리입니다."
         )
+
+        if payload.gh_pages_url:
+            msg += f"\n\n{payload.gh_pages_url}"
+
+        return msg
 
     @staticmethod
     def _build_zero_result_message(payload: NotifyPayload) -> str:

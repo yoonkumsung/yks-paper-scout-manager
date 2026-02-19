@@ -243,7 +243,15 @@ output:
   gh_pages:
     enabled: true
     base_url: https://USERNAME.github.io/REPO_NAME
-    notify_mode: link  # "link" = URL만 전송, "file" = HTML 파일 첨부
+
+# 채널별 알림 설정 (topics[].notify[].send)
+topics:
+- slug: my-topic
+  notify:
+  - provider: telegram
+    secret_key: YKS
+    events: [start, complete]
+    send: [link]              # "link" | "readonly_link" | "md" (다중 선택)
 ```
 
 ### 크로스 디바이스 읽음 추적 (Supabase)
