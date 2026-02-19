@@ -617,7 +617,10 @@
                 <div class="card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">설정 편집기</h5>
-                        <button class="btn btn-sm btn-primary" id="saveSettingsBtn">변경 저장</button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-primary" id="saveSettingsBtn">변경 저장</button>
+                            <button class="btn btn-sm btn-outline-success" id="deploySettingsBtn" onclick="deployToGitHub()">GitHub 배포</button>
+                        </div>
                     </div>
                     <div class="card-body" id="configEditor">
                         <div class="text-center text-muted">로딩 중...</div>
@@ -640,7 +643,7 @@
                 <!-- Database Status -->
                 <div class="card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">데이터베이스 상태</h5>
+                        <h5 class="mb-0">데이터 관리</h5>
                         <button class="btn btn-sm btn-secondary" id="refreshDbBtn">새로고침</button>
                     </div>
                     <div class="card-body" id="dbStatus">
@@ -1352,9 +1355,24 @@
                     .join('');
                 return `<div class="mb-2"><label class="form-label">${label}</label><select class="form-select form-select-sm" name="${name}" data-type="string">${options}</select></div>`;
             }
+            if (name.endsWith('.summary_mode')) {
+                const current = String(value || 'abstract').toLowerCase();
+                const modeOptions = [
+                    {value: 'abstract', label: 'Abstract (English original)'},
+                    {value: 'llm_ko', label: 'LLM Korean Summary'}
+                ].map(opt => `<option value="${opt.value}" ${current === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+                return `<div class="mb-2"><label class="form-label">${label}</label><p class="text-muted small mb-1">abstract: 영문 초록을 그대로 사용합니다 (비용 절감). llm_ko: LLM이 한국어 요약을 생성합니다.</p><select class="form-select form-select-sm" name="${name}" data-type="string">${modeOptions}</select></div>`;
+            }
             if (typeof value === 'boolean') {
                 const checked = value ? 'checked' : '';
-                return `<div class="form-check setting-bool"><input class="form-check-input" type="checkbox" name="${name}" ${checked} data-type="bool"><label class="form-check-label">${label}</label></div>`;
+                let boolHint = '';
+                if (name.endsWith('.tier2_summarize')) {
+                    boolHint = '<p class="text-muted small mb-0 ms-4">OFF: Tier 2 논문은 LLM 요약을 건너뛰고 평가기의 brief_reason을 사용합니다 (비용 절감). ON: 모든 티어에서 LLM 요약을 호출합니다.</p>';
+                }
+                if (name.endsWith('.schedule_enabled')) {
+                    boolHint = '<p class="text-muted small mb-0 ms-4">ON: 매일 오전 11시(KST)에 자동 실행됩니다. OFF: 자동 실행을 중지합니다 (수동 실행은 항상 가능).</p>';
+                }
+                return `<div class="form-check setting-bool"><input class="form-check-input" type="checkbox" name="${name}" ${checked} data-type="bool"><label class="form-check-label">${label}</label></div>${boolHint}`;
             } else if (typeof value === 'number') {
                 const step = Number.isInteger(value) ? '1' : '0.01';
                 return `<div class="mb-2"><label class="form-label">${label}</label><input type="number" step="${step}" class="form-control form-control-sm" name="${name}" value="${value}" data-type="number"></div>`;
@@ -1450,13 +1468,64 @@
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert('설정이 저장되었습니다!');
+                    alert('설정이 로컬에 저장되었습니다.\n\nGitHub Actions에도 반영하려면 "GitHub 배포" 버튼을 눌러주세요.');
                     loadSettings();
                 } else {
                     alert(`Error: ${data.error}`);
                 }
             } catch (error) {
                 alert(`설정 저장 오류: ${error.message}`);
+            }
+        }
+
+        // Deploy config to GitHub Actions secrets
+        async function deployToGitHub() {
+            const btn = document.getElementById('deploySettingsBtn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '배포 중...';
+
+            try {
+                const response = await fetch('/api/setup/sync-actions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const details = (result.results || [])
+                        .map(r => `${r.secret}: ${r.status}`)
+                        .join('\n');
+
+                    // Check schedule_enabled from current settings
+                    const scheduleEnabled = window.currentSettings?.app?.schedule_enabled !== false;
+                    const scheduleInfo = scheduleEnabled
+                        ? '자동 실행: 매일 오전 11시 (KST)'
+                        : '자동 실행: 비활성화됨 (설정에서 schedule_enabled: OFF)';
+
+                    alert(
+                        'GitHub Actions에 설정이 배포되었습니다.\n\n'
+                        + details + '\n\n'
+                        + '────────────────────────\n'
+                        + scheduleInfo + '\n'
+                        + '수동 실행: GitHub > Actions > Paper Scout Daily Pipeline > Run workflow\n'
+                        + '────────────────────────'
+                    );
+                } else if (result.error) {
+                    alert(`배포 오류: ${result.error}\n\nGITHUB_TOKEN이 설정되어 있는지 확인해주세요.`);
+                } else {
+                    const errors = (result.results || [])
+                        .filter(r => r.status !== 'ok')
+                        .map(r => `${r.secret}: ${r.error || r.status}`)
+                        .join('\n');
+                    alert('일부 항목 배포에 실패했습니다.\n\n' + errors);
+                }
+            } catch (error) {
+                alert(`배포 오류: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 
@@ -1491,29 +1560,123 @@
             }
         }
 
-        // Load database status
+        // Load database and cache status
         async function loadDbStatus() {
             const container = document.getElementById('dbStatus');
 
             try {
-                const response = await fetch('/api/settings/db-status');
+                const response = await fetch('/api/settings/data-status');
                 const status = await response.json();
 
-                let html = '<table class="table table-sm"><tbody>';
-                html += `<tr><th>DB 경로</th><td><code>${status.db_path || '-'}</code></td></tr>`;
-                html += `<tr><th>존재 여부</th><td>${status.exists ? '<span class="badge bg-success">예</span>' : '<span class="badge bg-secondary">아니오</span>'}</td></tr>`;
-                html += `<tr><th>파일 크기</th><td>${status.file_size_mb} MB</td></tr>`;
-                html += `<tr><th>논문 수</th><td>${status.papers || 0}</td></tr>`;
-                html += `<tr><th>논문 평가 수</th><td>${status.paper_evaluations || 0}</td></tr>`;
-                html += `<tr><th>실행 횟수</th><td>${status.runs || 0}</td></tr>`;
-                html += `<tr><th>쿼리 통계</th><td>${status.query_stats || 0}</td></tr>`;
-                html += `<tr><th>재평가 추적</th><td>${status.remind_tracking || 0}</td></tr>`;
-                html += `<tr><th>마지막 정리 날짜</th><td>${status.last_purge_date || 'N/A'}</td></tr>`;
+                let html = '';
+
+                // DB overview
+                html += '<h6>데이터베이스</h6>';
+                html += `<p class="text-muted small mb-2"><code>${status.db_path}</code> (${status.db_size_mb} MB)</p>`;
+
+                // DB tables
+                html += '<table class="table table-sm table-hover mb-3">';
+                html += '<thead><tr><th>테이블</th><th>설명</th><th>레코드</th><th></th></tr></thead><tbody>';
+                for (const t of status.tables) {
+                    const disabled = t.rows === 0 ? 'disabled' : '';
+                    html += `<tr>
+                        <td><code>${t.name}</code></td>
+                        <td class="text-muted small">${t.description}</td>
+                        <td><span class="badge ${t.rows > 0 ? 'bg-primary' : 'bg-secondary'}">${t.rows}</span></td>
+                        <td><button class="btn btn-outline-danger btn-sm" ${disabled} onclick="resetTable('${t.name}')">초기화</button></td>
+                    </tr>`;
+                }
+                html += '</tbody></table>';
+
+                // DB full reset
+                html += `<div class="d-flex justify-content-end mb-4">
+                    <button class="btn btn-danger btn-sm" onclick="resetFullDb()" ${status.db_exists ? '' : 'disabled'}>DB 전체 삭제</button>
+                </div>`;
+
+                // Cache files
+                html += '<h6>캐시 파일</h6>';
+                html += '<table class="table table-sm table-hover">';
+                html += '<thead><tr><th>파일</th><th>설명</th><th>크기</th><th></th></tr></thead><tbody>';
+                for (const cf of status.cache_files) {
+                    const badge = cf.exists
+                        ? `<span class="badge bg-info">${cf.size_kb} KB</span>`
+                        : '<span class="badge bg-secondary">없음</span>';
+                    const disabled = cf.exists ? '' : 'disabled';
+                    html += `<tr>
+                        <td><code>${cf.name}</code></td>
+                        <td class="text-muted small">${cf.description}</td>
+                        <td>${badge}</td>
+                        <td><button class="btn btn-outline-danger btn-sm" ${disabled} onclick="resetCache('${cf.path}', '${cf.name}')">삭제</button></td>
+                    </tr>`;
+                }
                 html += '</tbody></table>';
 
                 container.innerHTML = html;
             } catch (error) {
-                container.innerHTML = `<div class="alert alert-danger">DB 상태 로딩 오류: ${error.message}</div>`;
+                container.innerHTML = `<div class="alert alert-danger">데이터 상태 로딩 오류: ${error.message}</div>`;
+            }
+        }
+
+        async function resetTable(tableName) {
+            if (!confirm(`"${tableName}" 테이블의 모든 데이터를 삭제합니다.\n\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`)) return;
+
+            try {
+                const resp = await fetch('/api/settings/reset-table', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: tableName })
+                });
+                const result = await resp.json();
+                if (resp.ok) {
+                    alert(`${tableName}: ${result.deleted}개 레코드 삭제 완료\n\nGitHub Actions에도 반영하려면 "GitHub 배포" 버튼을 눌러주세요.`);
+                    loadDbStatus();
+                } else {
+                    alert(`오류: ${result.error}`);
+                }
+            } catch (e) {
+                alert(`오류: ${e.message}`);
+            }
+        }
+
+        async function resetCache(filePath, fileName) {
+            if (!confirm(`"${fileName}" 파일을 삭제합니다.\n\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`)) return;
+
+            try {
+                const resp = await fetch('/api/settings/reset-cache', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: filePath })
+                });
+                const result = await resp.json();
+                if (resp.ok) {
+                    alert(`${fileName} 삭제 완료\n\nGitHub Actions에도 반영하려면 "GitHub 배포" 버튼을 눌러주세요.`);
+                    loadDbStatus();
+                } else {
+                    alert(`오류: ${result.error}`);
+                }
+            } catch (e) {
+                alert(`오류: ${e.message}`);
+            }
+        }
+
+        async function resetFullDb() {
+            if (!confirm('데이터베이스 전체를 삭제합니다.\n\n모든 논문, 평가, 실행 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?')) return;
+            if (!confirm('정말 삭제하시겠습니까? (최종 확인)')) return;
+
+            try {
+                const resp = await fetch('/api/settings/reset-db', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await resp.json();
+                if (resp.ok) {
+                    alert('데이터베이스가 삭제되었습니다.\n다음 파이프라인 실행 시 자동으로 재생성됩니다.\n\nGitHub Actions에도 반영하려면 "GitHub 배포" 버튼을 눌러주세요.');
+                    loadDbStatus();
+                } else {
+                    alert(`오류: ${result.error}`);
+                }
+            } catch (e) {
+                alert(`오류: ${e.message}`);
             }
         }
 

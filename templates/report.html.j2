@@ -7,8 +7,13 @@
   <h1>{{ meta.display_title }}</h1>
   <div class="stats">
     <span title="arXiv에서 수집된 총 논문 수">수집 {{ meta.total_collected }}편</span>
+    <span class="stats-arrow">&rarr;</span>
     <span title="키워드 필터 통과">필터 {{ meta.total_filtered }}편</span>
+    <span class="stats-arrow">&rarr;</span>
     <span title="LLM 평가 후 제외">제외 {{ meta.total_discarded }}편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="점수 {{ meta.threshold_used }}점 미만">미달 {{ meta.total_below_threshold | default(0) }}편</span>
+    <span class="stats-arrow">&rarr;</span>
     <span title="최종 선정된 논문">선정 {{ meta.total_output }}편</span>
   </div>
   <div class="window-info">
@@ -31,11 +36,13 @@
 <div class="tabs">
   <input type="radio" name="tabs" id="tab-today" checked>
   <input type="radio" name="tabs" id="tab-remind">
+  <input type="radio" name="tabs" id="tab-below">
   <input type="radio" name="tabs" id="tab-excluded">
   <div class="tab-labels">
-    <label for="tab-today">오늘의 논문</label>
-    <label for="tab-remind">다시 보기</label>
-    <label for="tab-excluded">제외된 논문 ({{ discarded_papers | length }})</label>
+    <label for="tab-today">오늘의 논문 ({{ papers | length }})</label>
+    <label for="tab-remind">다시 보기 ({{ remind_papers | length }})</label>
+    <label for="tab-below">점수 미달 ({{ below_threshold_papers | length }})</label>
+    <label for="tab-excluded">제외 ({{ discarded_papers | length }})</label>
   </div>
 
   <div class="tab-content tab-panel-today">
@@ -147,13 +154,9 @@
       <div class="compact-card">
         <div class="rank-title">
           <input type="checkbox" class="paper-checkbox" data-tier="2" data-pdf="{{ paper.pdf_url or '' }}" onchange="updateToolbar()">
-          <span class="rank">{{ paper.rank }}위</span>
           <span class="paper-title">
             <a href="{{ paper.url }}">{{ paper.title }}</a>
           </span>
-          {% if paper.score_lowered %}
-          <span class="lowered-tag" title="필터 기준을 낮춰 포함된 논문">기준완화</span>
-          {% endif %}
           <span class="compact-meta">
             <span class="score-detail">{{ paper.final_score }}</span>
             {% if paper.pdf_url %}
@@ -161,6 +164,13 @@
             {% endif %}
           </span>
         </div>
+        {% if paper.categories %}
+        <div class="categories">
+          {% for cat in paper.categories %}
+          <span class="cat-tag">{{ cat }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
         {% if paper.summary_ko %}
         <div class="compact-body">
           <span class="abstract-preview">{{ paper.summary_ko | truncate_sentences(2) }}</span>
@@ -187,21 +197,28 @@
   <div class="tab-content tab-panel-remind">
     {% if remind_papers %}
       {% for paper in remind_papers %}
-      <div class="remind-card">
+      <div class="compact-card compact-card--remind">
         <div class="rank-title">
           <span class="paper-title">
             <a href="{{ paper.url }}">{{ paper.title }}</a>
           </span>
-          <span class="recommend-count">{{ paper.recommend_count | default(1) }}회째 추천</span>
+          <span class="compact-meta">
+            <span class="score-detail">{{ paper.final_score }}</span>
+            <span class="recommend-count">{{ paper.recommend_count | default(1) }}회째</span>
+          </span>
         </div>
-        <div class="score-bar-container">
-          <span>{{ paper.final_score }}</span>
+        {% if paper.categories %}
+        <div class="categories">
+          {% for cat in paper.categories %}
+          <span class="cat-tag">{{ cat }}</span>
+          {% endfor %}
         </div>
+        {% endif %}
         {% if paper.summary_ko %}
-        <p>{{ paper.summary_ko }}</p>
+        <div class="compact-body">{{ paper.summary_ko }}</div>
         {% endif %}
         {% if paper.reason_ko %}
-        <p><strong>선정 근거:</strong> {{ paper.reason_ko }}</p>
+        <div class="compact-reason">{{ paper.reason_ko }}</div>
         {% endif %}
       </div>
       {% endfor %}
@@ -212,15 +229,58 @@
     {% endif %}
   </div>
 
+  <div class="tab-content tab-panel-below">
+    {% if below_threshold_papers %}
+      {% for paper in below_threshold_papers %}
+      <div class="compact-card compact-card--below">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="{{ paper.url }}">{{ paper.title }}</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">{{ paper.base_score }}점</span>
+            {% if paper.pdf_url %}
+            <a href="{{ paper.pdf_url }}" class="compact-link">PDF</a>
+            {% endif %}
+          </span>
+        </div>
+        {% if paper.categories %}
+        <div class="categories">
+          {% for cat in paper.categories %}
+          <span class="cat-tag">{{ cat }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if paper.brief_reason %}
+        <div class="compact-reason">{{ paper.brief_reason }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-message">
+        점수 미달 논문이 없습니다.
+      </div>
+    {% endif %}
+  </div>
+
   <div class="tab-content tab-panel-excluded">
     {% if discarded_papers %}
       {% for paper in discarded_papers %}
-      <div class="discarded-card">
-        <div class="paper-title">
-          {% if paper.url %}<a href="{{ paper.url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}
+      <div class="compact-card compact-card--discarded">
+        <div class="rank-title">
+          <span class="paper-title">
+            {% if paper.url %}<a href="{{ paper.url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}
+          </span>
         </div>
+        {% if paper.categories %}
+        <div class="categories">
+          {% for cat in paper.categories %}
+          <span class="cat-tag">{{ cat }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
         {% if paper.reason %}
-        <div class="discard-reason">제외 사유: {{ paper.reason }}</div>
+        <div class="compact-reason">{{ paper.reason }}</div>
         {% endif %}
       </div>
       {% endfor %}

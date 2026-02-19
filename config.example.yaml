@@ -1,6 +1,7 @@
 app:
   display_timezone: Asia/Seoul
   report_retention_days: 90
+  schedule_enabled: true
 llm:
   provider: openrouter
   base_url: https://openrouter.ai/api/v1
@@ -51,6 +52,8 @@ agents:
     tier2_batch_size: 10
     tier1_prompt_version: agent3-tier1-v1
     tier2_prompt_version: agent3-tier2-v1
+    summary_mode: abstract
+    tier2_summarize: false
 sources:
   arxiv:
     num_retries: 3
@@ -82,13 +85,13 @@ scoring:
     is_realtime: 5
     has_code: 3
   thresholds:
-    default: 60
+    default: 50
     relaxation_steps:
     - 50
     - 40
     min_papers: 5
   discard_cutoff: 20
-  max_output: 100
+  max_output: 9999
   tier1_count: 30
 remind:
   enabled: true

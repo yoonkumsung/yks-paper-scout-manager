@@ -355,6 +355,7 @@ class TopicLoopOrchestrator:
                         "title": paper_obj.title if paper_obj else pk,
                         "url": paper_obj.url if paper_obj else "",
                         "reason": e.get("brief_reason", ""),
+                        "categories": list(paper_obj.categories) if paper_obj and paper_obj.categories else [],
                     })
             logger.info(
                 "Step 5: Scored %d papers (%d discarded) for '%s'",
@@ -458,6 +459,31 @@ class TopicLoopOrchestrator:
                 p.get("score_lowered", False) for p in ranked_papers
             )
 
+            # Build below-threshold paper list (scored but not selected)
+            ranked_keys = {p.get("paper_key") for p in ranked_papers}
+            below_threshold_papers: List[dict] = []
+            for ev in evaluations:
+                pk = ev.get("paper_key", "")
+                if ev.get("discard", False) or pk in ranked_keys:
+                    continue
+                paper_obj = papers_map.get(pk)
+                if paper_obj is None:
+                    continue
+                # Calculate final_score for display
+                base = ev.get("base_score", 0)
+                below_threshold_papers.append({
+                    "paper_key": pk,
+                    "title": paper_obj.title,
+                    "url": paper_obj.url,
+                    "pdf_url": getattr(paper_obj, "pdf_url", ""),
+                    "base_score": base,
+                    "brief_reason": ev.get("brief_reason", ""),
+                    "categories": list(paper_obj.categories) if paper_obj.categories else [],
+                })
+            below_threshold_papers.sort(
+                key=lambda x: x.get("base_score", 0), reverse=True
+            )
+
             # ---- Step 7: Clustering ----
             clusters = self._step_cluster(
                 filtered_papers, embedding_ranker, embedding_mode
@@ -513,12 +539,14 @@ class TopicLoopOrchestrator:
             )
 
             # ---- Step 10: Report Generation ----
+            total_below_threshold = len(below_threshold_papers)
             stats = {
                 "total_collected": total_collected,
                 "total_filtered": total_filtered,
                 "total_discarded": total_discarded,
                 "total_scored": total_scored,
                 "total_output": total_output,
+                "total_below_threshold": total_below_threshold,
                 "scoring_incomplete": total_scored < total_filtered,
             }
 
@@ -542,6 +570,7 @@ class TopicLoopOrchestrator:
                 clusters=clusters,
                 remind_papers=remind_papers,
                 discarded_papers=discarded_papers,
+                below_threshold_papers=below_threshold_papers,
             )
             logger.info(
                 "Step 10: Reports generated for '%s': %s",
@@ -928,22 +957,30 @@ class TopicLoopOrchestrator:
             if pk:
                 summary_map[pk] = s
 
+        # Read summary_mode setting
+        summary_mode = self._config.agents.get("summarizer", {}).get(
+            "summary_mode", "abstract"
+        )
+
         enriched: List[dict] = []
         for rp in ranked_papers:
             merged = dict(rp)
             pk = rp.get("paper_key", "")
-
-            # summary_ko is always the English abstract (no LLM translation)
-            merged["summary_ko"] = rp.get("abstract", "")
 
             # Fallback: use scorer's brief_reason when summarizer fails
             brief_reason = rp.get("brief_reason", "")
 
             if pk in summary_map:
                 sm = summary_map[pk]
+                # summary_ko source depends on summary_mode
+                if summary_mode == "llm_ko":
+                    merged["summary_ko"] = sm.get("summary_ko", "") or rp.get("abstract", "")
+                else:
+                    merged["summary_ko"] = rp.get("abstract", "")
                 merged["reason_ko"] = sm.get("reason_ko", "") or brief_reason
                 merged["insight_ko"] = sm.get("insight_ko", "")
             else:
+                merged["summary_ko"] = rp.get("abstract", "")
                 merged["reason_ko"] = brief_reason
                 merged["insight_ko"] = ""
             enriched.append(merged)
@@ -984,6 +1021,7 @@ class TopicLoopOrchestrator:
         clusters: List[dict],
         remind_papers: List[dict],
         discarded_papers: Optional[List[dict]] = None,
+        below_threshold_papers: Optional[List[dict]] = None,
     ) -> Dict[str, str]:
         """Step 10: Generate reports (JSON, MD, HTML)."""
         from output.render.json_exporter import export_json
@@ -1016,6 +1054,7 @@ class TopicLoopOrchestrator:
             clusters=clusters,
             remind_papers=remind_papers,
             discarded_papers=discarded_papers,
+            below_threshold_papers=below_threshold_papers,
             output_dir=date_subdir,
         )
 

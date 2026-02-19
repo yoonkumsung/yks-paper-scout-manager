@@ -356,6 +356,22 @@ def validate_config(raw: dict) -> AppConfig:
             "scoring.max_output: must be a positive integer"
         )
 
+    # --- agents.summarizer optional fields ---
+    summarizer_cfg = raw.get("agents", {}).get("summarizer", {})
+    if isinstance(summarizer_cfg, dict):
+        sm = summarizer_cfg.get("summary_mode")
+        if sm is not None and sm not in ("abstract", "llm_ko"):
+            raise ConfigError(
+                "agents.summarizer.summary_mode: must be 'abstract' or 'llm_ko', "
+                f"got '{sm}'"
+            )
+        t2s = summarizer_cfg.get("tier2_summarize")
+        if t2s is not None and not isinstance(t2s, bool):
+            raise ConfigError(
+                "agents.summarizer.tier2_summarize: must be a boolean, "
+                f"got {type(t2s).__name__}"
+            )
+
     # --- database.path ---
     db = raw["database"]
     if not isinstance(db, dict):

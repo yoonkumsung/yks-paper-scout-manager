@@ -113,6 +113,10 @@ class Summarizer(BaseAgent):
         except (TypeError, ValueError):
             batch_timeout = 500.0
 
+        # Read summary_mode and tier2_summarize settings
+        summary_mode = self.agent_config.get("summary_mode", "abstract")
+        tier2_summarize = self.agent_config.get("tier2_summarize", True)
+
         # Sticky fallback: once triggered, all subsequent batches use
         # the fallback model to avoid repeating slow primary calls.
         active_model_override: str | None = None
@@ -146,6 +150,7 @@ class Summarizer(BaseAgent):
                 batch_results = self._summarize_batch(
                     batch, topic_description, rate_limiter, batch_idx, tier=1,
                     model_override=active_model_override,
+                    summary_mode=summary_mode,
                 )
                 elapsed = time.monotonic() - t0
 
@@ -170,6 +175,7 @@ class Summarizer(BaseAgent):
                                 batch, topic_description, rate_limiter,
                                 batch_idx, tier=1,
                                 model_override=active_model_override,
+                                summary_mode=summary_mode,
                             )
 
                 if batch_results is not None:
@@ -185,70 +191,79 @@ class Summarizer(BaseAgent):
                 continue
 
         # Process Tier 2 batches (batch_size=10)
-        tier2_batch_size = self.agent_config.get(
-            "tier2_batch_size", _TIER2_BATCH_SIZE
-        )
-        tier2_batches = [
-            tier2[i : i + tier2_batch_size]
-            for i in range(0, len(tier2), tier2_batch_size)
-        ]
-        tier2_batch_offset = len(tier1_batches)
-        for batch_idx, batch in enumerate(tier2_batches):
-            # Check daily API limit before each batch
-            if rate_limiter.is_daily_limit_reached:
-                logger.warning(
-                    "summarizer: daily API limit reached at tier2 batch %d/%d, "
-                    "returning %d partial results",
-                    batch_idx, len(tier2_batches), len(results),
-                )
-                return results
+        if not tier2_summarize:
+            logger.info(
+                "summarizer: tier2_summarize=false, skipping %d tier-2 papers "
+                "(will use scorer brief_reason instead)",
+                len(tier2),
+            )
+        else:
+            tier2_batch_size = self.agent_config.get(
+                "tier2_batch_size", _TIER2_BATCH_SIZE
+            )
+            tier2_batches = [
+                tier2[i : i + tier2_batch_size]
+                for i in range(0, len(tier2), tier2_batch_size)
+            ]
+            tier2_batch_offset = len(tier1_batches)
+            for batch_idx, batch in enumerate(tier2_batches):
+                # Check daily API limit before each batch
+                if rate_limiter.is_daily_limit_reached:
+                    logger.warning(
+                        "summarizer: daily API limit reached at tier2 batch %d/%d, "
+                        "returning %d partial results",
+                        batch_idx, len(tier2_batches), len(results),
+                    )
+                    return results
 
-            try:
-                t0 = time.monotonic()
-                batch_results = self._summarize_batch(
-                    batch,
-                    topic_description,
-                    rate_limiter,
-                    tier2_batch_offset + batch_idx,
-                    tier=2,
-                    model_override=active_model_override,
-                )
-                elapsed = time.monotonic() - t0
+                try:
+                    t0 = time.monotonic()
+                    batch_results = self._summarize_batch(
+                        batch,
+                        topic_description,
+                        rate_limiter,
+                        tier2_batch_offset + batch_idx,
+                        tier=2,
+                        model_override=active_model_override,
+                        summary_mode=summary_mode,
+                    )
+                    elapsed = time.monotonic() - t0
 
-                is_slow = elapsed > batch_timeout
-                is_failed = batch_results is None or len(batch_results) == 0
+                    is_slow = elapsed > batch_timeout
+                    is_failed = batch_results is None or len(batch_results) == 0
 
-                if (is_slow or is_failed) and active_model_override is None:
-                    fallbacks = self.fallback_models
-                    if fallbacks:
-                        active_model_override = fallbacks[0]
-                        logger.warning(
-                            "summarizer: tier2 batch %d/%d was %s "
-                            "(%.1fs, timeout=%.0fs). "
-                            "Switching to fallback model: %s",
-                            batch_idx + 1, len(tier2_batches),
-                            "slow" if is_slow else "failed",
-                            elapsed, batch_timeout,
-                            active_model_override,
-                        )
-                        if is_failed:
-                            batch_results = self._summarize_batch(
-                                batch, topic_description, rate_limiter,
-                                tier2_batch_offset + batch_idx, tier=2,
-                                model_override=active_model_override,
+                    if (is_slow or is_failed) and active_model_override is None:
+                        fallbacks = self.fallback_models
+                        if fallbacks:
+                            active_model_override = fallbacks[0]
+                            logger.warning(
+                                "summarizer: tier2 batch %d/%d was %s "
+                                "(%.1fs, timeout=%.0fs). "
+                                "Switching to fallback model: %s",
+                                batch_idx + 1, len(tier2_batches),
+                                "slow" if is_slow else "failed",
+                                elapsed, batch_timeout,
+                                active_model_override,
                             )
+                            if is_failed:
+                                batch_results = self._summarize_batch(
+                                    batch, topic_description, rate_limiter,
+                                    tier2_batch_offset + batch_idx, tier=2,
+                                    model_override=active_model_override,
+                                    summary_mode=summary_mode,
+                                )
 
-                if batch_results is not None:
-                    results.extend(batch_results)
-            except InterruptedError:
-                raise  # Re-raise cancel events
-            except Exception as exc:
-                logger.error(
-                    "summarizer: tier2 batch %d/%d failed unexpectedly: %s. "
-                    "Skipping batch, continuing with remaining.",
-                    batch_idx + 1, len(tier2_batches), exc,
-                )
-                continue
+                    if batch_results is not None:
+                        results.extend(batch_results)
+                except InterruptedError:
+                    raise  # Re-raise cancel events
+                except Exception as exc:
+                    logger.error(
+                        "summarizer: tier2 batch %d/%d failed unexpectedly: %s. "
+                        "Skipping batch, continuing with remaining.",
+                        batch_idx + 1, len(tier2_batches), exc,
+                    )
+                    continue
 
         return results
 
@@ -271,6 +286,7 @@ class Summarizer(BaseAgent):
             "indices", list(range(1, len(papers) + 1))
         )
         tier: int = kwargs.get("tier", 1)
+        summary_mode: str = kwargs.get("summary_mode", "abstract")
 
         # Build paper list section
         paper_lines: list[str] = []
@@ -294,22 +310,37 @@ class Summarizer(BaseAgent):
             "7. Forbidden: mAP, BLEU, ROUGE etc. academic benchmark numbers\n"
         )
 
-        # Output format depends on tier
-        # NOTE: summary_ko is NOT requested from LLM; the English abstract
-        # is used directly (set in topic_loop._step_summarize).
+        # Output format depends on tier and summary_mode
         if tier == 1:
-            output_format = (
-                "## Output\n"
-                '[{"index":1,'
-                '"reason_ko":"~150chars",'
-                '"insight_ko":"~150chars"}]'
-            )
+            if summary_mode == "llm_ko":
+                output_format = (
+                    "## Output\n"
+                    '[{"index":1,'
+                    '"summary_ko":"300-500chars",'
+                    '"reason_ko":"~150chars",'
+                    '"insight_ko":"~150chars"}]'
+                )
+            else:
+                output_format = (
+                    "## Output\n"
+                    '[{"index":1,'
+                    '"reason_ko":"~150chars",'
+                    '"insight_ko":"~150chars"}]'
+                )
         else:
-            output_format = (
-                "## Output\n"
-                '[{"index":1,'
-                '"reason_ko":"1 line"}]'
-            )
+            if summary_mode == "llm_ko":
+                output_format = (
+                    "## Output\n"
+                    '[{"index":1,'
+                    '"summary_ko":"~200chars",'
+                    '"reason_ko":"1 line"}]'
+                )
+            else:
+                output_format = (
+                    "## Output\n"
+                    '[{"index":1,'
+                    '"reason_ko":"1 line"}]'
+                )
 
         user_content = (
             f"## Project Context\n{topic_description}\n\n"
@@ -363,6 +394,7 @@ class Summarizer(BaseAgent):
         batch_idx: int,
         tier: int,
         model_override: str | None = None,
+        summary_mode: str = "abstract",
     ) -> list[dict] | None:
         """Summarize a single batch of papers.
 
@@ -376,6 +408,7 @@ class Summarizer(BaseAgent):
             batch_idx: Batch index for logging.
             tier: Summary tier (1 or 2).
             model_override: Override model for this batch (fallback).
+            summary_mode: "abstract" or "llm_ko".
         """
         indices = list(range(1, len(batch) + 1))
         messages = self.build_messages(
@@ -383,6 +416,7 @@ class Summarizer(BaseAgent):
             topic_description=topic_description,
             indices=indices,
             tier=tier,
+            summary_mode=summary_mode,
         )
 
         # --- First LLM call ---
@@ -443,6 +477,7 @@ class Summarizer(BaseAgent):
                 topic_description=topic_description,
                 indices=missing_idx_list,
                 tier=tier,
+                summary_mode=summary_mode,
             )
 
             rate_limiter.wait()

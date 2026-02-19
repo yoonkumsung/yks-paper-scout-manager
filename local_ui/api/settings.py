@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import sqlite3
+from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, request
 
@@ -220,4 +221,232 @@ def db_status():
 
     except Exception as e:
         logger.error(f"Error getting DB status: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/data-status", methods=["GET"])
+def data_status():
+    """Get detailed status of all data files and DB tables.
+
+    Returns:
+        JSON with DB tables (name, rows, description) and cache files
+        (name, path, size, description, exists).
+    """
+    try:
+        db_path = current_app.config["DB_PATH"]
+        data_path = current_app.config.get("DATA_PATH", "data")
+
+        # --- DB tables ---
+        table_info = [
+            {"name": "papers", "description": "수집된 논문 메타데이터"},
+            {"name": "paper_evaluations", "description": "논문 평가 및 요약 결과"},
+            {"name": "runs", "description": "파이프라인 실행 기록"},
+            {"name": "query_stats", "description": "arXiv 검색 쿼리 통계"},
+            {"name": "remind_tracking", "description": "재추천 논문 추적"},
+        ]
+
+        tables = []
+        if os.path.exists(db_path):
+            conn = None
+            try:
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                for t in table_info:
+                    try:
+                        cursor.execute(f"SELECT COUNT(*) FROM {t['name']}")
+                        rows = cursor.fetchone()[0]
+                    except sqlite3.OperationalError:
+                        rows = 0
+                    tables.append({
+                        "name": t["name"],
+                        "rows": rows,
+                        "description": t["description"],
+                    })
+            finally:
+                if conn is not None:
+                    conn.close()
+        else:
+            for t in table_info:
+                tables.append({"name": t["name"], "rows": 0, "description": t["description"]})
+
+        # --- Cache files ---
+        cache_files_info = [
+            {
+                "name": "keyword_cache.json",
+                "path": os.path.join(data_path, "keyword_cache.json"),
+                "description": "키워드 확장 캐시 (LLM 호출 절감)",
+            },
+            {
+                "name": "last_success.json",
+                "path": os.path.join(data_path, "last_success.json"),
+                "description": "토픽별 마지막 성공 시간 (검색 윈도우 계산용)",
+            },
+            {
+                "name": "model_caps.json",
+                "path": os.path.join(data_path, "model_caps.json"),
+                "description": "LLM 모델 기능 캐시 (API 호환성 확인용)",
+            },
+            {
+                "name": "seen_items.jsonl",
+                "path": os.path.join(data_path, "seen_items.jsonl"),
+                "description": "중복 논문 필터링 기록",
+            },
+        ]
+
+        # Usage directory
+        usage_dir = os.path.join(data_path, "usage")
+        usage_size = 0
+        usage_count = 0
+        if os.path.isdir(usage_dir):
+            for f in os.listdir(usage_dir):
+                fp = os.path.join(usage_dir, f)
+                if os.path.isfile(fp):
+                    usage_size += os.path.getsize(fp)
+                    usage_count += 1
+
+        cache_files = []
+        for cf in cache_files_info:
+            exists = os.path.exists(cf["path"])
+            size_kb = round(os.path.getsize(cf["path"]) / 1024, 1) if exists else 0
+            cache_files.append({
+                "name": cf["name"],
+                "path": cf["path"],
+                "exists": exists,
+                "size_kb": size_kb,
+                "description": cf["description"],
+            })
+
+        # Add usage dir as a single entry
+        cache_files.append({
+            "name": f"usage/ ({usage_count} files)",
+            "path": usage_dir,
+            "exists": usage_count > 0,
+            "size_kb": round(usage_size / 1024, 1),
+            "description": "일별 API 사용량 통계",
+        })
+
+        # DB file info
+        db_exists = os.path.exists(db_path)
+        db_size_mb = round(os.path.getsize(db_path) / (1024 * 1024), 2) if db_exists else 0
+
+        return jsonify({
+            "db_path": db_path,
+            "db_exists": db_exists,
+            "db_size_mb": db_size_mb,
+            "tables": tables,
+            "cache_files": cache_files,
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error getting data status: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/reset-table", methods=["POST"])
+def reset_table():
+    """Delete all rows from a specific DB table.
+
+    Request body:
+        {"table": "paper_evaluations"}
+
+    Returns:
+        200 on success with deleted row count.
+    """
+    try:
+        data = request.get_json()
+        if not data or "table" not in data:
+            return jsonify({"error": "Missing 'table' field"}), 400
+
+        table = data["table"]
+        allowed = {"papers", "paper_evaluations", "runs", "query_stats", "remind_tracking"}
+        if table not in allowed:
+            return jsonify({"error": f"Invalid table: {table}"}), 400
+
+        db_path = current_app.config["DB_PATH"]
+        if not os.path.exists(db_path):
+            return jsonify({"error": "Database does not exist"}), 404
+
+        conn = sqlite3.connect(db_path)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            count = cursor.fetchone()[0]
+            cursor.execute(f"DELETE FROM {table}")
+            conn.commit()
+        finally:
+            conn.close()
+
+        logger.info("Reset table '%s': deleted %d rows", table, count)
+        return jsonify({"table": table, "deleted": count}), 200
+
+    except Exception as e:
+        logger.error(f"Error resetting table: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/reset-cache", methods=["POST"])
+def reset_cache():
+    """Delete a specific cache file or directory.
+
+    Request body:
+        {"path": "data/keyword_cache.json"}
+
+    Returns:
+        200 on success.
+    """
+    try:
+        data = request.get_json()
+        if not data or "path" not in data:
+            return jsonify({"error": "Missing 'path' field"}), 400
+
+        target = data["path"]
+        data_path = current_app.config.get("DATA_PATH", "data")
+
+        # Security: only allow deletion within data directory
+        resolved = Path(target).resolve()
+        allowed_root = Path(data_path).resolve()
+        if not str(resolved).startswith(str(allowed_root)):
+            return jsonify({"error": "Path outside data directory"}), 403
+
+        if resolved.is_dir():
+            import shutil
+            shutil.rmtree(str(resolved))
+            resolved.mkdir(parents=True, exist_ok=True)
+            logger.info("Reset cache directory: %s", target)
+        elif resolved.is_file():
+            resolved.unlink()
+            logger.info("Reset cache file: %s", target)
+        else:
+            return jsonify({"error": "File not found"}), 404
+
+        return jsonify({"path": target, "deleted": True}), 200
+
+    except Exception as e:
+        logger.error(f"Error resetting cache: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@settings_bp.route("/reset-db", methods=["POST"])
+def reset_db():
+    """Delete and recreate the entire database.
+
+    Returns:
+        200 on success.
+    """
+    try:
+        db_path = current_app.config["DB_PATH"]
+
+        if os.path.exists(db_path):
+            os.remove(db_path)
+            # Remove WAL/SHM files if present
+            for suffix in ("-wal", "-shm"):
+                wal_path = db_path + suffix
+                if os.path.exists(wal_path):
+                    os.remove(wal_path)
+
+        logger.info("Database deleted: %s", db_path)
+        return jsonify({"deleted": True, "path": db_path}), 200
+
+    except Exception as e:
+        logger.error(f"Error resetting database: {e}")
         return jsonify({"error": str(e)}), 500

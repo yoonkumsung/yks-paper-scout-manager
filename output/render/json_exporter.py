@@ -48,6 +48,7 @@ def export_json(
     clusters: List[dict],  # from Clusterer
     remind_papers: List[dict],  # remind tab papers
     discarded_papers: Optional[List[dict]] = None,  # discarded papers with reason
+    below_threshold_papers: Optional[List[dict]] = None,  # scored but below threshold
     output_dir: str = "tmp/reports",
 ) -> str:
     """Export report data as JSON file.
@@ -100,6 +101,7 @@ def export_json(
             "total_discarded": stats.get("total_discarded", 0),
             "total_scored": stats.get("total_scored", 0),
             "total_output": stats.get("total_output", 0),
+            "total_below_threshold": stats.get("total_below_threshold", 0),
             "threshold_used": threshold_used,
             "threshold_lowered": threshold_lowered,
             "run_id": run_id,
@@ -109,6 +111,7 @@ def export_json(
         "papers": papers,
         "remind_papers": remind_papers,
         "discarded_papers": discarded_papers or [],
+        "below_threshold_papers": below_threshold_papers or [],
     }
 
     # Ensure output directory exists

@@ -62,6 +62,7 @@ def generate_report_html(
     clusters: List[dict] = report_data.get("clusters", [])
     remind_papers: List[dict] = report_data.get("remind_papers", [])
     discarded_papers: List[dict] = report_data.get("discarded_papers", [])
+    below_threshold_papers: List[dict] = report_data.get("below_threshold_papers", [])
 
     # Build cluster mate lookup.
     key_to_rank = _build_key_to_rank(papers)
@@ -77,6 +78,7 @@ def generate_report_html(
         papers=enriched_papers,
         remind_papers=remind_papers,
         discarded_papers=discarded_papers,
+        below_threshold_papers=below_threshold_papers,
     )
 
     # Write output file.
