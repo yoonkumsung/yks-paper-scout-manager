@@ -110,6 +110,23 @@ class PostLoopProcessor:
                 "Post-loop step 2: HTML build failed", exc_info=True
             )
 
+        # Step 2.5: Deploy to gh-pages (before notifications so link is live)
+        gh_pages_cfg = self._config.output.get("gh_pages", {})
+        if gh_pages_cfg.get("enabled") and summary["html_built"]:
+            try:
+                deployed = self._deploy_gh_pages(self._report_dir, gh_pages_cfg)
+                summary["gh_pages_deployed"] = deployed
+                logger.info(
+                    "Post-loop step 2.5: gh-pages deploy %s",
+                    "succeeded" if deployed else "skipped",
+                )
+            except Exception:
+                summary["gh_pages_deployed"] = False
+                logger.warning(
+                    "Post-loop step 2.5: gh-pages deploy failed (non-fatal)",
+                    exc_info=True,
+                )
+
         # Step 3: Notification dispatch
         try:
             sent, failed = self._send_notifications(completed)
@@ -270,6 +287,7 @@ class PostLoopProcessor:
                 report_data=latest_report_data,
                 output_dir=report_dir,
                 template_dir=template_dir,
+                read_sync=self._config.read_sync or None,
             )
 
     # ------------------------------------------------------------------
@@ -340,7 +358,13 @@ class PostLoopProcessor:
                 file_paths = self._find_report_files(slug, self._report_dir)
 
                 # Build gh_pages URL if configured
-                gh_pages_url = self._config.output.get("gh_pages_url")
+                gh_pages_cfg = self._config.output.get("gh_pages", {})
+                gh_pages_url = None
+                notify_mode = "file"
+                if gh_pages_cfg.get("enabled") and gh_pages_cfg.get("base_url"):
+                    base_url = gh_pages_cfg["base_url"].rstrip("/")
+                    gh_pages_url = f"{base_url}/latest.html"
+                    notify_mode = gh_pages_cfg.get("notify_mode", "file")
 
                 payload = NotifyPayload(
                     topic_slug=slug,
@@ -350,6 +374,7 @@ class PostLoopProcessor:
                     total_output=total_output,
                     file_paths=file_paths,
                     gh_pages_url=gh_pages_url,
+                    notify_mode=notify_mode,
                     event_type="complete",
                 )
 
@@ -470,6 +495,224 @@ class PostLoopProcessor:
         except FileNotFoundError:
             logger.warning("git not found in PATH")
             return False
+
+    # ------------------------------------------------------------------
+    # Step 2.5: Deploy to gh-pages
+    # ------------------------------------------------------------------
+
+    def _deploy_gh_pages(
+        self, report_dir: str, gh_pages_cfg: dict
+    ) -> bool:
+        """Deploy report files to the gh-pages branch.
+
+        Uses git subtree-based approach:
+        1. Create/checkout orphan gh-pages branch worktree
+        2. Copy report files
+        3. Commit and push
+
+        Falls back gracefully if git operations fail.
+
+        Args:
+            report_dir: Directory containing generated HTML reports.
+            gh_pages_cfg: gh_pages config section with enabled, base_url, etc.
+
+        Returns:
+            True if deploy succeeded, False otherwise.
+        """
+        if not os.path.isdir(report_dir):
+            logger.info("gh-pages: report_dir %s not found, skipping", report_dir)
+            return False
+
+        try:
+            import tempfile
+
+            branch = "gh-pages"
+            keep_files = gh_pages_cfg.get("keep_files", True)
+
+            # Check if gh-pages branch exists on remote
+            result = subprocess.run(
+                ["git", "ls-remote", "--heads", "origin", branch],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            branch_exists = branch in result.stdout
+
+            # Create temp directory for worktree
+            with tempfile.TemporaryDirectory(prefix="gh-pages-") as tmpdir:
+                worktree_dir = os.path.join(tmpdir, "deploy")
+
+                if branch_exists:
+                    # Checkout existing branch
+                    subprocess.run(
+                        ["git", "worktree", "add", worktree_dir, branch],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        check=True,
+                    )
+                else:
+                    # Create orphan branch
+                    subprocess.run(
+                        [
+                            "git",
+                            "worktree",
+                            "add",
+                            "--orphan",
+                            worktree_dir,
+                            branch,
+                        ],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
+                    # For older git without --orphan worktree support
+                    if not os.path.isdir(worktree_dir):
+                        subprocess.run(
+                            [
+                                "git",
+                                "worktree",
+                                "add",
+                                "-b",
+                                branch,
+                                worktree_dir,
+                            ],
+                            capture_output=True,
+                            text=True,
+                            timeout=30,
+                            check=True,
+                        )
+                        # Clean worktree for fresh start
+                        for item in os.listdir(worktree_dir):
+                            if item == ".git":
+                                continue
+                            path = os.path.join(worktree_dir, item)
+                            if os.path.isdir(path):
+                                shutil.rmtree(path)
+                            else:
+                                os.remove(path)
+
+                # Run prune script if retention configured
+                retention_days = gh_pages_cfg.get("retention_days", 90)
+                if retention_days and keep_files:
+                    self._prune_old_reports(worktree_dir, retention_days)
+
+                # Copy report files to worktree
+                for item in os.listdir(report_dir):
+                    src = os.path.join(report_dir, item)
+                    dst = os.path.join(worktree_dir, item)
+                    if os.path.isdir(src):
+                        if os.path.exists(dst):
+                            shutil.rmtree(dst)
+                        shutil.copytree(src, dst)
+                    else:
+                        shutil.copy2(src, dst)
+
+                # Git add, commit, push in worktree
+                subprocess.run(
+                    ["git", "add", "-A"],
+                    cwd=worktree_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    check=True,
+                )
+
+                # Check if there are changes to commit
+                diff_result = subprocess.run(
+                    ["git", "diff", "--cached", "--quiet"],
+                    cwd=worktree_dir,
+                    capture_output=True,
+                    timeout=10,
+                )
+                if diff_result.returncode == 0:
+                    logger.info("gh-pages: no changes to deploy")
+                    return True
+
+                subprocess.run(
+                    [
+                        "git",
+                        "commit",
+                        "-m",
+                        "deploy: update reports [skip ci]",
+                    ],
+                    cwd=worktree_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    check=True,
+                )
+
+                subprocess.run(
+                    ["git", "push", "origin", branch],
+                    cwd=worktree_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    check=True,
+                )
+
+                logger.info("gh-pages: deployed successfully")
+
+            # Clean up worktree reference
+            subprocess.run(
+                ["git", "worktree", "prune"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+            return True
+
+        except subprocess.CalledProcessError as exc:
+            logger.warning(
+                "gh-pages deploy git error: %s (stderr: %s)",
+                exc,
+                exc.stderr if exc.stderr else "",
+            )
+            # Clean up worktree on failure
+            subprocess.run(
+                ["git", "worktree", "prune"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            return False
+        except subprocess.TimeoutExpired:
+            logger.warning("gh-pages deploy timed out")
+            subprocess.run(
+                ["git", "worktree", "prune"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            return False
+        except FileNotFoundError:
+            logger.warning("git not found in PATH, skipping gh-pages deploy")
+            return False
+
+    @staticmethod
+    def _prune_old_reports(deploy_dir: str, retention_days: int) -> None:
+        """Remove date directories older than retention_days from deploy dir."""
+        import re
+        from datetime import datetime, timedelta
+
+        cutoff = datetime.now() - timedelta(days=retention_days)
+        date_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+        for item in os.listdir(deploy_dir):
+            if not date_pattern.match(item):
+                continue
+            item_path = os.path.join(deploy_dir, item)
+            if not os.path.isdir(item_path):
+                continue
+            try:
+                dir_date = datetime.strptime(item, "%Y-%m-%d")
+                if dir_date < cutoff:
+                    shutil.rmtree(item_path)
+                    logger.info("gh-pages: pruned old report dir %s", item)
+            except ValueError:
+                continue
 
     # ------------------------------------------------------------------
     # Step 5: Cleanup

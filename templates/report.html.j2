@@ -58,7 +58,7 @@
       {% endfor %}
 
       {% for paper in tier1_papers %}
-      <div class="paper-card{% if loop.index > 5 %} paper-card--collapsed{% endif %}">
+      <div class="paper-card{% if loop.index > 5 %} paper-card--collapsed{% endif %}" data-paper-url="{{ paper.url }}">
         <div class="rank-title">
           <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="{{ paper.pdf_url or '' }}" onchange="updateToolbar()">
           <span class="rank">{{ paper.rank }}위</span>
@@ -151,7 +151,7 @@
       {% endif %}
 
       {% for paper in tier2_papers %}
-      <div class="compact-card">
+      <div class="compact-card" data-paper-url="{{ paper.url }}">
         <div class="rank-title">
           <input type="checkbox" class="paper-checkbox" data-tier="2" data-pdf="{{ paper.pdf_url or '' }}" onchange="updateToolbar()">
           <span class="paper-title">
@@ -197,7 +197,7 @@
   <div class="tab-content tab-panel-remind">
     {% if remind_papers %}
       {% for paper in remind_papers %}
-      <div class="compact-card compact-card--remind">
+      <div class="compact-card compact-card--remind" data-paper-url="{{ paper.url }}">
         <div class="rank-title">
           <span class="paper-title">
             <a href="{{ paper.url }}">{{ paper.title }}</a>
@@ -232,7 +232,7 @@
   <div class="tab-content tab-panel-below">
     {% if below_threshold_papers %}
       {% for paper in below_threshold_papers %}
-      <div class="compact-card compact-card--below">
+      <div class="compact-card compact-card--below" data-paper-url="{{ paper.url }}">
         <div class="rank-title">
           <span class="paper-title">
             <a href="{{ paper.url }}">{{ paper.title }}</a>
@@ -266,7 +266,7 @@
   <div class="tab-content tab-panel-excluded">
     {% if discarded_papers %}
       {% for paper in discarded_papers %}
-      <div class="compact-card compact-card--discarded">
+      <div class="compact-card compact-card--discarded" data-paper-url="{{ paper.url }}">
         <div class="rank-title">
           <span class="paper-title">
             {% if paper.url %}<a href="{{ paper.url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}
@@ -311,6 +311,152 @@
 </footer>
 
 <script>
+var READ_KEY = 'paperscout_read';
+var SUPABASE_CFG = {
+  enabled: {{ 'true' if read_sync and read_sync.enabled else 'false' }},
+  url: '{{ read_sync.supabase_url if read_sync and read_sync.enabled else "" }}',
+  key: '{{ read_sync.supabase_anon_key if read_sync and read_sync.enabled else "" }}'
+};
+
+/* localStorage helpers */
+function getLocalRead() {
+  try { return JSON.parse(localStorage.getItem(READ_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveLocalRead(arr) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+/* Supabase helpers */
+function supabaseHeaders() {
+  return {
+    'apikey': SUPABASE_CFG.key,
+    'Authorization': 'Bearer ' + SUPABASE_CFG.key,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
+  };
+}
+
+function fetchReadFromSupabase() {
+  if (!SUPABASE_CFG.enabled) return Promise.resolve([]);
+  return fetch(SUPABASE_CFG.url + '/rest/v1/read_papers?select=paper_url', {
+    headers: supabaseHeaders()
+  })
+  .then(function(r) { return r.ok ? r.json() : []; })
+  .then(function(rows) { return rows.map(function(r) { return r.paper_url; }); })
+  .catch(function() { return []; });
+}
+
+function markReadOnSupabase(url) {
+  if (!SUPABASE_CFG.enabled || !url) return;
+  fetch(SUPABASE_CFG.url + '/rest/v1/read_papers', {
+    method: 'POST',
+    headers: Object.assign({}, supabaseHeaders(), {'Prefer': 'return=minimal,resolution=ignore-duplicates'}),
+    body: JSON.stringify({ paper_url: url })
+  }).catch(function() {});
+}
+
+/* Unified read state */
+var _readCache = null;
+
+function getReadPapers() {
+  if (_readCache) return _readCache;
+  _readCache = getLocalRead();
+  return _readCache;
+}
+
+function markAsRead(url) {
+  if (!url) return;
+  var read = getReadPapers();
+  if (read.indexOf(url) === -1) {
+    read.push(url);
+    _readCache = read;
+    saveLocalRead(read);
+  }
+  markReadOnSupabase(url);
+}
+
+function isRead(url) {
+  return getReadPapers().indexOf(url) !== -1;
+}
+
+function applyReadState() {
+  var cards = document.querySelectorAll('[data-paper-url]');
+  var remindHidden = 0;
+  cards.forEach(function(card) {
+    var url = card.dataset.paperUrl;
+    if (!isRead(url)) return;
+    // Remind tab: hide read papers entirely
+    if (card.classList.contains('compact-card--remind')) {
+      card.style.display = 'none';
+      remindHidden++;
+    } else {
+      card.classList.add('paper-read');
+    }
+  });
+  // Update remind tab count
+  var remindLabel = document.querySelector('label[for="tab-remind"]');
+  if (remindLabel) {
+    var total = document.querySelectorAll('.compact-card--remind').length;
+    var visible = total - remindHidden;
+    remindLabel.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 (' + visible + ')';
+  }
+  // Show empty message if all remind papers are hidden
+  var remindPanel = document.querySelector('.tab-panel-remind');
+  if (remindPanel) {
+    var visibleCards = remindPanel.querySelectorAll('.compact-card--remind:not([style*="display: none"])');
+    var emptyMsg = remindPanel.querySelector('.empty-message');
+    if (visibleCards.length === 0 && !emptyMsg) {
+      var msg = document.createElement('div');
+      msg.className = 'empty-message';
+      msg.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 \uB17C\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.';
+      remindPanel.appendChild(msg);
+    }
+  }
+}
+
+function trackClicks() {
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var card = link.closest('[data-paper-url]');
+    if (!card) return;
+    markAsRead(card.dataset.paperUrl);
+    card.classList.add('paper-read');
+    // If remind card, hide after brief delay
+    if (card.classList.contains('compact-card--remind')) {
+      setTimeout(function() {
+        card.style.display = 'none';
+        applyReadState();
+      }, 200);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Apply localStorage state immediately for fast UX
+  applyReadState();
+  trackClicks();
+  // Then merge Supabase data for cross-device sync
+  fetchReadFromSupabase().then(function(remote) {
+    if (!remote || remote.length === 0) return;
+    var local = getLocalRead();
+    var merged = local.slice();
+    var changed = false;
+    remote.forEach(function(url) {
+      if (merged.indexOf(url) === -1) {
+        merged.push(url);
+        changed = true;
+      }
+    });
+    if (changed) {
+      _readCache = merged;
+      saveLocalRead(merged);
+      applyReadState();
+    }
+  });
+});
+
 function showAllTier1() {
   document.querySelectorAll('.paper-card--collapsed').forEach(function(el) {
     el.classList.remove('paper-card--collapsed');

@@ -208,6 +208,7 @@
       white-space: nowrap;
       flex-shrink: 0;
       min-width: 2.5em;
+      text-align: center;
     }
     .paper-card .paper-title {
       font-size: 1rem;
@@ -372,6 +373,7 @@
       white-space: nowrap;
       flex-shrink: 0;
       min-width: 2.5em;
+      text-align: center;
     }
     .compact-card .paper-title {
       font-weight: 600;
@@ -433,6 +435,10 @@
     .compact-card--below .score-detail { color: #f59e0b; font-weight: 600; }
     /* Modifier: discarded */
     .compact-card--discarded { opacity: 0.7; }
+
+    /* Read state - Gmail-style dimming */
+    .paper-read { opacity: 0.5; }
+    .paper-read .paper-title a { font-weight: 400; }
 
     .empty-message {
       text-align: center;

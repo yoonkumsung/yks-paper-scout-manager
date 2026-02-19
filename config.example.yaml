@@ -129,11 +129,18 @@ topics:
     - start
     - complete
 
+read_sync:
+  enabled: false  # true to enable cross-device read tracking
+  provider: supabase
+  supabase_url: ''  # https://xxxx.supabase.co
+  supabase_anon_key: ''  # eyJxxxx...
 output:
   gh_pages:
     enabled: true
+    base_url: https://USERNAME.github.io/REPO_NAME
     keep_files: true
     retention_days: 90
+    notify_mode: link  # "link" = send URL only, "file" = attach HTML file
   github_issue:
     enabled: false
     body_max_chars: 60000

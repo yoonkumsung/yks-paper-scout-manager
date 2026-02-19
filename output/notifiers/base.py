@@ -42,6 +42,7 @@ class NotifyPayload:
     total_output: int
     file_paths: Dict[str, str] = field(default_factory=dict)
     gh_pages_url: Optional[str] = None
+    notify_mode: str = "file"  # "file" = attach HTML, "link" = send URL only
     event_type: str = "complete"  # "start" or "complete"
     categories: List[str] = field(default_factory=list)
     search_window: Optional[str] = None  # e.g. "2026-02-17 ~ 2026-02-18"
@@ -73,6 +74,36 @@ class NotifierBase(ABC):
         """
         message = self.build_message(payload)
 
+        # Link-only mode: send URL instead of file attachment.
+        if (
+            payload.notify_mode == "link"
+            and payload.gh_pages_url
+            and payload.event_type != "start"
+        ):
+            for attempt in range(1, 3):
+                try:
+                    success = self._send_link_only(message, payload)
+                    if success:
+                        return True
+                    logger.warning(
+                        "Link-only send returned False (attempt %d/2) for %s",
+                        attempt,
+                        payload.topic_slug,
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Link-only send error (attempt %d/2) for %s: %s",
+                        attempt,
+                        payload.topic_slug,
+                        exc,
+                    )
+            logger.warning(
+                "All link-only attempts failed for %s",
+                payload.topic_slug,
+            )
+            return False
+
+        # File mode (default): attach HTML/MD files.
         # Start events are message-only -- no file attachments.
         if payload.event_type == "start":
             attachable_files: Dict[str, str] = {}

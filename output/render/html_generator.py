@@ -42,6 +42,7 @@ def generate_report_html(
     report_data: dict,
     output_dir: str = "tmp/reports",
     template_dir: str = "templates",
+    read_sync: Optional[dict] = None,
 ) -> str:
     """Generate an HTML report page.
 
@@ -79,6 +80,7 @@ def generate_report_html(
         remind_papers=remind_papers,
         discarded_papers=discarded_papers,
         below_threshold_papers=below_threshold_papers,
+        read_sync=_sanitize_read_sync(read_sync),
     )
 
     # Write output file.
@@ -130,6 +132,7 @@ def generate_latest_html(
     report_data: dict,
     output_dir: str = "tmp/reports",
     template_dir: str = "templates",
+    read_sync: Optional[dict] = None,
 ) -> str:
     """Generate latest.html that always overwrites for bookmarking.
 
@@ -166,6 +169,7 @@ def generate_latest_html(
         papers=enriched_papers,
         remind_papers=remind_papers,
         discarded_papers=discarded_papers,
+        read_sync=_sanitize_read_sync(read_sync),
     )
 
     os.makedirs(output_dir, exist_ok=True)
@@ -221,6 +225,25 @@ def _truncate_sentences(text: str, count: int = 2) -> str:
     # Split on sentence boundaries: period/exclamation/question + space
     parts = re.split(r"(?<=[.!?])\s+", text.strip(), maxsplit=count)
     return " ".join(parts[:count])
+
+
+def _sanitize_read_sync(read_sync: Optional[dict]) -> dict:
+    """Build a safe read_sync config dict for template injection.
+
+    Returns a dict with ``enabled``, ``supabase_url``, ``supabase_anon_key``.
+    If read_sync is None or disabled, returns ``{"enabled": False}``.
+    """
+    if not read_sync or not read_sync.get("enabled"):
+        return {"enabled": False}
+    url = read_sync.get("supabase_url", "")
+    key = read_sync.get("supabase_anon_key", "")
+    if not url or not key:
+        return {"enabled": False}
+    return {
+        "enabled": True,
+        "supabase_url": url.rstrip("/"),
+        "supabase_anon_key": key,
+    }
 
 
 def _create_env(template_dir: str) -> Environment:

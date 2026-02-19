@@ -52,6 +52,7 @@ class AppConfig:
     database: dict
     weekly: dict
     local_ui: dict
+    read_sync: dict = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -415,6 +416,7 @@ def validate_config(raw: dict) -> AppConfig:
         database=db,
         weekly=_apply_defaults("weekly", raw.get("weekly", {})),
         local_ui=_apply_defaults("local_ui", raw.get("local_ui", {})),
+        read_sync=raw.get("read_sync", {}),
     )
 
 
