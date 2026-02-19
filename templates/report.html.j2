@@ -161,6 +161,9 @@
           {% endif %}
         </div>
         {% endif %}
+        {% if paper.reason_ko %}
+        <div class="compact-reason">{{ paper.reason_ko }}</div>
+        {% endif %}
       </div>
       {% endfor %}
     {% else %}
