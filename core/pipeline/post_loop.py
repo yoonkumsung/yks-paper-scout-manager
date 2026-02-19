@@ -13,12 +13,13 @@ gh-pages deploy and cache save are handled by CI, not Python.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
 import subprocess
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -440,83 +441,6 @@ class PostLoopProcessor:
 
         return sent, failed
 
-    def _get_readonly_html(
-        self, slug: str, original_html_path: str
-    ) -> Optional[str]:
-        """Generate a read-only HTML (no Supabase JS) for shared channels.
-
-        Re-renders the report HTML with ``read_sync=None`` to exclude
-        Supabase read-tracking JavaScript.  The result is cached so
-        multiple read-only channels reuse the same file.
-
-        Args:
-            slug: Topic slug for locating the JSON report.
-            original_html_path: Path to the original (full) HTML report.
-
-        Returns:
-            Absolute path to the read-only HTML file, or None on failure.
-        """
-        if not os.path.exists(original_html_path):
-            return None
-
-        # Cache path: same directory, with _readonly suffix
-        report_dir = os.path.dirname(original_html_path)
-        readonly_filename = os.path.basename(original_html_path).replace(
-            ".html", "_readonly.html"
-        )
-        readonly_path = os.path.join(report_dir, readonly_filename)
-        if os.path.exists(readonly_path):
-            return readonly_path
-
-        # Find JSON report in the same directory
-        json_files = [
-            f for f in os.listdir(report_dir) if f.endswith(".json") and slug in f
-        ]
-        if not json_files:
-            logger.warning(
-                "No JSON report found for read-only HTML generation "
-                "(slug=%s, dir=%s)",
-                slug,
-                report_dir,
-            )
-            return None
-
-        import json
-
-        json_path = os.path.join(report_dir, json_files[0])
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                report_data = json.load(f)
-        except Exception:
-            logger.warning(
-                "Failed to load report JSON for read-only HTML",
-                exc_info=True,
-            )
-            return None
-
-        from output.render.html_generator import generate_report_html
-
-        template_dir = self._config.output.get("template_dir", "templates")
-        try:
-            result_path = generate_report_html(
-                report_data=report_data,
-                output_dir=report_dir,
-                template_dir=template_dir,
-                read_sync=None,  # No Supabase JS
-                filename=readonly_filename,
-            )
-            logger.info(
-                "Generated read-only HTML for '%s': %s", slug, result_path
-            )
-            return result_path
-        except Exception:
-            logger.warning(
-                "Failed to generate read-only HTML for '%s'",
-                slug,
-                exc_info=True,
-            )
-            return None
-
     # ------------------------------------------------------------------
     # Step 4: Git commit metadata
     # ------------------------------------------------------------------
@@ -663,128 +587,128 @@ class PostLoopProcessor:
             # Create temp directory for worktree
             with tempfile.TemporaryDirectory(prefix="gh-pages-") as tmpdir:
                 worktree_dir = os.path.join(tmpdir, "deploy")
-
-                if branch_exists:
-                    # Checkout existing branch
-                    subprocess.run(
-                        ["git", "worktree", "add", worktree_dir, branch],
-                        capture_output=True,
-                        text=True,
-                        timeout=30,
-                        check=True,
-                    )
-                else:
-                    # Create orphan branch
-                    subprocess.run(
-                        [
-                            "git",
-                            "worktree",
-                            "add",
-                            "--orphan",
-                            worktree_dir,
-                            branch,
-                        ],
-                        capture_output=True,
-                        text=True,
-                        timeout=30,
-                    )
-                    # For older git without --orphan worktree support
-                    if not os.path.isdir(worktree_dir):
+                try:
+                    if branch_exists:
+                        # Checkout existing branch
                         subprocess.run(
-                            [
-                                "git",
-                                "worktree",
-                                "add",
-                                "-b",
-                                branch,
-                                worktree_dir,
-                            ],
+                            ["git", "worktree", "add", worktree_dir, branch],
                             capture_output=True,
                             text=True,
                             timeout=30,
                             check=True,
                         )
-                        # Clean worktree for fresh start
-                        for item in os.listdir(worktree_dir):
-                            if item == ".git":
-                                continue
-                            path = os.path.join(worktree_dir, item)
-                            if os.path.isdir(path):
-                                shutil.rmtree(path)
-                            else:
-                                os.remove(path)
-
-                # Run prune script if retention configured
-                retention_days = gh_pages_cfg.get("retention_days", 90)
-                if retention_days and keep_files:
-                    self._prune_old_reports(worktree_dir, retention_days)
-
-                # Copy report files to worktree
-                for item in os.listdir(report_dir):
-                    src = os.path.join(report_dir, item)
-                    dst = os.path.join(worktree_dir, item)
-                    if os.path.isdir(src):
-                        if os.path.exists(dst):
-                            shutil.rmtree(dst)
-                        shutil.copytree(src, dst)
                     else:
-                        shutil.copy2(src, dst)
+                        # Create orphan branch
+                        subprocess.run(
+                            [
+                                "git",
+                                "worktree",
+                                "add",
+                                "--orphan",
+                                worktree_dir,
+                                branch,
+                            ],
+                            capture_output=True,
+                            text=True,
+                            timeout=30,
+                        )
+                        # For older git without --orphan worktree support
+                        if not os.path.isdir(worktree_dir):
+                            subprocess.run(
+                                [
+                                    "git",
+                                    "worktree",
+                                    "add",
+                                    "-b",
+                                    branch,
+                                    worktree_dir,
+                                ],
+                                capture_output=True,
+                                text=True,
+                                timeout=30,
+                                check=True,
+                            )
+                            # Clean worktree for fresh start
+                            for item in os.listdir(worktree_dir):
+                                if item == ".git":
+                                    continue
+                                path = os.path.join(worktree_dir, item)
+                                if os.path.isdir(path):
+                                    shutil.rmtree(path)
+                                else:
+                                    os.remove(path)
 
-                # Git add, commit, push in worktree
-                subprocess.run(
-                    ["git", "add", "-A"],
-                    cwd=worktree_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
-                    check=True,
-                )
+                    # Run prune script if retention configured
+                    retention_days = gh_pages_cfg.get("retention_days", 90)
+                    if retention_days and keep_files:
+                        self._prune_old_reports(worktree_dir, retention_days)
 
-                # Check if there are changes to commit
-                diff_result = subprocess.run(
-                    ["git", "diff", "--cached", "--quiet"],
-                    cwd=worktree_dir,
-                    capture_output=True,
-                    timeout=10,
-                )
-                if diff_result.returncode == 0:
-                    logger.info("gh-pages: no changes to deploy")
+                    # Copy report files to worktree
+                    for item in os.listdir(report_dir):
+                        src = os.path.join(report_dir, item)
+                        dst = os.path.join(worktree_dir, item)
+                        if os.path.isdir(src):
+                            if os.path.exists(dst):
+                                shutil.rmtree(dst)
+                            shutil.copytree(src, dst)
+                        else:
+                            shutil.copy2(src, dst)
+
+                    # Git add, commit, push in worktree
+                    subprocess.run(
+                        ["git", "add", "-A"],
+                        cwd=worktree_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        check=True,
+                    )
+
+                    # Check if there are changes to commit
+                    diff_result = subprocess.run(
+                        ["git", "diff", "--cached", "--quiet"],
+                        cwd=worktree_dir,
+                        capture_output=True,
+                        timeout=10,
+                    )
+                    if diff_result.returncode == 0:
+                        logger.info("gh-pages: no changes to deploy")
+                        return True
+
+                    subprocess.run(
+                        [
+                            "git",
+                            "commit",
+                            "-m",
+                            "deploy: update reports [skip ci]",
+                        ],
+                        cwd=worktree_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        check=True,
+                    )
+
+                    subprocess.run(
+                        ["git", "push", "origin", branch],
+                        cwd=worktree_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=60,
+                        check=True,
+                    )
+
+                    logger.info("gh-pages: deployed successfully")
                     return True
 
-                subprocess.run(
-                    [
-                        "git",
-                        "commit",
-                        "-m",
-                        "deploy: update reports [skip ci]",
-                    ],
-                    cwd=worktree_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
-                    check=True,
-                )
-
-                subprocess.run(
-                    ["git", "push", "origin", branch],
-                    cwd=worktree_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    check=True,
-                )
-
-                logger.info("gh-pages: deployed successfully")
-
-            # Clean up worktree reference
-            subprocess.run(
-                ["git", "worktree", "prune"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-
-            return True
+                finally:
+                    # Always clean up worktree reference
+                    subprocess.run(
+                        ["git", "worktree", "prune"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
 
         except subprocess.CalledProcessError as exc:
             logger.warning(
@@ -792,22 +716,9 @@ class PostLoopProcessor:
                 exc,
                 exc.stderr if exc.stderr else "",
             )
-            # Clean up worktree on failure
-            subprocess.run(
-                ["git", "worktree", "prune"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
             return False
         except subprocess.TimeoutExpired:
             logger.warning("gh-pages deploy timed out")
-            subprocess.run(
-                ["git", "worktree", "prune"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
             return False
         except FileNotFoundError:
             logger.warning("git not found in PATH, skipping gh-pages deploy")
@@ -864,10 +775,8 @@ class PostLoopProcessor:
 
     def _find_topic_name(self, slug: str) -> str:
         """Find topic display name from config."""
-        for topic in self._config.topics:
-            if topic.slug == slug:
-                return topic.name
-        return slug
+        spec = self._find_topic_spec(slug)
+        return spec.name if spec else slug
 
     def _find_topic_spec(self, slug: str) -> Any:
         """Find TopicSpec from config by slug."""
@@ -875,6 +784,22 @@ class PostLoopProcessor:
             if topic.slug == slug:
                 return topic
         return None
+
+    @staticmethod
+    def _iter_report_dirs(
+        report_dir: str,
+    ) -> Iterator[Tuple[str, str]]:
+        """Yield (date_str, date_dir_path) in reverse-chronological order.
+
+        Iterates over subdirectories of *report_dir* sorted newest-first.
+        Only directories are yielded; non-directory entries are skipped.
+        """
+        if not os.path.isdir(report_dir):
+            return
+        for entry in sorted(os.listdir(report_dir), reverse=True):
+            date_dir = os.path.join(report_dir, entry)
+            if os.path.isdir(date_dir):
+                yield entry, date_dir
 
     def _find_report_entry(
         self, slug: str, topic_name: str, report_dir: str
@@ -884,55 +809,25 @@ class PostLoopProcessor:
         Returns a dict with topic_slug, topic_name, date, filepath
         or None if not found.
         """
-        if not os.path.isdir(report_dir):
-            return None
-
-        # Look for date subdirectories containing report files
-        best_date = ""
-        best_filepath = ""
-
-        for entry in sorted(os.listdir(report_dir), reverse=True):
-            date_dir = os.path.join(report_dir, entry)
-            if not os.path.isdir(date_dir):
-                continue
-
-            # Look for HTML file matching the slug
+        for date_str, date_dir in self._iter_report_dirs(report_dir):
             for fname in os.listdir(date_dir):
                 if fname.endswith(f"_paper_{slug}.html"):
-                    best_date = entry
-                    best_filepath = os.path.join(date_dir, fname)
-                    break
-
-            if best_filepath:
-                break
-
-        if not best_filepath:
-            return None
-
-        # Convert filesystem path to web-relative path under /reports/
-        rel_path = os.path.relpath(best_filepath, report_dir)
-
-        return {
-            "topic_slug": slug,
-            "topic_name": topic_name,
-            "date": best_date,
-            "filepath": rel_path,
-        }
+                    rel_path = os.path.relpath(
+                        os.path.join(date_dir, fname), report_dir
+                    )
+                    return {
+                        "topic_slug": slug,
+                        "topic_name": topic_name,
+                        "date": date_str,
+                        "filepath": rel_path,
+                    }
+        return None
 
     def _load_latest_report_data(
         self, slug: str, report_dir: str
     ) -> Optional[Dict[str, Any]]:
         """Load the JSON report data for the latest report of a topic."""
-        import json
-
-        if not os.path.isdir(report_dir):
-            return None
-
-        for entry in sorted(os.listdir(report_dir), reverse=True):
-            date_dir = os.path.join(report_dir, entry)
-            if not os.path.isdir(date_dir):
-                continue
-
+        for _date_str, date_dir in self._iter_report_dirs(report_dir):
             for fname in os.listdir(date_dir):
                 if fname.endswith(f"_paper_{slug}.json"):
                     json_path = os.path.join(date_dir, fname)
@@ -944,7 +839,6 @@ class PostLoopProcessor:
                             "Failed to load report JSON: %s", json_path
                         )
                         return None
-
         return None
 
     def _get_display_date(self, slug: str) -> str:
@@ -970,20 +864,12 @@ class PostLoopProcessor:
     def _find_report_files(
         self, slug: str, report_dir: str
     ) -> Dict[str, str]:
-        """Find report file paths for a topic (html, md).
+        """Find report file paths for a topic (html, md, json).
 
         Returns a dict mapping format key to absolute file path.
         """
-        result: Dict[str, str] = {}
-
-        if not os.path.isdir(report_dir):
-            return result
-
-        for entry in sorted(os.listdir(report_dir), reverse=True):
-            date_dir = os.path.join(report_dir, entry)
-            if not os.path.isdir(date_dir):
-                continue
-
+        for _date_str, date_dir in self._iter_report_dirs(report_dir):
+            result: Dict[str, str] = {}
             for fname in os.listdir(date_dir):
                 if slug not in fname:
                     continue
@@ -994,8 +880,6 @@ class PostLoopProcessor:
                     result["md"] = abs_path
                 elif fname.endswith(".json"):
                     result["json"] = abs_path
-
             if result:
-                break
-
-        return result
+                return result
+        return {}

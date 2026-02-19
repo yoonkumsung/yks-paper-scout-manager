@@ -9,6 +9,7 @@ DevSpec Section 9 (Pipeline Architecture).
 
 from __future__ import annotations
 
+import json
 import logging
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -70,6 +71,16 @@ class TopicLoopOrchestrator:
     # ------------------------------------------------------------------
     # Lazy-initialized shared components
     # ------------------------------------------------------------------
+
+    def _make_llm_client(self) -> tuple:
+        """Create an OpenRouterClient and return (client, response_format_supported)."""
+        from core.llm.openrouter_client import OpenRouterClient
+
+        client = OpenRouterClient(self._config)
+        response_format_supported = self._config.llm.get(
+            "response_format_supported", False
+        )
+        return client, response_format_supported
 
     def _get_dedup_manager(self) -> Any:
         """Return a shared DedupManager instance (created once per orchestrator)."""
@@ -278,23 +289,9 @@ class TopicLoopOrchestrator:
                     "Pipeline completed with 0 results.",
                     slug,
                 )
-                if run_id >= 0:
-                    try:
-                        self._db.update_run_status(run_id, "completed")
-                        self._db.update_run_stats(
-                            run_id,
-                            total_collected=0, total_filtered=0,
-                            total_scored=0, total_discarded=0, total_output=0,
-                            threshold_used=0, threshold_lowered=False,
-                        )
-                    except Exception as exc:
-                        logger.warning("DB update failed (no-papers path): %s", exc)
-                return {
-                    "run_id": run_id,
-                    "total_collected": 0, "total_filtered": 0,
-                    "total_scored": 0, "total_discarded": 0,
-                    "total_output": 0, "report_paths": {},
-                }
+                return self._finalize_run(
+                    run_id, "completed", label="no-papers",
+                )
 
             # ---- Step 4: Hybrid Filter ----
             topic_embedding_text = agent1_output.get("topic_embedding_text")
@@ -314,23 +311,11 @@ class TopicLoopOrchestrator:
                     "Step 4: No papers passed filter for '%s', skipping remaining steps",
                     slug,
                 )
-                if run_id >= 0:
-                    try:
-                        self._db.update_run_status(run_id, "completed")
-                        self._db.update_run_stats(
-                            run_id,
-                            total_collected=total_collected, total_filtered=0,
-                            total_scored=0, total_discarded=0, total_output=0,
-                            threshold_used=0, threshold_lowered=False,
-                        )
-                    except Exception as exc:
-                        logger.warning("DB update failed (no-filter path): %s", exc)
-                return {
-                    "run_id": run_id,
-                    "total_collected": total_collected, "total_filtered": 0,
-                    "total_scored": 0, "total_discarded": 0,
-                    "total_output": 0, "report_paths": {},
-                }
+                return self._finalize_run(
+                    run_id, "completed",
+                    total_collected=total_collected,
+                    label="no-filter",
+                )
 
             # ---- Step 5: Agent 2 - Scoring ----
             evaluations = self._step_score(
@@ -419,28 +404,14 @@ class TopicLoopOrchestrator:
                     "Skipping ranking/summarization steps.",
                     len(evaluations), slug,
                 )
-                if run_id >= 0:
-                    try:
-                        self._db.update_run_status(run_id, "completed")
-                        self._db.update_run_stats(
-                            run_id,
-                            total_collected=total_collected,
-                            total_filtered=total_filtered,
-                            total_scored=total_scored,
-                            total_discarded=total_discarded,
-                            total_output=0,
-                            threshold_used=0, threshold_lowered=False,
-                        )
-                    except Exception as exc:
-                        logger.warning("DB update failed (all-discarded path): %s", exc)
-                return {
-                    "run_id": run_id,
-                    "total_collected": total_collected,
-                    "total_filtered": total_filtered,
-                    "total_scored": total_scored,
-                    "total_discarded": total_discarded,
-                    "total_output": 0, "report_paths": {},
-                }
+                return self._finalize_run(
+                    run_id, "completed",
+                    total_collected=total_collected,
+                    total_filtered=total_filtered,
+                    total_scored=total_scored,
+                    total_discarded=total_discarded,
+                    label="all-discarded",
+                )
 
             # ---- Step 6: Ranker ----
             ranked_papers = self._step_rank(
@@ -595,35 +566,22 @@ class TopicLoopOrchestrator:
             logger.info("Step 11: Post-run updates done for '%s'", slug)
 
             # ---- Step 12: Mark run completed ----
-            if run_id >= 0:
-                try:
-                    self._db.update_run_status(run_id, "completed")
-                    self._db.update_run_stats(
-                        run_id,
-                        total_collected=total_collected,
-                        total_filtered=total_filtered,
-                        total_scored=total_scored,
-                        total_discarded=total_discarded,
-                        total_output=total_output,
-                        threshold_used=threshold_used,
-                        threshold_lowered=threshold_lowered,
-                    )
-                except Exception as exc:
-                    logger.warning("DB update failed (completion): %s", exc)
             logger.info(
                 "Step 12: Run completed for '%s' (run_id=%d)",
                 slug, run_id,
             )
-
-            return {
-                "run_id": run_id,
-                "total_collected": total_collected,
-                "total_filtered": total_filtered,
-                "total_scored": total_scored,
-                "total_discarded": total_discarded,
-                "total_output": total_output,
-                "report_paths": report_paths,
-            }
+            return self._finalize_run(
+                run_id, "completed",
+                total_collected=total_collected,
+                total_filtered=total_filtered,
+                total_scored=total_scored,
+                total_discarded=total_discarded,
+                total_output=total_output,
+                threshold_used=threshold_used,
+                threshold_lowered=threshold_lowered,
+                report_paths=report_paths,
+                label="completion",
+            )
 
         except Exception:
             # Mark run as failed
@@ -704,12 +662,8 @@ class TopicLoopOrchestrator:
     def _step_agent1(self, topic: Any) -> dict:
         """Step 2: Run Agent 1 (Keyword Expander)."""
         from agents.keyword_expander import KeywordExpander
-        from core.llm.openrouter_client import OpenRouterClient
 
-        client = OpenRouterClient(self._config)
-        response_format_supported = self._config.llm.get(
-            "response_format_supported", False
-        )
+        client, response_format_supported = self._make_llm_client()
         expander = KeywordExpander(
             config=self._config,
             client=client,
@@ -813,12 +767,8 @@ class TopicLoopOrchestrator:
     ) -> List[dict]:
         """Step 5: Agent 2 - Score papers."""
         from agents.scorer import Scorer
-        from core.llm.openrouter_client import OpenRouterClient
 
-        client = OpenRouterClient(self._config)
-        response_format_supported = self._config.llm.get(
-            "response_format_supported", False
-        )
+        client, response_format_supported = self._make_llm_client()
         scorer = Scorer(
             config=self._config,
             client=client,
@@ -935,12 +885,8 @@ class TopicLoopOrchestrator:
                         rp["published_at_utc"] = ""
 
         from agents.summarizer import Summarizer
-        from core.llm.openrouter_client import OpenRouterClient
 
-        client = OpenRouterClient(self._config)
-        response_format_supported = self._config.llm.get(
-            "response_format_supported", False
-        )
+        client, response_format_supported = self._make_llm_client()
         summarizer = Summarizer(
             config=self._config,
             client=client,
@@ -1059,8 +1005,6 @@ class TopicLoopOrchestrator:
         )
 
         # Load JSON report data for MD and HTML generation
-        import json
-
         try:
             with open(json_path, "r", encoding="utf-8") as f:
                 report_data = json.load(f)
@@ -1156,6 +1100,51 @@ class TopicLoopOrchestrator:
             return [t for t in all_topics if t.slug in slug_set]
 
         return list(all_topics)
+
+    def _finalize_run(
+        self,
+        run_id: int,
+        status: str,
+        *,
+        total_collected: int = 0,
+        total_filtered: int = 0,
+        total_scored: int = 0,
+        total_discarded: int = 0,
+        total_output: int = 0,
+        threshold_used: int = 0,
+        threshold_lowered: bool = False,
+        report_paths: Optional[Dict[str, str]] = None,
+        label: str = "",
+    ) -> Dict[str, Any]:
+        """Update DB run status/stats and return a standardized result dict.
+
+        Centralizes the repeated pattern of updating the DB and building
+        the return dict at each early-exit point.
+        """
+        if run_id >= 0:
+            try:
+                self._db.update_run_status(run_id, status)
+                self._db.update_run_stats(
+                    run_id,
+                    total_collected=total_collected,
+                    total_filtered=total_filtered,
+                    total_scored=total_scored,
+                    total_discarded=total_discarded,
+                    total_output=total_output,
+                    threshold_used=threshold_used,
+                    threshold_lowered=threshold_lowered,
+                )
+            except Exception as exc:
+                logger.warning("DB update failed (%s): %s", label, exc)
+        return {
+            "run_id": run_id,
+            "total_collected": total_collected,
+            "total_filtered": total_filtered,
+            "total_scored": total_scored,
+            "total_discarded": total_discarded,
+            "total_output": total_output,
+            "report_paths": report_paths or {},
+        }
 
     @staticmethod
     def _extract_keywords(agent1_output: dict) -> List[str]:

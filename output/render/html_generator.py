@@ -144,7 +144,8 @@ def generate_latest_html(
 ) -> str:
     """Generate latest.html that always overwrites for bookmarking.
 
-    Uses the same report template but always writes to the given filename.
+    Delegates to ``generate_report_html`` with below-threshold papers
+    excluded (latest view shows only selected papers).
 
     Args:
         report_data: Dict from JSON exporter containing ``meta``, ``papers``,
@@ -158,40 +159,16 @@ def generate_latest_html(
     Returns:
         Absolute path to the written HTML file.
     """
-    env = _create_env(template_dir)
-    template = env.get_template("report.html.j2")
-
-    meta: dict = report_data.get("meta", {})
-    papers: List[dict] = report_data.get("papers", [])
-    clusters: List[dict] = report_data.get("clusters", [])
-    remind_papers: List[dict] = report_data.get("remind_papers", [])
-    discarded_papers: List[dict] = report_data.get("discarded_papers", [])
-
-    # Build cluster mate lookup.
-    key_to_rank = _build_key_to_rank(papers)
-    key_to_cluster_mates = _build_cluster_mates(clusters, key_to_rank)
-
-    enriched_papers = _enrich_papers_with_cluster_mates(
-        papers, key_to_cluster_mates
+    # Exclude below_threshold_papers from the latest view
+    data = dict(report_data)
+    data.pop("below_threshold_papers", None)
+    return generate_report_html(
+        report_data=data,
+        output_dir=output_dir,
+        template_dir=template_dir,
+        read_sync=read_sync,
+        filename=filename,
     )
-
-    rendered = template.render(
-        meta=meta,
-        papers=enriched_papers,
-        remind_papers=remind_papers,
-        discarded_papers=discarded_papers,
-        read_sync=_sanitize_read_sync(read_sync),
-    )
-
-    os.makedirs(output_dir, exist_ok=True)
-    filepath = os.path.join(output_dir, filename)
-
-    with open(filepath, "w", encoding="utf-8") as fh:
-        fh.write(rendered)
-
-    abs_path = os.path.abspath(filepath)
-    logger.info("Latest HTML written to %s", abs_path)
-    return abs_path
 
 
 # ---------------------------------------------------------------------------
