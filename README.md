@@ -1,8 +1,22 @@
 # Paper Scout
 
-arXiv 논문을 자동으로 수집하고, LLM으로 평가하여 한국어 리포트를 생성하는 시스템.
+연구자를 위한 **AI 논문 큐레이션 시스템**. arXiv에서 매일 쏟아지는 수천 편의 논문 중 내 연구와 관련된 핵심 논문만 골라 한국어 리포트로 만들어줍니다.
 
-GitHub Actions에서 매일 자동 실행되며, 로컬 웹 UI로도 사용할 수 있습니다.
+### 왜 만들었나?
+
+arXiv에는 매일 500편 이상의 논문이 올라옵니다. 이 중 내 연구에 진짜 필요한 논문을 찾으려면 매일 시간을 들여 훑어봐야 합니다. Paper Scout는 이 과정을 자동화합니다:
+
+- **AI가 논문을 읽고 점수를 매깁니다** — 내 연구 주제와의 관련성을 0~100점으로 평가
+- **한국어로 요약해줍니다** — 핵심 기여, 방법론, 실험 결과를 한눈에 파악
+- **매일 자동으로 실행됩니다** — GitHub Actions로 매일 아침 리포트가 도착
+- **놓친 논문을 다시 추천합니다** — 리마인드 시스템으로 중요 논문 재노출
+
+### 기대 효과
+
+- 논문 탐색 시간 **90% 이상 절감** (매일 1시간 → 5분)
+- 관련 논문을 **놓치지 않는** 체계적 모니터링
+- 한국어 요약으로 **빠른 의사결정** (읽을지 말지 즉시 판단)
+- 무료 LLM 모델 사용으로 **비용 부담 제로**
 
 ---
 
@@ -159,6 +173,8 @@ final = 0.80 × (base_score + bonus) + 0.20 × recency_score
 | 중복 제거 | SQLite + JSONL 2티어 |
 | 웹 UI | Flask + SSE 실시간 로그 |
 | CI/CD | GitHub Actions (매일 UTC 02:00) |
+| 리포트 배포 | GitHub Pages (gh-pages 브랜치) |
+| 읽음 추적 | Supabase (선택, 크로스 디바이스 동기화) |
 | 알림 | Discord 웹훅, Telegram Bot API |
 
 ### LLM 에이전트
@@ -211,6 +227,62 @@ topics:
 | Telegram | `TELEGRAM_CHAT_ID_{KEY}` | `TELEGRAM_CHAT_ID_YKS` |
 
 Discord는 `DISCORD_WEBHOOK_URL`을 폴백으로도 지원합니다.
+
+---
+
+## GitHub Pages & 읽음 추적
+
+### GitHub Pages 배포
+
+리포트를 GitHub Pages에 배포하면 고정 URL로 접근할 수 있습니다. Telegram 알림에서 링크를 클릭하면 바로 리포트를 볼 수 있습니다.
+
+`config.yaml`에서 설정:
+
+```yaml
+output:
+  gh_pages:
+    enabled: true
+    base_url: https://USERNAME.github.io/REPO_NAME
+    notify_mode: link  # "link" = URL만 전송, "file" = HTML 파일 첨부
+```
+
+### 크로스 디바이스 읽음 추적 (Supabase)
+
+논문을 클릭하면 자동으로 "읽음" 처리되며, 여러 기기에서 읽음 상태가 동기화됩니다. 무료 [Supabase](https://supabase.com) 프로젝트를 생성하여 연동합니다.
+
+**설정 방법:**
+
+1. [supabase.com](https://supabase.com)에서 무료 프로젝트 생성
+2. **SQL Editor**에서 테이블 생성:
+
+```sql
+CREATE TABLE read_papers (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  paper_url text NOT NULL UNIQUE,
+  read_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE read_papers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow anon read" ON read_papers FOR SELECT USING (true);
+CREATE POLICY "Allow anon insert" ON read_papers FOR INSERT WITH CHECK (true);
+CREATE INDEX idx_read_papers_url ON read_papers (paper_url);
+```
+
+3. **Settings > API** 페이지에서 두 값을 복사:
+   - **Data API URL** (`https://xxxx.supabase.co`)
+   - **anon public key** (`eyJxxxx...`)
+
+4. `config.yaml` 또는 로컬 UI 설정 탭에서 입력:
+
+```yaml
+read_sync:
+  enabled: true
+  provider: supabase
+  supabase_url: 'https://xxxx.supabase.co'
+  supabase_anon_key: 'eyJxxxx...'
+```
+
+Supabase를 설정하지 않아도 논문 읽음 추적은 브라우저 localStorage로 동작합니다 (단, 기기 간 동기화 없음).
 
 ---
 
