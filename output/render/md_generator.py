@@ -282,10 +282,12 @@ def _render_tier2_paper(paper: dict) -> str:
     )
     lines.append("")
 
-    # Summary (shorter)
+    # Abstract preview (first 2 sentences)
     summary_ko = paper.get("summary_ko", "")
     if summary_ko:
-        lines.append(summary_ko)
+        import re
+        parts = re.split(r"(?<=[.!?])\s+", summary_ko.strip(), maxsplit=2)
+        lines.append(" ".join(parts[:2]))
         lines.append("")
 
     # Reason with arrow prefix

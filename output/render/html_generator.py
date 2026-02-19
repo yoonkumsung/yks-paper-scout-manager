@@ -206,6 +206,21 @@ def _format_window_date(iso_str: str) -> str:
         return iso_str
 
 
+def _truncate_sentences(text: str, count: int = 2) -> str:
+    """Return the first *count* sentences from *text*.
+
+    Splits on sentence-ending punctuation (. ! ?) followed by whitespace.
+    Returns the original text if it has fewer sentences than *count*.
+    """
+    import re
+
+    if not text:
+        return text
+    # Split on sentence boundaries: period/exclamation/question + space
+    parts = re.split(r"(?<=[.!?])\s+", text.strip(), maxsplit=count)
+    return " ".join(parts[:count])
+
+
 def _create_env(template_dir: str) -> Environment:
     """Create a Jinja2 Environment with autoescape enabled.
 
@@ -216,6 +231,7 @@ def _create_env(template_dir: str) -> Environment:
         autoescape=select_autoescape(["html", "j2"]),
     )
     env.filters["window_date"] = _format_window_date
+    env.filters["truncate_sentences"] = _truncate_sentences
     return env
 
 

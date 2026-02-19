@@ -151,7 +151,15 @@
           </span>
         </div>
         {% if paper.summary_ko %}
-        <div class="compact-body">{{ paper.summary_ko }}</div>
+        <div class="compact-body">
+          <span class="abstract-preview">{{ paper.summary_ko | truncate_sentences(2) }}</span>
+          {% if paper.summary_ko | truncate_sentences(2) != paper.summary_ko %}
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">{{ paper.summary_ko }}</div>
+          </details>
+          {% endif %}
+        </div>
         {% endif %}
       </div>
       {% endfor %}
