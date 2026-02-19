@@ -295,11 +295,12 @@ class Summarizer(BaseAgent):
         )
 
         # Output format depends on tier
+        # NOTE: summary_ko is NOT requested from LLM; the English abstract
+        # is used directly (set in topic_loop._step_summarize).
         if tier == 1:
             output_format = (
                 "## Output\n"
                 '[{"index":1,'
-                '"summary_ko":"300~500chars",'
                 '"reason_ko":"~150chars",'
                 '"insight_ko":"~150chars"}]'
             )
@@ -307,7 +308,6 @@ class Summarizer(BaseAgent):
             output_format = (
                 "## Output\n"
                 '[{"index":1,'
-                '"summary_ko":"~200chars",'
                 '"reason_ko":"1 line"}]'
             )
 

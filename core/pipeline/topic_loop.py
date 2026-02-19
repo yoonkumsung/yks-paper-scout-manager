@@ -932,18 +932,15 @@ class TopicLoopOrchestrator:
         for rp in ranked_papers:
             merged = dict(rp)
             pk = rp.get("paper_key", "")
+
+            # summary_ko is always the English abstract (no LLM translation)
+            merged["summary_ko"] = rp.get("abstract", "")
+
             if pk in summary_map:
                 sm = summary_map[pk]
-                merged["summary_ko"] = sm.get("summary_ko", "")
                 merged["reason_ko"] = sm.get("reason_ko", "")
                 merged["insight_ko"] = sm.get("insight_ko", "")
             else:
-                # Summarization failed - use English abstract as fallback
-                abstract = rp.get("abstract", "")
-                merged.setdefault(
-                    "summary_ko",
-                    abstract if abstract else "(요약 생성 실패)",
-                )
                 merged.setdefault("reason_ko", "")
                 merged.setdefault("insight_ko", "")
             enriched.append(merged)
