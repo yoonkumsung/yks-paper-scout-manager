@@ -17,6 +17,7 @@ ENV_KEYS = [
     "TELEGRAM_BOT_TOKEN",
     "TELEGRAM_CHAT_ID",
     "GITHUB_TOKEN",
+    "SUPABASE_DB_URL",
 ]
 
 # Validation rules per key
@@ -26,6 +27,17 @@ _VALIDATORS = {
     "TELEGRAM_BOT_TOKEN": lambda v: ":" in v,
     "TELEGRAM_CHAT_ID": lambda v: bool(v.strip()),
     "GITHUB_TOKEN": lambda v: v.startswith("ghp_") or v.startswith("github_pat_"),
+    "SUPABASE_DB_URL": lambda v: v.startswith("postgresql://"),
+}
+
+# Help URLs for each key (external documentation links)
+HELP_URLS = {
+    "OPENROUTER_API_KEY": "https://openrouter.ai/keys",
+    "DISCORD_WEBHOOK_URL": "https://support.discord.com/hc/en-us/articles/228383668",
+    "TELEGRAM_BOT_TOKEN": "https://core.telegram.org/bots#botfather",
+    "TELEGRAM_CHAT_ID": "https://t.me/userinfobot",
+    "GITHUB_TOKEN": "https://github.com/settings/tokens/new",
+    "SUPABASE_DB_URL": "https://supabase.com/dashboard/project/_/settings/database",
 }
 
 ENV_PATH = Path(".env")

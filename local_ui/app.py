@@ -41,6 +41,22 @@ def create_app(
     app.config["DB_PATH"] = db_path
     app.config["DATA_PATH"] = data_path
 
+    # Load database provider config for topic stats
+    import os
+    import yaml
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            raw_config = yaml.safe_load(f) or {}
+        db_cfg = raw_config.get("database", {})
+        app.config["DB_PROVIDER"] = db_cfg.get("provider", "sqlite")
+        if app.config["DB_PROVIDER"] == "supabase":
+            supabase_cfg = db_cfg.get("supabase", {})
+            env_var = supabase_cfg.get("connection_string_env", "SUPABASE_DB_URL")
+            app.config["SUPABASE_DB_URL"] = os.environ.get(env_var, "")
+    except Exception:
+        app.config["DB_PROVIDER"] = "sqlite"
+
     # Register blueprints
     from local_ui.api.topics import topics_bp
     from local_ui.api.pipeline import pipeline_bp

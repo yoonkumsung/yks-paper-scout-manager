@@ -166,7 +166,11 @@ def save_and_deploy():
                 config = read_config(config_path)
                 for key, value in config_updates.items():
                     if key != "topics":
-                        config[key] = value
+                        # Deep merge for existing dict sections
+                        if key in config and isinstance(config[key], dict) and isinstance(value, dict):
+                            config[key].update(value)
+                        else:
+                            config[key] = value
                 write_config(config_path, config)
                 steps.append({"step": "config", "status": "ok"})
             except Exception as e:

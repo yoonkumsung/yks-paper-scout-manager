@@ -157,12 +157,15 @@ notifications:
   on_zero_results: true
   on_error: true
 database:
-  path: data/paper_scout.db
+  provider: sqlite  # "sqlite" (default) or "supabase"
+  path: data/paper_scout.db  # sqlite only
+  supabase:
+    connection_string_env: SUPABASE_DB_URL  # env var holding PostgreSQL connection string
   retention:
     evaluations_days: 90
     query_stats_days: 90
     runs_days: 90
-  papers_ttl_days: 365
+  papers_ttl_days: 0  # 0 = permanent retention (never delete papers)
   vacuum_after_purge: true
   seen_items:
     path: data/seen_items.jsonl

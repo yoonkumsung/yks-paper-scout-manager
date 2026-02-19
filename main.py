@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 
@@ -228,14 +229,174 @@ def run_pipeline(args: argparse.Namespace) -> int:
                 except Exception:
                     logger.warning("Failed to close DB before weekly maintenance", exc_info=True)
                 from core.pipeline.weekly_db_maintenance import run_weekly_maintenance
-                maint_summary = run_weekly_maintenance(db_path=db_path)
+                db_config = config.database
+                maint_summary = run_weekly_maintenance(db_path=db_path, db_config=db_config)
                 logger.info("Weekly maintenance: %s", maint_summary)
+                today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+                _provider = db_config.get("provider", "sqlite")
+                _conn_str = None
+                if _provider == "supabase":
+                    _env_key = db_config.get("supabase", {}).get("connection_string_env", "SUPABASE_DB_URL")
+                    _conn_str = os.environ.get(_env_key)
+
+                summary_data: dict = {}
+                chart_files: list = []
+                report_dir = config.output.get("report_dir", "tmp/reports")
+                md_path = ""
+                html_path = ""
+
+                # --- Weekly summary data ---
                 try:
                     from core.pipeline.weekly_summary import generate_weekly_summary
-                    today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
-                    generate_weekly_summary(db_path=db_path, date_str=today_str)
+                    summary_data = generate_weekly_summary(
+                        db_path=db_path, date_str=today_str,
+                        provider=_provider, connection_string=_conn_str,
+                    )
                 except Exception:
                     logger.warning("Weekly summary generation failed (non-fatal)", exc_info=True)
+
+                # --- Weekly charts ---
+                try:
+                    viz_enabled = config.weekly.get("visualization", {}).get("enabled", False)
+                    if viz_enabled:
+                        from core.pipeline.weekly_viz import generate_weekly_charts
+                        today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                        chart_files = generate_weekly_charts(
+                            db_path=db_path, date_str=today_iso,
+                            provider=_provider, connection_string=_conn_str,
+                        )
+                        if chart_files:
+                            logger.info("Weekly charts generated: %s", chart_files)
+                        else:
+                            logger.debug("Weekly charts: no charts generated (no data or viz unavailable)")
+                except Exception:
+                    logger.warning("Weekly chart generation failed (non-fatal)", exc_info=True)
+
+                # --- Step A: Render HTML and MD ---
+                try:
+                    from pathlib import Path
+                    from core.pipeline.weekly_summary import (
+                        render_weekly_summary_html,
+                        render_weekly_summary_md,
+                    )
+
+                    Path(report_dir).mkdir(parents=True, exist_ok=True)
+
+                    md_content = render_weekly_summary_md(summary_data, today_str)
+                    md_path = os.path.join(report_dir, f"{today_str}_weekly_summary.md")
+                    with open(md_path, "w", encoding="utf-8") as f:
+                        f.write(md_content)
+
+                    html_content = render_weekly_summary_html(
+                        summary_data, today_str, chart_paths=chart_files,
+                    )
+                    html_path = os.path.join(report_dir, f"{today_str}_weekly_summary.html")
+                    with open(html_path, "w", encoding="utf-8") as f:
+                        f.write(html_content)
+                    logger.info("Weekly report files: %s, %s", md_path, html_path)
+                except Exception:
+                    logger.warning("Weekly report rendering failed (non-fatal)", exc_info=True)
+
+                # --- Step B: Deploy to gh-pages ---
+                gh_pages_cfg = config.output.get("gh_pages", {})
+                if gh_pages_cfg.get("enabled"):
+                    try:
+                        from core.pipeline.post_loop import PostLoopProcessor
+                        post_proc = PostLoopProcessor(
+                            config=config, db_manager=None, report_dir=report_dir,
+                        )
+                        deployed = post_proc._deploy_gh_pages(report_dir, gh_pages_cfg)
+                        logger.info(
+                            "Weekly gh-pages deploy: %s",
+                            "succeeded" if deployed else "skipped",
+                        )
+                    except Exception:
+                        logger.warning("Weekly gh-pages deploy failed (non-fatal)", exc_info=True)
+
+                # --- Step C: Send notification ---
+                try:
+                    from output.notifiers.base import NotifyPayload
+                    from output.notifiers.registry import NotifierRegistry
+                    from core.models import NotifyConfig
+
+                    registry = NotifierRegistry()
+                    notifier = None
+                    send_modes: list = ["link", "md"]
+
+                    # Try weekly_summary config first
+                    weekly_notify_cfg = config.notifications.get("weekly_summary", {})
+                    if weekly_notify_cfg.get("provider"):
+                        events = weekly_notify_cfg.get("events", ["complete"])
+                        send_modes = weekly_notify_cfg.get("send", ["link", "md"])
+                        if "complete" in events:
+                            notify_cfg = NotifyConfig(
+                                provider=weekly_notify_cfg["provider"],
+                                channel_id=weekly_notify_cfg.get("channel_id", ""),
+                                secret_key=weekly_notify_cfg.get("secret_key", ""),
+                                events=events,
+                                send=send_modes,
+                            )
+                            try:
+                                notifier = registry.get_notifier(notify_cfg)
+                            except ValueError:
+                                pass
+
+                    # Fall back to first topic's notification channel
+                    if notifier is None:
+                        for t_spec in config.topics:
+                            if hasattr(t_spec, "notify") and t_spec.notify:
+                                notifiers = registry.get_notifiers_for_event(
+                                    t_spec.notify, "complete",
+                                )
+                                if notifiers:
+                                    notifier = notifiers[0]
+                                    # Inherit send modes from topic config
+                                    for nc in t_spec.notify:
+                                        if "complete" in nc.events:
+                                            send_modes = nc.send or ["link", "md"]
+                                            break
+                                    break
+
+                    if notifier is not None:
+                        gh_pages_base = gh_pages_cfg.get("base_url", "").rstrip("/")
+                        gh_pages_url = None
+                        if "link" in send_modes and gh_pages_base:
+                            gh_pages_url = (
+                                f"{gh_pages_base}/{today_str}_weekly_summary.html"
+                            )
+
+                        display_date = datetime.now(timezone.utc).strftime("%y년 %m월 %d일")
+
+                        file_paths_notify: dict = {}
+                        if "md" in send_modes and md_path and os.path.exists(md_path):
+                            file_paths_notify["md"] = os.path.abspath(md_path)
+
+                        allowed_fmts = [f for f in send_modes if f in ("md", "html")]
+
+                        payload = NotifyPayload(
+                            topic_slug="weekly-summary",
+                            topic_name="Weekly Summary",
+                            display_date=display_date,
+                            keywords=[],
+                            total_output=len(summary_data.get("top_papers", [])),
+                            file_paths=file_paths_notify,
+                            gh_pages_url=gh_pages_url,
+                            notify_mode="file",
+                            allowed_formats=allowed_fmts or ["md"],
+                            event_type="complete",
+                        )
+                        success = notifier.notify(payload)
+                        if success:
+                            logger.info("Weekly summary notification sent")
+                        else:
+                            logger.warning("Weekly summary notification failed")
+                    else:
+                        logger.debug("No notifier configured for weekly summary")
+                except Exception:
+                    logger.warning(
+                        "Weekly summary notification failed (non-fatal)", exc_info=True,
+                    )
+
                 mark_weekly_done()
                 logger.info("Weekly tasks completed")
             else:
@@ -245,8 +406,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
     # 8. Cleanup (db_manager may already be closed by weekly maintenance)
     try:
-        if hasattr(db_manager, '_conn') and db_manager._conn is not None:
-            db_manager.close()
+        db_manager.close()
     except Exception:
         logger.warning("Failed to close database", exc_info=True)
 

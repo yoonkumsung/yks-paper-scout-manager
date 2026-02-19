@@ -10,16 +10,19 @@ from __future__ import annotations
 
 import html
 import json
-import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
+
+from core.storage.db_connection import get_connection
 
 
 def generate_weekly_summary(
-    db_path: str,
-    date_str: str,
-    output_dir: str = "tmp/reports"
+    db_path: str = "data/paper_scout.db",
+    date_str: str = "",
+    output_dir: str = "tmp/reports",
+    provider: str = "sqlite",
+    connection_string: str | None = None,
 ) -> dict:
     """Generate weekly summary data from database.
 
@@ -30,6 +33,8 @@ def generate_weekly_summary(
         db_path: Path to SQLite database
         date_str: End date in YYYYMMDD format
         output_dir: Output directory for reports (default: "tmp/reports")
+        provider: Database provider ("sqlite" or "supabase")
+        connection_string: PostgreSQL connection string (when provider is "supabase")
 
     Returns:
         dict: Summary data containing:
@@ -46,10 +51,12 @@ def generate_weekly_summary(
     end_str = end_date.strftime("%Y-%m-%d")
 
     # Gather all summary components
-    keyword_freq = _get_keyword_frequency(db_path, start_str, end_str)
-    score_trends = _get_score_trends(db_path, start_str, end_str)
-    top_papers = _get_top_papers(db_path, start_str, end_str, limit=3)
-    graduated_reminds = _get_graduated_reminds(db_path, start_str, end_str)
+    keyword_freq = _get_keyword_frequency(
+        db_path, start_str, end_str, provider, connection_string, output_dir,
+    )
+    score_trends = _get_score_trends(db_path, start_str, end_str, provider, connection_string)
+    top_papers = _get_top_papers(db_path, start_str, end_str, 3, provider, connection_string)
+    graduated_reminds = _get_graduated_reminds(db_path, start_str, end_str, provider, connection_string)
 
     return {
         "keyword_freq": keyword_freq,
@@ -62,56 +69,76 @@ def generate_weekly_summary(
 def _get_keyword_frequency(
     db_path: str,
     start_date: str,
-    end_date: str
+    end_date: str,
+    provider: str = "sqlite",
+    connection_string: str | None = None,
+    output_dir: str = "tmp/reports",
 ) -> Dict[str, List[Tuple[str, int]]]:
-    """Query keyword frequency per topic for the week.
+    """Collect keyword frequency per topic for the week from JSON reports.
 
-    Uses keywords_used from runs table meta (stored as JSON).
+    Keywords are stored in each run's JSON report file (``meta.keywords_used``),
+    not in the database.  This scans report directories whose date falls
+    within ``[start_date, end_date]``.
 
     Args:
-        db_path: Path to SQLite database
+        db_path: Unused (kept for call-site compatibility).
         start_date: Start date (YYYY-MM-DD)
         end_date: End date (YYYY-MM-DD)
+        provider: Unused (kept for call-site compatibility).
+        connection_string: Unused (kept for call-site compatibility).
+        output_dir: Directory containing date-based report subdirectories.
 
     Returns:
         Dict[topic_slug, List[Tuple[keyword, count]]]:
             Top 10 keywords per topic sorted by count descending
     """
-    conn = sqlite3.connect(db_path)
-    try:
-        cursor = conn.cursor()
+    import os
+    import re
 
-        # Query runs within date range
-        query = """
-        SELECT topic_slug, keywords_used
-        FROM runs
-        WHERE DATE(window_start_utc) >= ? AND DATE(window_end_utc) <= ?
-        """
-        cursor.execute(query, (start_date, end_date))
-        rows = cursor.fetchall()
-    finally:
-        conn.close()
+    report_root = Path(output_dir)
+    if not report_root.is_dir():
+        return {}
 
-    # Aggregate keywords by topic
+    # Convert YYYY-MM-DD boundaries to comparable strings (YYYYMMDD)
+    start_cmp = start_date.replace("-", "")
+    end_cmp = end_date.replace("-", "")
+
     topic_keywords: Dict[str, Dict[str, int]] = {}
 
-    for topic_slug, keywords_json in rows:
-        if keywords_json is None:
+    # Scan date directories that fall within the range
+    for entry in sorted(os.listdir(report_root)):
+        date_dir = report_root / entry
+        if not date_dir.is_dir():
+            continue
+        # Directory names are YYYYMMDD
+        if not re.fullmatch(r"\d{8}", entry):
+            continue
+        if entry < start_cmp or entry > end_cmp:
             continue
 
-        try:
-            keywords = json.loads(keywords_json)
+        # Find JSON report files: {YYYYMMDD}_paper_{slug}.json
+        for fname in os.listdir(date_dir):
+            m = re.match(r"\d{8}_paper_(.+)\.json$", fname)
+            if not m:
+                continue
+            slug = m.group(1)
+            json_path = date_dir / fname
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    report_data = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                continue
+
+            keywords = report_data.get("meta", {}).get("keywords_used", [])
             if not isinstance(keywords, list):
                 continue
 
-            if topic_slug not in topic_keywords:
-                topic_keywords[topic_slug] = {}
+            if slug not in topic_keywords:
+                topic_keywords[slug] = {}
 
             for kw in keywords:
                 if isinstance(kw, str):
-                    topic_keywords[topic_slug][kw] = topic_keywords[topic_slug].get(kw, 0) + 1
-        except (json.JSONDecodeError, TypeError):
-            continue
+                    topic_keywords[slug][kw] = topic_keywords[slug].get(kw, 0) + 1
 
     # Sort and limit to top 10 per topic
     result: Dict[str, List[Tuple[str, int]]] = {}
@@ -125,7 +152,9 @@ def _get_keyword_frequency(
 def _get_score_trends(
     db_path: str,
     start_date: str,
-    end_date: str
+    end_date: str,
+    provider: str = "sqlite",
+    connection_string: str | None = None,
 ) -> Dict[str, List[Tuple[str, float]]]:
     """Daily average final_score per topic.
 
@@ -133,38 +162,45 @@ def _get_score_trends(
         db_path: Path to SQLite database
         start_date: Start date (YYYY-MM-DD)
         end_date: End date (YYYY-MM-DD)
+        provider: Database provider
+        connection_string: PostgreSQL connection string
 
     Returns:
         Dict[topic_slug, List[Tuple[date, avg_score]]]:
             Daily averages sorted by date
     """
-    conn = sqlite3.connect(db_path)
-    try:
+    with get_connection(db_path, provider, connection_string) as (conn, ph):
+        if conn is None:
+            return {}
         cursor = conn.cursor()
 
-        query = """
+        query = f"""
         SELECT
             r.topic_slug,
-            DATE(r.window_start_utc) as date,
+            r.window_start_utc as date,
             AVG(e.final_score) as avg_score
         FROM runs r
         JOIN paper_evaluations e ON r.run_id = e.run_id
-        WHERE DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
+        WHERE r.window_start_utc >= {ph} AND r.window_end_utc <= {ph}
             AND e.final_score IS NOT NULL
-        GROUP BY r.topic_slug, DATE(r.window_start_utc)
+        GROUP BY r.topic_slug, r.window_start_utc
         ORDER BY r.topic_slug, date
         """
         cursor.execute(query, (start_date, end_date))
         rows = cursor.fetchall()
-    finally:
-        conn.close()
 
     # Group by topic
     result: Dict[str, List[Tuple[str, float]]] = {}
-    for topic_slug, date, avg_score in rows:
+    for row in rows:
+        if isinstance(row, dict):
+            topic_slug, date, avg_score = row["topic_slug"], row["date"], row["avg_score"]
+        else:
+            topic_slug, date, avg_score = row[0], row[1], row[2]
+        # Extract date portion if full timestamp
+        date_str = str(date)[:10] if date else ""
         if topic_slug not in result:
             result[topic_slug] = []
-        result[topic_slug].append((date, round(avg_score, 2)))
+        result[topic_slug].append((date_str, round(float(avg_score), 2)))
 
     return result
 
@@ -173,7 +209,9 @@ def _get_top_papers(
     db_path: str,
     start_date: str,
     end_date: str,
-    limit: int = 3
+    limit: int = 3,
+    provider: str = "sqlite",
+    connection_string: str | None = None,
 ) -> List[dict]:
     """Top N papers across all topics by final_score.
 
@@ -182,15 +220,18 @@ def _get_top_papers(
         start_date: Start date (YYYY-MM-DD)
         end_date: End date (YYYY-MM-DD)
         limit: Number of top papers to return (default: 3)
+        provider: Database provider
+        connection_string: PostgreSQL connection string
 
     Returns:
         List[dict]: Papers with title, url, final_score, topic_slug
     """
-    conn = sqlite3.connect(db_path)
-    try:
+    with get_connection(db_path, provider, connection_string) as (conn, ph):
+        if conn is None:
+            return []
         cursor = conn.cursor()
 
-        query = """
+        query = f"""
         SELECT
             p.title,
             p.url,
@@ -199,31 +240,31 @@ def _get_top_papers(
         FROM paper_evaluations e
         JOIN papers p ON e.paper_key = p.paper_key
         JOIN runs r ON e.run_id = r.run_id
-        WHERE DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
+        WHERE r.window_start_utc >= {ph} AND r.window_end_utc <= {ph}
             AND e.final_score IS NOT NULL
         ORDER BY e.final_score DESC
-        LIMIT ?
+        LIMIT {ph}
         """
         cursor.execute(query, (start_date, end_date, limit))
         rows = cursor.fetchall()
-    finally:
-        conn.close()
 
     return [
         {
-            "title": title,
-            "url": url,
-            "final_score": round(final_score, 2),
-            "topic_slug": topic_slug,
+            "title": row["title"] if isinstance(row, dict) else row[0],
+            "url": row["url"] if isinstance(row, dict) else row[1],
+            "final_score": round(float(row["final_score"] if isinstance(row, dict) else row[2]), 2),
+            "topic_slug": row["topic_slug"] if isinstance(row, dict) else row[3],
         }
-        for title, url, final_score, topic_slug in rows
+        for row in rows
     ]
 
 
 def _get_graduated_reminds(
     db_path: str,
     start_date: str,
-    end_date: str
+    end_date: str,
+    provider: str = "sqlite",
+    connection_string: str | None = None,
 ) -> List[dict]:
     """Papers that reached recommend_count=2 this week.
 
@@ -231,16 +272,19 @@ def _get_graduated_reminds(
         db_path: Path to SQLite database
         start_date: Start date (YYYY-MM-DD)
         end_date: End date (YYYY-MM-DD)
+        provider: Database provider
+        connection_string: PostgreSQL connection string
 
     Returns:
         List[dict]: Papers with title, url, topic_slug, recommend_count
     """
-    conn = sqlite3.connect(db_path)
-    try:
+    with get_connection(db_path, provider, connection_string) as (conn, ph):
+        if conn is None:
+            return []
         cursor = conn.cursor()
 
         # Find papers with recommend_count=2 whose last_recommend_run_id is in date range
-        query = """
+        query = f"""
         SELECT
             p.title,
             p.url,
@@ -250,22 +294,20 @@ def _get_graduated_reminds(
         JOIN papers p ON rt.paper_key = p.paper_key
         JOIN runs r ON rt.last_recommend_run_id = r.run_id
         WHERE rt.recommend_count = 2
-            AND DATE(r.window_start_utc) >= ? AND DATE(r.window_end_utc) <= ?
+            AND r.window_start_utc >= {ph} AND r.window_end_utc <= {ph}
         ORDER BY p.title
         """
         cursor.execute(query, (start_date, end_date))
         rows = cursor.fetchall()
-    finally:
-        conn.close()
 
     return [
         {
-            "title": title,
-            "url": url,
-            "topic_slug": topic_slug,
-            "recommend_count": recommend_count,
+            "title": row["title"] if isinstance(row, dict) else row[0],
+            "url": row["url"] if isinstance(row, dict) else row[1],
+            "topic_slug": row["topic_slug"] if isinstance(row, dict) else row[2],
+            "recommend_count": row["recommend_count"] if isinstance(row, dict) else row[3],
         }
-        for title, url, topic_slug, recommend_count in rows
+        for row in rows
     ]
 
 
@@ -346,12 +388,13 @@ def render_weekly_summary_md(summary_data: dict, date_str: str) -> str:
     return "\n".join(lines)
 
 
-def render_weekly_summary_html(summary_data: dict, date_str: str) -> str:
+def render_weekly_summary_html(summary_data: dict, date_str: str, chart_paths: list[str] | None = None) -> str:
     """Render summary data to HTML string (simple inline-styled HTML).
 
     Args:
         summary_data: Summary data from generate_weekly_summary
         date_str: Date in YYYYMMDD format
+        chart_paths: Optional list of chart image file paths to embed
 
     Returns:
         str: HTML formatted summary
@@ -404,6 +447,18 @@ def render_weekly_summary_html(summary_data: dict, date_str: str) -> str:
             lines.append("</table>")
     else:
         lines.append("<p><em>No score trend data available</em></p>")
+
+    # Charts (inline base64 images)
+    if chart_paths:
+        import base64
+        lines.append("<h2>Score Distribution</h2>")
+        for chart_path in chart_paths:
+            try:
+                with open(chart_path, "rb") as f:
+                    img_data = base64.b64encode(f.read()).decode("utf-8")
+                lines.append(f"<img src='data:image/png;base64,{img_data}' style='max-width:100%;height:auto;margin:10px 0;' alt='Chart'>")
+            except (OSError, IOError):
+                continue
 
     # Top Papers
     lines.append("<h2>Top 3 Papers This Week</h2>")

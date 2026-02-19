@@ -84,15 +84,25 @@ def _get_cache_status(data_path: str, topic: dict) -> dict:
 def _get_topic_stats(db_path: str, topic_slug: str) -> dict:
     """Get statistics for a topic from database.
 
+    Supports both SQLite (via db_path) and Supabase (via DB_PROVIDER app config).
+
     Args:
-        db_path: Path to SQLite database
+        db_path: Path to SQLite database (ignored when provider is supabase)
         topic_slug: Topic slug
 
     Returns:
         Dictionary with last_run_date, total_collected, total_output
     """
+    empty = {"last_run_date": None, "total_collected": 0, "total_output": 0}
+
+    provider = current_app.config.get("DB_PROVIDER", "sqlite")
+
+    if provider == "supabase":
+        return _get_topic_stats_supabase(topic_slug)
+
+    # SQLite path
     if not os.path.exists(db_path):
-        return {"last_run_date": None, "total_collected": 0, "total_output": 0}
+        return empty
 
     conn = None
     try:
@@ -100,7 +110,6 @@ def _get_topic_stats(db_path: str, topic_slug: str) -> dict:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        # Get last run date and totals
         cursor.execute(
             """
             SELECT display_date_kst, total_collected, total_output
@@ -119,12 +128,68 @@ def _get_topic_stats(db_path: str, topic_slug: str) -> dict:
                 "total_collected": row["total_collected"],
                 "total_output": row["total_output"],
             }
-        else:
-            return {"last_run_date": None, "total_collected": 0, "total_output": 0}
+        return empty
 
     except sqlite3.Error as e:
         logger.error(f"Database error getting topic stats: {e}")
-        return {"last_run_date": None, "total_collected": 0, "total_output": 0}
+        return empty
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def _get_topic_stats_supabase(topic_slug: str) -> dict:
+    """Get topic stats from Supabase PostgreSQL.
+
+    Args:
+        topic_slug: Topic slug
+
+    Returns:
+        Dictionary with last_run_date, total_collected, total_output
+    """
+    empty = {"last_run_date": None, "total_collected": 0, "total_output": 0}
+
+    connection_string = current_app.config.get("SUPABASE_DB_URL")
+    if not connection_string:
+        logger.warning("SUPABASE_DB_URL not configured for topic stats")
+        return empty
+
+    conn = None
+    try:
+        import psycopg2
+        import psycopg2.extras
+
+        from core.storage.db_connection import _sanitize_dsn
+
+        conn = psycopg2.connect(
+            _sanitize_dsn(connection_string),
+            cursor_factory=psycopg2.extras.RealDictCursor,
+        )
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT display_date_kst, total_collected, total_output
+            FROM runs
+            WHERE topic_slug = %s
+            ORDER BY run_id DESC
+            LIMIT 1
+            """,
+            (topic_slug,),
+        )
+        row = cursor.fetchone()
+
+        if row:
+            return {
+                "last_run_date": row["display_date_kst"],
+                "total_collected": row["total_collected"],
+                "total_output": row["total_output"],
+            }
+        return empty
+
+    except Exception as e:
+        logger.error(f"Supabase error getting topic stats: {e}")
+        return empty
     finally:
         if conn is not None:
             conn.close()

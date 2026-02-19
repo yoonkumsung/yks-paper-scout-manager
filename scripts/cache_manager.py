@@ -300,10 +300,17 @@ def cleanup_old_releases(repo: str, keep_weeks: int = 4) -> int:
         return deleted_count
 
 
-def ensure_db(db_path: str, repo: str | None = None) -> str:
+def ensure_db(
+    db_path: str,
+    repo: str | None = None,
+    db_config: dict[str, Any] | None = None,
+) -> str:
     """Ensure DB exists, creating or restoring if needed.
 
-    Recovery chain:
+    When provider is "supabase", the DB is cloud-persistent and cache
+    save/restore is unnecessary -- returns db_path immediately.
+
+    Recovery chain (SQLite only):
     1. If DB exists, return path
     2. Try restore from GitHub Release
     3. Create empty DB
@@ -311,10 +318,17 @@ def ensure_db(db_path: str, repo: str | None = None) -> str:
     Args:
         db_path: Path to DB file
         repo: Repository in format "owner/repo" (optional)
+        db_config: Database config dict (optional). If provider is "supabase",
+            skips local cache operations.
 
     Returns:
         Path to DB file
     """
+    # When using Supabase, the DB is cloud-persistent -- skip local cache
+    if db_config and db_config.get("provider") == "supabase":
+        logger.info("Supabase provider: skipping local DB cache (cloud-persistent)")
+        return db_path
+
     if os.path.exists(db_path):
         logger.info(f"DB already exists: {db_path}")
         return db_path

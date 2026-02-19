@@ -21,6 +21,7 @@ from core.config import AppConfig, ConfigError, load_config
 from core.llm.openrouter_client import OpenRouterClient, OpenRouterError
 from core.llm.rate_limiter import RateLimiter
 from core.models import TopicSpec
+from core.storage.db_factory import create_db_manager
 from core.storage.db_manager import DBManager
 
 logger = logging.getLogger(__name__)
@@ -118,17 +119,17 @@ def run_preflight(
     notif_warnings = _check_notifications(config)
     warnings_list.extend(notif_warnings)
 
-    # Initialize DBManager for checks 7+8
-    db_path = config.database.get("path", "data/paper_scout.db")
-    db = DBManager(db_path)
+    # Initialize database manager for checks 7+8
+    db = create_db_manager(config.database)
 
-    # Quick integrity check
-    try:
-        result = db._conn.execute("PRAGMA integrity_check(1)").fetchone()
-        if result and result[0] != "ok":
-            logger.warning("DB integrity issue detected: %s", result[0])
-    except Exception as ic_exc:
-        logger.warning("DB integrity check failed: %s", ic_exc)
+    # Quick integrity check (SQLite only)
+    if isinstance(db, DBManager):
+        try:
+            result = db._conn.execute("PRAGMA integrity_check(1)").fetchone()
+            if result and result[0] != "ok":
+                logger.warning("DB integrity issue detected: %s", result[0])
+        except Exception as ic_exc:
+            logger.warning("DB integrity check failed: %s", ic_exc)
 
     try:
         # Check 7: Search windows per topic

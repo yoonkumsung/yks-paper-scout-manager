@@ -11,9 +11,10 @@ or empty list on failure, never raising exceptions.
 from __future__ import annotations
 
 import os
-import sqlite3
 from pathlib import Path
 from typing import Any, List, Optional
+
+from core.storage.db_connection import get_connection
 
 # Graceful import handling - set module-level flag
 _VIZ_AVAILABLE = False
@@ -200,7 +201,9 @@ def generate_cluster_map(
 def generate_weekly_charts(
     db_path: str,
     date_str: str,
-    output_dir: str = "tmp/reports"
+    output_dir: str = "tmp/reports",
+    provider: str = "sqlite",
+    connection_string: str | None = None,
 ) -> List[str]:
     """Main entry: generate all available visualizations for weekly report.
 
@@ -208,6 +211,8 @@ def generate_weekly_charts(
         db_path: Path to SQLite database.
         date_str: ISO date string (YYYY-MM-DD) for the week.
         output_dir: Directory where charts will be saved.
+        provider: Database provider ("sqlite" or "supabase").
+        connection_string: PostgreSQL connection string (when provider is "supabase").
 
     Returns:
         List of generated file paths (empty list if viz not available).
@@ -216,27 +221,41 @@ def generate_weekly_charts(
         return []
 
     generated_files = []
-    conn = None
 
     try:
-        # Connect to database
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        with get_connection(db_path, provider, connection_string) as (conn, ph):
+            if conn is None:
+                return []
+            cursor = conn.cursor()
 
-        # Query 1: Score distribution from paper_evaluations
-        # Join with runs to filter by date using window_start_utc,
-        # since paper_evaluations has no created_at column.
-        # Use final_score (actual column name, not 'score').
-        cursor.execute("""
-            SELECT pe.final_score
-            FROM paper_evaluations pe
-            JOIN runs r ON pe.run_id = r.run_id
-            WHERE DATE(r.window_start_utc) >= date(?, '-7 days')
-              AND DATE(r.window_start_utc) < date(?)
-              AND pe.final_score IS NOT NULL
-        """, (date_str, date_str))
+            # Query 1: Score distribution from paper_evaluations
+            # Join with runs to filter by date using window_start_utc,
+            # since paper_evaluations has no created_at column.
+            if provider == "supabase":
+                query = f"""
+                    SELECT pe.final_score
+                    FROM paper_evaluations pe
+                    JOIN runs r ON pe.run_id = r.run_id
+                    WHERE r.window_start_utc >= ({ph}::date - interval '7 days')::text
+                      AND r.window_start_utc < {ph}
+                      AND pe.final_score IS NOT NULL
+                """
+            else:
+                query = f"""
+                    SELECT pe.final_score
+                    FROM paper_evaluations pe
+                    JOIN runs r ON pe.run_id = r.run_id
+                    WHERE DATE(r.window_start_utc) >= date({ph}, '-7 days')
+                      AND DATE(r.window_start_utc) < date({ph})
+                      AND pe.final_score IS NOT NULL
+                """
+            cursor.execute(query, (date_str, date_str))
 
-        scores = [row[0] for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            scores = [
+                row["final_score"] if isinstance(row, dict) else row[0]
+                for row in rows
+            ]
 
         if scores:
             score_chart_path = os.path.join(
@@ -255,11 +274,8 @@ def generate_weekly_charts(
         # NOTE: paper_embeddings table does not exist in the current schema.
         # Skipping cluster map generation until embeddings storage is added.
 
-    except (sqlite3.Error, OSError, ValueError):
+    except (OSError, ValueError, Exception):
         # Graceful failure - return whatever was generated before error
         pass
-    finally:
-        if conn is not None:
-            conn.close()
 
     return generated_files

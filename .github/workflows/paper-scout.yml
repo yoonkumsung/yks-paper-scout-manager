@@ -51,19 +51,16 @@ jobs:
             cp config.example.yaml config.yaml
           fi
 
-      - name: Restore DB cache
-        id: cache-db
+      - name: Restore data cache
+        id: cache-data
         uses: actions/cache/restore@v4
         with:
           path: |
-            data/*.db
-            data/*.db-shm
-            data/*.db-wal
             data/keyword_cache.json
             data/model_caps.json
-          key: paper-scout-db-${{ github.sha }}
+          key: paper-scout-data-${{ github.sha }}
           restore-keys: |
-            paper-scout-db-
+            paper-scout-data-
 
       - name: Restore keyword cache
         run: |
@@ -143,18 +140,16 @@ jobs:
           TELEGRAM_BOT_TOKEN_YKS: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID_YKS: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
-      - name: Save DB cache
+      - name: Save data cache
         if: always() && steps.schedule-check.outputs.skip != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
-            data/*.db
-            data/*.db-shm
-            data/*.db-wal
             data/keyword_cache.json
             data/model_caps.json
-          key: paper-scout-db-${{ github.sha }}
+          key: paper-scout-data-${{ github.sha }}
 
       - name: Commit metadata
         if: (success() || failure()) && steps.schedule-check.outputs.skip != 'true'
@@ -166,13 +161,6 @@ jobs:
           git push
         continue-on-error: true
 
-      - name: Upload DB backup
-        if: success() && github.event_name == 'schedule'
-        uses: actions/upload-artifact@v4
-        with:
-          name: db-backup-${{ github.run_number }}
-          path: data/*.db
-          retention-days: 30
 
       - name: Upload debug artifacts
         if: failure()

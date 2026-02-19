@@ -12,6 +12,7 @@ from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, request
 
+from core.storage.db_connection import get_connection
 from local_ui.config_io import read_config, write_config
 
 logger = logging.getLogger(__name__)
@@ -103,6 +104,7 @@ def env_status():
             "DISCORD_WEBHOOK_URL": os.getenv("DISCORD_WEBHOOK_URL"),
             "TELEGRAM_BOT_TOKEN": os.getenv("TELEGRAM_BOT_TOKEN"),
             "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN"),
+            "SUPABASE_DB_URL": os.getenv("SUPABASE_DB_URL"),
         }
 
         status = {}
@@ -124,6 +126,8 @@ def env_status():
                     is_valid = ":" in value  # Basic format: digits:token
                 elif key == "GITHUB_TOKEN":
                     is_valid = value.startswith("ghp_") or value.startswith("github_pat_")
+                elif key == "SUPABASE_DB_URL":
+                    is_valid = value.startswith("postgresql://")
 
                 status[key] = {
                     "exists": True,
@@ -153,46 +157,47 @@ def db_status():
     """
     try:
         db_path = current_app.config["DB_PATH"]
+        provider = current_app.config.get("DB_PROVIDER", "sqlite")
+        conn_str = current_app.config.get("SUPABASE_DB_URL")
+        # Fallback to sqlite if supabase connection string is missing
+        if provider == "supabase" and not conn_str:
+            provider = "sqlite"
 
-        if not os.path.exists(db_path):
-            return (
-                jsonify(
-                    {
-                        "exists": False,
-                        "db_path": db_path,
-                        "file_size_mb": 0,
-                        "papers": 0,
-                        "paper_evaluations": 0,
-                        "runs": 0,
-                        "query_stats": 0,
-                        "remind_tracking": 0,
-                        "last_purge_date": None,
-                    }
-                ),
-                200,
-            )
+        empty_result = {
+            "exists": False,
+            "db_path": db_path,
+            "provider": provider,
+            "file_size_mb": 0,
+            "papers": 0,
+            "paper_evaluations": 0,
+            "runs": 0,
+            "query_stats": 0,
+            "remind_tracking": 0,
+            "last_purge_date": None,
+        }
 
-        # Get file size
-        file_size_bytes = os.path.getsize(db_path)
-        file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
+        # Get file size (SQLite only)
+        if provider == "sqlite" and not os.path.exists(db_path):
+            return jsonify(empty_result), 200
 
-        # Get record counts for all tables
-        conn = None
+        file_size_mb = 0.0
+        if provider == "sqlite" and os.path.exists(db_path):
+            file_size_mb = round(os.path.getsize(db_path) / (1024 * 1024), 2)
+
+        # Get record counts
         counts = {}
-        try:
-            conn = sqlite3.connect(db_path)
+        with get_connection(db_path, provider, conn_str) as (conn, ph):
+            if conn is None:
+                return jsonify(empty_result), 200
             cursor = conn.cursor()
-
             tables = ["papers", "paper_evaluations", "runs", "query_stats", "remind_tracking"]
             for table in tables:
                 try:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
-                    counts[table] = cursor.fetchone()[0]
-                except sqlite3.OperationalError:
+                    cursor.execute(f"SELECT COUNT(*) AS cnt FROM {table}")
+                    row = cursor.fetchone()
+                    counts[table] = row["cnt"] if isinstance(row, dict) else row[0]
+                except Exception:
                     counts[table] = 0
-        finally:
-            if conn is not None:
-                conn.close()
 
         # Check for last purge date from weekly_done.flag
         last_purge_date = None
@@ -207,6 +212,7 @@ def db_status():
                 {
                     "exists": True,
                     "db_path": db_path,
+                    "provider": provider,
                     "file_size_mb": file_size_mb,
                     "papers": counts.get("papers", 0),
                     "paper_evaluations": counts.get("paper_evaluations", 0),
@@ -245,27 +251,35 @@ def data_status():
             {"name": "remind_tracking", "description": "재추천 논문 추적"},
         ]
 
+        provider = current_app.config.get("DB_PROVIDER", "sqlite")
+        conn_str = current_app.config.get("SUPABASE_DB_URL")
+        if provider == "supabase" and not conn_str:
+            provider = "sqlite"
+
         tables = []
-        if os.path.exists(db_path):
-            conn = None
-            try:
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-                for t in table_info:
-                    try:
-                        cursor.execute(f"SELECT COUNT(*) FROM {t['name']}")
-                        rows = cursor.fetchone()[0]
-                    except sqlite3.OperationalError:
-                        rows = 0
-                    tables.append({
-                        "name": t["name"],
-                        "rows": rows,
-                        "description": t["description"],
-                    })
-            finally:
+        db_error = None
+        try:
+            with get_connection(db_path, provider, conn_str) as (conn, ph):
                 if conn is not None:
-                    conn.close()
-        else:
+                    cursor = conn.cursor()
+                    for t in table_info:
+                        try:
+                            cursor.execute(f"SELECT COUNT(*) AS cnt FROM {t['name']}")
+                            row = cursor.fetchone()
+                            rows = row["cnt"] if isinstance(row, dict) else row[0]
+                        except Exception:
+                            rows = 0
+                        tables.append({
+                            "name": t["name"],
+                            "rows": rows,
+                            "description": t["description"],
+                        })
+                else:
+                    for t in table_info:
+                        tables.append({"name": t["name"], "rows": 0, "description": t["description"]})
+        except Exception as e:
+            logger.warning(f"DB connection failed: {e}")
+            db_error = str(e)
             for t in table_info:
                 tables.append({"name": t["name"], "rows": 0, "description": t["description"]})
 
@@ -329,13 +343,16 @@ def data_status():
         db_exists = os.path.exists(db_path)
         db_size_mb = round(os.path.getsize(db_path) / (1024 * 1024), 2) if db_exists else 0
 
-        return jsonify({
+        result = {
             "db_path": db_path,
             "db_exists": db_exists,
             "db_size_mb": db_size_mb,
             "tables": tables,
             "cache_files": cache_files,
-        }), 200
+        }
+        if db_error:
+            result["db_error"] = db_error
+        return jsonify(result), 200
 
     except Exception as e:
         logger.error(f"Error getting data status: {e}")
@@ -363,18 +380,23 @@ def reset_table():
             return jsonify({"error": f"Invalid table: {table}"}), 400
 
         db_path = current_app.config["DB_PATH"]
-        if not os.path.exists(db_path):
+        provider = current_app.config.get("DB_PROVIDER", "sqlite")
+        conn_str = current_app.config.get("SUPABASE_DB_URL")
+        if provider == "supabase" and not conn_str:
+            provider = "sqlite"
+
+        if provider == "sqlite" and not os.path.exists(db_path):
             return jsonify({"error": "Database does not exist"}), 404
 
-        conn = sqlite3.connect(db_path)
-        try:
+        with get_connection(db_path, provider, conn_str) as (conn, ph):
+            if conn is None:
+                return jsonify({"error": "Database does not exist"}), 404
             cursor = conn.cursor()
-            cursor.execute(f"SELECT COUNT(*) FROM {table}")
-            count = cursor.fetchone()[0]
+            cursor.execute(f"SELECT COUNT(*) AS cnt FROM {table}")
+            row = cursor.fetchone()
+            count = row["cnt"] if isinstance(row, dict) else row[0]
             cursor.execute(f"DELETE FROM {table}")
             conn.commit()
-        finally:
-            conn.close()
 
         logger.info("Reset table '%s': deleted %d rows", table, count)
         return jsonify({"table": table, "deleted": count}), 200
@@ -435,10 +457,27 @@ def reset_db():
     """
     try:
         db_path = current_app.config["DB_PATH"]
+        provider = current_app.config.get("DB_PROVIDER", "sqlite")
+        conn_str = current_app.config.get("SUPABASE_DB_URL")
+        if provider == "supabase" and not conn_str:
+            provider = "sqlite"
 
+        if provider == "supabase":
+            # Truncate all tables instead of deleting the file
+            tables = ["paper_evaluations", "query_stats", "remind_tracking", "papers", "runs"]
+            with get_connection(db_path, provider, conn_str) as (conn, ph):
+                if conn is None:
+                    return jsonify({"error": "Cannot connect to database"}), 500
+                cursor = conn.cursor()
+                for table in tables:
+                    cursor.execute(f"DELETE FROM {table}")
+                conn.commit()
+            logger.info("All Supabase tables truncated")
+            return jsonify({"deleted": True, "provider": "supabase"}), 200
+
+        # SQLite: delete the file
         if os.path.exists(db_path):
             os.remove(db_path)
-            # Remove WAL/SHM files if present
             for suffix in ("-wal", "-shm"):
                 wal_path = db_path + suffix
                 if os.path.exists(wal_path):

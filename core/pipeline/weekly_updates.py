@@ -14,18 +14,26 @@ from __future__ import annotations
 
 import html as html_mod
 import os
-import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
+from core.storage.db_connection import get_connection
 
-def scan_updated_papers(db_path: str, reference_date: str) -> list[dict]:
+
+def scan_updated_papers(
+    db_path: str,
+    reference_date: str,
+    provider: str = "sqlite",
+    connection_string: str | None = None,
+) -> list[dict]:
     """Scan for papers matching weekly update criteria.
 
     Args:
         db_path: Path to the SQLite database file.
         reference_date: Reference date in YYYY-MM-DD format (UTC).
+        provider: Database provider ("sqlite" or "supabase").
+        connection_string: PostgreSQL connection string (when provider is "supabase").
 
     Returns:
         List of dicts with: paper_key, title, url, native_id, llm_base_score,
@@ -38,32 +46,32 @@ def scan_updated_papers(db_path: str, reference_date: str) -> list[dict]:
     seven_days_ago = ref_dt - timedelta(days=7)
     ninety_days_ago = ref_dt - timedelta(days=90)
 
-    # SQL query to find matching papers
-    query = """
-        SELECT DISTINCT
-            p.paper_key,
-            p.title,
-            p.url,
-            p.native_id,
-            pe.llm_base_score,
-            p.updated_at_utc,
-            p.published_at_utc,
-            r.topic_slug
-        FROM papers p
-        JOIN paper_evaluations pe ON p.paper_key = pe.paper_key
-        JOIN runs r ON pe.run_id = r.run_id
-        WHERE p.updated_at_utc >= ?
-          AND p.published_at_utc < ?
-          AND p.published_at_utc >= ?
-          AND pe.discarded = 0
-        ORDER BY p.updated_at_utc DESC
-    """
+    with get_connection(db_path, provider, connection_string) as (conn, ph):
+        if conn is None:
+            return []
+        cursor = conn.cursor()
 
-    # Execute query
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    try:
-        cur = conn.execute(
+        query = f"""
+            SELECT DISTINCT
+                p.paper_key,
+                p.title,
+                p.url,
+                p.native_id,
+                pe.llm_base_score,
+                p.updated_at_utc,
+                p.published_at_utc,
+                r.topic_slug
+            FROM papers p
+            JOIN paper_evaluations pe ON p.paper_key = pe.paper_key
+            JOIN runs r ON pe.run_id = r.run_id
+            WHERE p.updated_at_utc >= {ph}
+              AND p.published_at_utc < {ph}
+              AND p.published_at_utc >= {ph}
+              AND pe.discarded = 0
+            ORDER BY p.updated_at_utc DESC
+        """
+
+        cursor.execute(
             query,
             (
                 seven_days_ago.isoformat(),
@@ -71,10 +79,12 @@ def scan_updated_papers(db_path: str, reference_date: str) -> list[dict]:
                 ninety_days_ago.isoformat(),
             ),
         )
-        rows = cur.fetchall()
-        return [dict(row) for row in rows]
-    finally:
-        conn.close()
+        rows = cursor.fetchall()
+
+    return [dict(row) if isinstance(row, dict) else dict(zip(
+        ["paper_key", "title", "url", "native_id", "llm_base_score",
+         "updated_at_utc", "published_at_utc", "topic_slug"], row
+    )) for row in rows]
 
 
 def render_updates_md(papers: list[dict], date_str: str) -> str:
@@ -213,7 +223,11 @@ def render_updates_html(papers: list[dict], date_str: str) -> str:
 
 
 def generate_update_report(
-    db_path: str, date_str: str, output_dir: str = "tmp/reports"
+    db_path: str,
+    date_str: str,
+    output_dir: str = "tmp/reports",
+    provider: str = "sqlite",
+    connection_string: str | None = None,
 ) -> Optional[str]:
     """Generate weekly update report in both formats.
 
@@ -221,12 +235,14 @@ def generate_update_report(
         db_path: Path to the SQLite database file.
         date_str: Report date in YYYY-MM-DD format.
         output_dir: Directory to save report files.
+        provider: Database provider ("sqlite" or "supabase").
+        connection_string: PostgreSQL connection string (when provider is "supabase").
 
     Returns:
         Path to the output directory if papers found, None otherwise.
     """
     # Scan for updated papers
-    papers = scan_updated_papers(db_path, date_str)
+    papers = scan_updated_papers(db_path, date_str, provider, connection_string)
 
     # Return None if no papers found
     if not papers:

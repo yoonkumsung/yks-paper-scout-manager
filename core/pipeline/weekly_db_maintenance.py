@@ -23,12 +23,14 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from core.storage.db_factory import create_db_manager
 from core.storage.db_manager import DBManager
 
 logger = logging.getLogger(__name__)
 
 
 def run_weekly_maintenance(
+    db_config: dict[str, Any] | None = None,
     db_path: str = "data/paper_scout.db",
     eval_days: int = 90,
     papers_days: int = 365,
@@ -38,7 +40,8 @@ def run_weekly_maintenance(
     """Run all weekly DB maintenance operations.
 
     Args:
-        db_path: Path to the SQLite database file.
+        db_config: Database config dict (if provided, uses factory to create manager).
+        db_path: Path to the SQLite database file (fallback when db_config is None).
         eval_days: Days to retain evaluations (default: 90).
         papers_days: Days to retain papers (default: 365).
         release_tag: GitHub Release tag for asset upload (default: "db-backup").
@@ -71,7 +74,12 @@ def run_weekly_maintenance(
     logger.info("Starting weekly database maintenance")
 
     # Open database connection
-    db = DBManager(db_path)
+    if db_config is not None:
+        db = create_db_manager(db_config)
+    else:
+        db = DBManager(db_path)
+
+    is_sqlite = isinstance(db, DBManager)
 
     try:
         # Phase 1: Purge operations (order matters - foreign key constraints)
@@ -79,35 +87,35 @@ def run_weekly_maintenance(
         try:
             summary["purged_evaluations"] = db.purge_old_evaluations(eval_days)
             logger.info("Purged %d evaluations", summary["purged_evaluations"])
-        except (sqlite3.Error, AttributeError) as e:
+        except Exception as e:
             logger.warning("Failed to purge evaluations: %s", e)
 
         logger.info("Phase 2: Purging old query_stats (>%d days)", eval_days)
         try:
             summary["purged_query_stats"] = db.purge_old_query_stats(eval_days)
             logger.info("Purged %d query_stats", summary["purged_query_stats"])
-        except (sqlite3.Error, AttributeError) as e:
+        except Exception as e:
             logger.warning("Failed to purge query_stats: %s", e)
 
         logger.info("Phase 3: Purging old runs (>%d days)", eval_days)
         try:
             summary["purged_runs"] = db.purge_old_runs(eval_days)
             logger.info("Purged %d runs", summary["purged_runs"])
-        except (sqlite3.Error, AttributeError) as e:
+        except Exception as e:
             logger.warning("Failed to purge runs: %s", e)
 
         logger.info("Phase 4: Purging orphan remind_tracking entries")
         try:
             summary["purged_remind_tracking"] = db.purge_orphan_remind_tracking()
             logger.info("Purged %d remind_tracking entries", summary["purged_remind_tracking"])
-        except (sqlite3.Error, AttributeError) as e:
+        except Exception as e:
             logger.warning("Failed to purge remind_tracking: %s", e)
 
         logger.info("Phase 5: Purging old papers (>%d days)", papers_days)
         try:
             summary["purged_papers"] = db.purge_old_papers(papers_days)
             logger.info("Purged %d papers", summary["purged_papers"])
-        except (sqlite3.Error, AttributeError) as e:
+        except Exception as e:
             logger.warning("Failed to purge papers: %s", e)
 
         # Phase 2: VACUUM
@@ -116,14 +124,20 @@ def run_weekly_maintenance(
             db.vacuum()
             summary["vacuum_done"] = True
             logger.info("VACUUM completed successfully")
-        except sqlite3.Error as e:
+        except Exception as e:
             logger.warning("Failed to run VACUUM: %s", e)
 
     finally:
         db.close()
 
-    # Phase 3: Release asset backup
+    # Phase 3: Release asset backup (SQLite only - Supabase is cloud-persistent)
+    if not is_sqlite:
+        logger.info("Phase 7-8: Skipping Release asset backup (Supabase is cloud-persistent)")
+        logger.info("Weekly maintenance completed: %s", summary)
+        return summary
+
     logger.info("Phase 7: Uploading database as Release asset")
+    db_path = db_config.get("path", db_path) if db_config else db_path
     date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
     try:
         uploaded = _upload_release_asset(db_path, release_tag, date_str)

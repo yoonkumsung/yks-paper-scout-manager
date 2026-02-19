@@ -1,18 +1,20 @@
-"""SQLite database manager for Paper Scout.
+"""PostgreSQL (Supabase) database manager for Paper Scout.
 
-Provides CRUD operations for papers, evaluations, runs, query_stats,
-and remind_tracking tables.  Supports context manager protocol,
-thread-safe connections, and time-based purge operations.
+Drop-in replacement for DBManager that connects to Supabase PostgreSQL
+instead of local SQLite.  All public methods match DBManager's interface.
+Uses psycopg2 with RealDictCursor for dict-style row access.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import os
-import sqlite3
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Any
+
+import psycopg2
+import psycopg2.extras
 
 from core.models import (
     Evaluation,
@@ -23,106 +25,7 @@ from core.models import (
     RunMeta,
 )
 
-# ---------------------------------------------------------------------------
-# SQL DDL statements
-# ---------------------------------------------------------------------------
-
-_CREATE_PAPERS = """
-CREATE TABLE IF NOT EXISTS papers (
-    paper_key TEXT PRIMARY KEY,
-    source TEXT NOT NULL,
-    native_id TEXT NOT NULL,
-    canonical_id TEXT,
-    url TEXT NOT NULL,
-    title TEXT NOT NULL,
-    abstract TEXT NOT NULL,
-    authors TEXT NOT NULL,
-    categories TEXT NOT NULL,
-    published_at_utc TEXT NOT NULL,
-    updated_at_utc TEXT,
-    pdf_url TEXT,
-    has_code INTEGER NOT NULL DEFAULT 0,
-    has_code_source TEXT NOT NULL DEFAULT 'none',
-    code_url TEXT,
-    comment TEXT,
-    first_seen_run_id INTEGER NOT NULL,
-    created_at TEXT NOT NULL
-);
-"""
-
-_CREATE_EVALUATIONS = """
-CREATE TABLE IF NOT EXISTS paper_evaluations (
-    run_id INTEGER NOT NULL,
-    paper_key TEXT NOT NULL,
-    embed_score REAL,
-    llm_base_score INTEGER NOT NULL,
-    flags TEXT NOT NULL,
-    bonus_score INTEGER,
-    final_score REAL,
-    rank INTEGER,
-    tier INTEGER,
-    discarded INTEGER NOT NULL DEFAULT 0,
-    score_lowered INTEGER,
-    multi_topic TEXT,
-    is_remind INTEGER NOT NULL DEFAULT 0,
-    summary_ko TEXT,
-    reason_ko TEXT,
-    insight_ko TEXT,
-    brief_reason TEXT,
-    prompt_ver_score TEXT NOT NULL,
-    prompt_ver_summ TEXT,
-    PRIMARY KEY (run_id, paper_key)
-);
-"""
-
-_CREATE_RUNS = """
-CREATE TABLE IF NOT EXISTS runs (
-    run_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    topic_slug TEXT NOT NULL,
-    window_start_utc TEXT NOT NULL,
-    window_end_utc TEXT NOT NULL,
-    display_date_kst TEXT NOT NULL,
-    embedding_mode TEXT NOT NULL,
-    scoring_weights TEXT NOT NULL,
-    detected_rpm INTEGER,
-    detected_daily_limit INTEGER,
-    response_format_supported INTEGER NOT NULL,
-    prompt_versions TEXT NOT NULL,
-    topic_override_fields TEXT NOT NULL,
-    total_collected INTEGER NOT NULL DEFAULT 0,
-    total_filtered INTEGER NOT NULL DEFAULT 0,
-    total_scored INTEGER NOT NULL DEFAULT 0,
-    total_discarded INTEGER NOT NULL DEFAULT 0,
-    total_output INTEGER NOT NULL DEFAULT 0,
-    threshold_used INTEGER NOT NULL DEFAULT 60,
-    threshold_lowered INTEGER NOT NULL DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'running',
-    errors TEXT
-);
-"""
-
-_CREATE_QUERY_STATS = """
-CREATE TABLE IF NOT EXISTS query_stats (
-    run_id INTEGER NOT NULL,
-    query_text TEXT NOT NULL,
-    collected INTEGER NOT NULL DEFAULT 0,
-    total_available INTEGER,
-    truncated INTEGER NOT NULL DEFAULT 0,
-    retries INTEGER NOT NULL DEFAULT 0,
-    duration_ms INTEGER NOT NULL DEFAULT 0,
-    exception TEXT
-);
-"""
-
-_CREATE_REMIND_TRACKING = """
-CREATE TABLE IF NOT EXISTS remind_tracking (
-    paper_key TEXT NOT NULL,
-    topic_slug TEXT NOT NULL,
-    recommend_count INTEGER NOT NULL DEFAULT 0,
-    last_recommend_run_id INTEGER NOT NULL,
-    PRIMARY KEY (paper_key, topic_slug)
-);
-"""
+logger = logging.getLogger(__name__)
 
 
 def _dt_to_iso(dt: datetime | None) -> str | None:
@@ -139,30 +42,28 @@ def _iso_to_dt(s: str | None) -> datetime | None:
     return datetime.fromisoformat(s)
 
 
-class DBManager:
-    """SQLite database manager for Paper Scout."""
+class SupabaseDBManager:
+    """PostgreSQL database manager for Paper Scout (Supabase backend)."""
 
-    def __init__(self, db_path: str = "data/paper_scout.db") -> None:
-        """Initialize DB and create tables if not exist.
+    def __init__(self, connection_string: str) -> None:
+        """Initialize PostgreSQL connection.
 
         Args:
-            db_path: Path to the SQLite database file.
+            connection_string: PostgreSQL connection string (from SUPABASE_DB_URL).
         """
-        self._db_path = db_path
-        os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
-        # check_same_thread=False: callers are responsible for ensuring
-        # thread-safe access (e.g. single-writer or external locking).
-        self._conn = sqlite3.connect(db_path, check_same_thread=False)
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL;")
-        self._conn.execute("PRAGMA foreign_keys=ON;")
+        self._connection_string = connection_string
+        self._conn = psycopg2.connect(
+            connection_string,
+            cursor_factory=psycopg2.extras.RealDictCursor,
+        )
+        self._conn.autocommit = False
         self._create_tables()
 
     # ------------------------------------------------------------------
     # Context manager
     # ------------------------------------------------------------------
 
-    def __enter__(self) -> DBManager:
+    def __enter__(self) -> SupabaseDBManager:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
@@ -174,9 +75,8 @@ class DBManager:
 
     def close(self) -> None:
         """Close the database connection."""
-        if self._conn:
+        if self._conn and not self._conn.closed:
             self._conn.close()
-            self._conn = None  # Prevent use-after-close
 
     # ------------------------------------------------------------------
     # Table creation
@@ -186,8 +86,8 @@ class DBManager:
         """Create all tables if they do not exist."""
         cur = self._conn.cursor()
         cur.execute(_CREATE_PAPERS)
-        cur.execute(_CREATE_EVALUATIONS)
         cur.execute(_CREATE_RUNS)
+        cur.execute(_CREATE_EVALUATIONS)
         cur.execute(_CREATE_QUERY_STATS)
         cur.execute(_CREATE_REMIND_TRACKING)
         self._conn.commit()
@@ -197,22 +97,17 @@ class DBManager:
     # ==================================================================
 
     def insert_paper(self, paper: Paper, *, commit: bool = True) -> None:
-        """Insert a paper record.  Ignores duplicates on paper_key.
-
-        Args:
-            paper: Paper to insert.
-            commit: If True (default), commit immediately.  Set to False
-                when inserting in a loop, then call ``commit()`` once after.
-        """
+        """Insert a paper record.  Ignores duplicates on paper_key."""
         created_at = paper.created_at or datetime.now(timezone.utc).isoformat()
-        self._conn.execute(
+        self._conn.cursor().execute(
             """
-            INSERT OR IGNORE INTO papers (
+            INSERT INTO papers (
                 paper_key, source, native_id, canonical_id, url,
                 title, abstract, authors, categories, published_at_utc,
                 updated_at_utc, pdf_url, has_code, has_code_source,
                 code_url, comment, first_seen_run_id, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (paper_key) DO NOTHING
             """,
             (
                 paper.paper_key,
@@ -240,19 +135,20 @@ class DBManager:
 
     def get_paper(self, paper_key: str) -> Paper | None:
         """Retrieve a paper by its primary key."""
-        row = self._conn.execute(
-            "SELECT * FROM papers WHERE paper_key = ?", (paper_key,)
-        ).fetchone()
+        cur = self._conn.cursor()
+        cur.execute("SELECT * FROM papers WHERE paper_key = %s", (paper_key,))
+        row = cur.fetchone()
         if row is None:
             return None
         return self._row_to_paper(row)
 
     def paper_exists(self, paper_key: str) -> bool:
         """Return True if a paper with the given key exists."""
-        row = self._conn.execute(
-            "SELECT 1 FROM papers WHERE paper_key = ? LIMIT 1", (paper_key,)
-        ).fetchone()
-        return row is not None
+        cur = self._conn.cursor()
+        cur.execute(
+            "SELECT 1 FROM papers WHERE paper_key = %s LIMIT 1", (paper_key,)
+        )
+        return cur.fetchone() is not None
 
     def update_paper_code_info(
         self,
@@ -262,18 +158,19 @@ class DBManager:
         code_url: str | None,
     ) -> None:
         """Update code-related columns for an existing paper."""
-        self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             UPDATE papers
-               SET has_code = ?, has_code_source = ?, code_url = ?
-             WHERE paper_key = ?
+               SET has_code = %s, has_code_source = %s, code_url = %s
+             WHERE paper_key = %s
             """,
             (int(has_code), has_code_source, code_url, paper_key),
         )
         self._conn.commit()
 
     @staticmethod
-    def _row_to_paper(row: sqlite3.Row) -> Paper:
+    def _row_to_paper(row: dict) -> Paper:
         """Map a database row to a Paper dataclass."""
         return Paper(
             paper_key=row["paper_key"],
@@ -303,22 +200,34 @@ class DBManager:
     def insert_evaluation(
         self, evaluation: Evaluation, commit: bool = True
     ) -> None:
-        """Insert an evaluation record.
-
-        Args:
-            evaluation: Evaluation dataclass to insert.
-            commit: Whether to commit immediately (default True).
-                Set to False for batch inserts, then call commit() manually.
-        """
-        self._conn.execute(
+        """Insert an evaluation record (upsert on conflict)."""
+        self._conn.cursor().execute(
             """
-            INSERT OR REPLACE INTO paper_evaluations (
+            INSERT INTO paper_evaluations (
                 run_id, paper_key, embed_score, llm_base_score, flags,
                 bonus_score, final_score, rank, tier, discarded,
                 score_lowered, multi_topic, is_remind,
                 summary_ko, reason_ko, insight_ko, brief_reason,
                 prompt_ver_score, prompt_ver_summ
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (run_id, paper_key) DO UPDATE SET
+                embed_score = EXCLUDED.embed_score,
+                llm_base_score = EXCLUDED.llm_base_score,
+                flags = EXCLUDED.flags,
+                bonus_score = EXCLUDED.bonus_score,
+                final_score = EXCLUDED.final_score,
+                rank = EXCLUDED.rank,
+                tier = EXCLUDED.tier,
+                discarded = EXCLUDED.discarded,
+                score_lowered = EXCLUDED.score_lowered,
+                multi_topic = EXCLUDED.multi_topic,
+                is_remind = EXCLUDED.is_remind,
+                summary_ko = EXCLUDED.summary_ko,
+                reason_ko = EXCLUDED.reason_ko,
+                insight_ko = EXCLUDED.insight_ko,
+                brief_reason = EXCLUDED.brief_reason,
+                prompt_ver_score = EXCLUDED.prompt_ver_score,
+                prompt_ver_summ = EXCLUDED.prompt_ver_summ
             """,
             (
                 evaluation.run_id,
@@ -347,31 +256,30 @@ class DBManager:
 
     def get_evaluations_by_run(self, run_id: int) -> list[Evaluation]:
         """Retrieve all evaluations for a given run."""
-        rows = self._conn.execute(
-            "SELECT * FROM paper_evaluations WHERE run_id = ?", (run_id,)
-        ).fetchall()
-        return [self._row_to_evaluation(r) for r in rows]
+        cur = self._conn.cursor()
+        cur.execute(
+            "SELECT * FROM paper_evaluations WHERE run_id = %s", (run_id,)
+        )
+        return [self._row_to_evaluation(r) for r in cur.fetchall()]
 
     def get_latest_evaluation(
         self, paper_key: str, topic_slug: str
     ) -> Evaluation | None:
-        """Return the most recent evaluation for a paper within a topic.
-
-        Finds the latest run for the given topic_slug and returns the
-        evaluation for that run + paper_key combination.
-        """
-        row = self._conn.execute(
+        """Return the most recent evaluation for a paper within a topic."""
+        cur = self._conn.cursor()
+        cur.execute(
             """
             SELECT pe.*
               FROM paper_evaluations pe
               JOIN runs r ON pe.run_id = r.run_id
-             WHERE pe.paper_key = ?
-               AND r.topic_slug = ?
+             WHERE pe.paper_key = %s
+               AND r.topic_slug = %s
              ORDER BY pe.run_id DESC
              LIMIT 1
             """,
             (paper_key, topic_slug),
-        ).fetchone()
+        )
+        row = cur.fetchone()
         if row is None:
             return None
         return self._row_to_evaluation(row)
@@ -380,22 +288,23 @@ class DBManager:
         self, topic_slug: str, min_score: float
     ) -> list[Evaluation]:
         """Return evaluations with final_score >= min_score for a topic."""
-        rows = self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             SELECT pe.*
               FROM paper_evaluations pe
               JOIN runs r ON pe.run_id = r.run_id
-             WHERE r.topic_slug = ?
-               AND pe.final_score >= ?
+             WHERE r.topic_slug = %s
+               AND pe.final_score >= %s
                AND pe.discarded = 0
              ORDER BY pe.final_score DESC
             """,
             (topic_slug, min_score),
-        ).fetchall()
-        return [self._row_to_evaluation(r) for r in rows]
+        )
+        return [self._row_to_evaluation(r) for r in cur.fetchall()]
 
     @staticmethod
-    def _row_to_evaluation(row: sqlite3.Row) -> Evaluation:
+    def _row_to_evaluation(row: dict) -> Evaluation:
         """Map a database row to an Evaluation dataclass."""
         return Evaluation(
             run_id=row["run_id"],
@@ -425,7 +334,8 @@ class DBManager:
 
     def create_run(self, run_meta: RunMeta) -> int:
         """Insert a new run and return the auto-generated run_id."""
-        cur = self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             INSERT INTO runs (
                 topic_slug, window_start_utc, window_end_utc,
@@ -437,7 +347,8 @@ class DBManager:
                 total_discarded, total_output,
                 threshold_used, threshold_lowered,
                 status, errors
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING run_id
             """,
             (
                 run_meta.topic_slug,
@@ -462,25 +373,23 @@ class DBManager:
                 run_meta.errors,
             ),
         )
+        row = cur.fetchone()
         self._conn.commit()
-        return cur.lastrowid  # type: ignore[return-value]
+        return row["run_id"]
 
     def update_run_status(
         self, run_id: int, status: str, errors: str | None = None
     ) -> None:
         """Update the status (and optionally errors) of a run."""
-        self._conn.execute(
-            "UPDATE runs SET status = ?, errors = ? WHERE run_id = ?",
+        cur = self._conn.cursor()
+        cur.execute(
+            "UPDATE runs SET status = %s, errors = %s WHERE run_id = %s",
             (status, errors, run_id),
         )
         self._conn.commit()
 
     def update_run_stats(self, run_id: int, **stats: Any) -> None:
-        """Update numeric counters / stats on a run record.
-
-        Allowed keyword arguments correspond to column names such as
-        total_collected, total_filtered, total_scored, etc.
-        """
+        """Update numeric counters / stats on a run record."""
         allowed = {
             "total_collected",
             "total_filtered",
@@ -493,32 +402,35 @@ class DBManager:
         filtered = {k: v for k, v in stats.items() if k in allowed}
         if not filtered:
             return
-        set_clause = ", ".join(f"{k} = ?" for k in filtered)
+        set_clause = ", ".join(f"{k} = %s" for k in filtered)
         values = list(filtered.values())
         values.append(run_id)
-        self._conn.execute(
-            f"UPDATE runs SET {set_clause} WHERE run_id = ?",  # noqa: S608
+        cur = self._conn.cursor()
+        cur.execute(
+            f"UPDATE runs SET {set_clause} WHERE run_id = %s",  # noqa: S608
             values,
         )
         self._conn.commit()
 
     def get_latest_completed_run(self, topic_slug: str) -> RunMeta | None:
         """Return the most recently completed run for a topic."""
-        row = self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             SELECT * FROM runs
-             WHERE topic_slug = ? AND status = 'completed'
+             WHERE topic_slug = %s AND status = 'completed'
              ORDER BY run_id DESC
              LIMIT 1
             """,
             (topic_slug,),
-        ).fetchone()
+        )
+        row = cur.fetchone()
         if row is None:
             return None
         return self._row_to_run(row)
 
     @staticmethod
-    def _row_to_run(row: sqlite3.Row) -> RunMeta:
+    def _row_to_run(row: dict) -> RunMeta:
         """Map a database row to a RunMeta dataclass."""
         return RunMeta(
             run_id=row["run_id"],
@@ -550,12 +462,13 @@ class DBManager:
 
     def insert_query_stats(self, stats: QueryStats) -> None:
         """Insert a query_stats record."""
-        self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             INSERT INTO query_stats (
                 run_id, query_text, collected, total_available,
                 truncated, retries, duration_ms, exception
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 stats.run_id,
@@ -578,13 +491,15 @@ class DBManager:
         self, paper_key: str, topic_slug: str
     ) -> RemindTracking | None:
         """Retrieve a remind_tracking entry by composite key."""
-        row = self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             SELECT * FROM remind_tracking
-             WHERE paper_key = ? AND topic_slug = ?
+             WHERE paper_key = %s AND topic_slug = %s
             """,
             (paper_key, topic_slug),
-        ).fetchone()
+        )
+        row = cur.fetchone()
         if row is None:
             return None
         return RemindTracking(
@@ -596,12 +511,13 @@ class DBManager:
 
     def get_remind_trackings_by_topic(self, topic_slug: str) -> dict[str, RemindTracking]:
         """Get all remind_tracking entries for a topic as a dict keyed by paper_key."""
-        rows = self._conn.execute(
-            "SELECT * FROM remind_tracking WHERE topic_slug = ?",
+        cur = self._conn.cursor()
+        cur.execute(
+            "SELECT * FROM remind_tracking WHERE topic_slug = %s",
             (topic_slug,),
-        ).fetchall()
+        )
         result: dict[str, RemindTracking] = {}
-        for row in rows:
+        for row in cur.fetchall():
             tracking = RemindTracking(
                 paper_key=row["paper_key"],
                 topic_slug=row["topic_slug"],
@@ -613,15 +529,16 @@ class DBManager:
 
     def upsert_remind_tracking(self, tracking: RemindTracking) -> None:
         """Insert or update a remind_tracking entry."""
-        self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             INSERT INTO remind_tracking (
                 paper_key, topic_slug, recommend_count, last_recommend_run_id
-            ) VALUES (?, ?, ?, ?)
-            ON CONFLICT(paper_key, topic_slug)
+            ) VALUES (%s, %s, %s, %s)
+            ON CONFLICT (paper_key, topic_slug)
             DO UPDATE SET
-                recommend_count = excluded.recommend_count,
-                last_recommend_run_id = excluded.last_recommend_run_id
+                recommend_count = EXCLUDED.recommend_count,
+                last_recommend_run_id = EXCLUDED.last_recommend_run_id
             """,
             (
                 tracking.paper_key,
@@ -635,12 +552,9 @@ class DBManager:
     def get_remind_candidates(
         self, topic_slug: str, min_score: float, max_count: int
     ) -> list[dict]:
-        """Return candidate papers for re-recommendation.
-
-        Joins remind_tracking with paper_evaluations to find papers that
-        have not exceeded the recommend limit and scored above the threshold.
-        """
-        rows = self._conn.execute(
+        """Return candidate papers for re-recommendation."""
+        cur = self._conn.cursor()
+        cur.execute(
             """
             SELECT rt.paper_key,
                    rt.topic_slug,
@@ -651,31 +565,26 @@ class DBManager:
               JOIN paper_evaluations pe
                 ON rt.paper_key = pe.paper_key
                AND rt.last_recommend_run_id = pe.run_id
-             WHERE rt.topic_slug = ?
-               AND pe.final_score >= ?
-               AND rt.recommend_count < ?
+             WHERE rt.topic_slug = %s
+               AND pe.final_score >= %s
+               AND rt.recommend_count < %s
                AND pe.discarded = 0
              ORDER BY pe.final_score DESC
             """,
             (topic_slug, min_score, max_count),
-        ).fetchall()
-        return [dict(r) for r in rows]
+        )
+        return [dict(r) for r in cur.fetchall()]
 
     def update_evaluation_multi_topic(
         self, run_id: int, paper_key: str, multi_topic: str
     ) -> None:
-        """Update the multi_topic field for an evaluation.
-
-        Args:
-            run_id: Run ID
-            paper_key: Paper key
-            multi_topic: Comma-separated topic slugs
-        """
-        self._conn.execute(
+        """Update the multi_topic field for an evaluation."""
+        cur = self._conn.cursor()
+        cur.execute(
             """
             UPDATE paper_evaluations
-               SET multi_topic = ?
-             WHERE run_id = ? AND paper_key = ?
+               SET multi_topic = %s
+             WHERE run_id = %s AND paper_key = %s
             """,
             (multi_topic, run_id, paper_key),
         )
@@ -685,21 +594,19 @@ class DBManager:
         self._conn.commit()
 
     # ==================================================================
-    # Purge operations (Section 12-5)
+    # Purge operations
     # ==================================================================
 
     def purge_old_evaluations(self, days: int = 90) -> int:
-        """Delete evaluations whose run is older than *days* days.
-
-        Returns the number of deleted rows.
-        """
+        """Delete evaluations whose run is older than *days* days."""
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        cur = self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             DELETE FROM paper_evaluations
              WHERE run_id IN (
                 SELECT run_id FROM runs
-                 WHERE window_start_utc < ?
+                 WHERE window_start_utc < %s
              )
             """,
             (cutoff,),
@@ -710,12 +617,13 @@ class DBManager:
     def purge_old_query_stats(self, days: int = 90) -> int:
         """Delete query_stats whose run is older than *days* days."""
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        cur = self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             DELETE FROM query_stats
              WHERE run_id IN (
                 SELECT run_id FROM runs
-                 WHERE window_start_utc < ?
+                 WHERE window_start_utc < %s
              )
             """,
             (cutoff,),
@@ -726,8 +634,9 @@ class DBManager:
     def purge_old_runs(self, days: int = 90) -> int:
         """Delete runs older than *days* days."""
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        cur = self._conn.execute(
-            "DELETE FROM runs WHERE window_start_utc < ?", (cutoff,)
+        cur = self._conn.cursor()
+        cur.execute(
+            "DELETE FROM runs WHERE window_start_utc < %s", (cutoff,)
         )
         self._conn.commit()
         return cur.rowcount
@@ -742,34 +651,35 @@ class DBManager:
         if days <= 0:
             return 0
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        # Delete dependent records first to prevent orphans
-        self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             DELETE FROM paper_evaluations
              WHERE paper_key IN (
-                SELECT paper_key FROM papers WHERE created_at < ?
+                SELECT paper_key FROM papers WHERE created_at < %s
              )
             """,
             (cutoff,),
         )
-        self._conn.execute(
+        cur.execute(
             """
             DELETE FROM remind_tracking
              WHERE paper_key IN (
-                SELECT paper_key FROM papers WHERE created_at < ?
+                SELECT paper_key FROM papers WHERE created_at < %s
              )
             """,
             (cutoff,),
         )
-        cur = self._conn.execute(
-            "DELETE FROM papers WHERE created_at < ?", (cutoff,)
+        cur.execute(
+            "DELETE FROM papers WHERE created_at < %s", (cutoff,)
         )
         self._conn.commit()
         return cur.rowcount
 
     def purge_orphan_remind_tracking(self) -> int:
         """Delete remind_tracking entries with no matching evaluations."""
-        cur = self._conn.execute(
+        cur = self._conn.cursor()
+        cur.execute(
             """
             DELETE FROM remind_tracking
              WHERE paper_key NOT IN (
@@ -781,15 +691,15 @@ class DBManager:
         return cur.rowcount
 
     def vacuum(self) -> None:
-        """Reclaim disk space after purge operations."""
-        self._conn.execute("VACUUM")
+        """No-op for Supabase (auto-managed)."""
+        logger.debug("VACUUM skipped: Supabase manages vacuuming automatically")
 
     # ==================================================================
     # Utility
     # ==================================================================
 
     def get_db_stats(self) -> dict:
-        """Return record counts per table and database file size."""
+        """Return record counts per table."""
         tables = [
             "papers",
             "paper_evaluations",
@@ -798,12 +708,114 @@ class DBManager:
             "remind_tracking",
         ]
         counts: dict[str, Any] = {}
+        cur = self._conn.cursor()
         for table in tables:
-            row = self._conn.execute(
+            cur.execute(
                 f"SELECT COUNT(*) AS cnt FROM {table}"  # noqa: S608
-            ).fetchone()
+            )
+            row = cur.fetchone()
             counts[table] = row["cnt"]
-
-        db_file = Path(self._db_path)
-        counts["file_size_bytes"] = db_file.stat().st_size if db_file.exists() else 0
+        counts["file_size_bytes"] = 0  # Not applicable for cloud DB
         return counts
+
+
+# ---------------------------------------------------------------------------
+# PostgreSQL DDL statements
+# ---------------------------------------------------------------------------
+
+_CREATE_PAPERS = """
+CREATE TABLE IF NOT EXISTS papers (
+    paper_key TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    native_id TEXT NOT NULL,
+    canonical_id TEXT,
+    url TEXT NOT NULL,
+    title TEXT NOT NULL,
+    abstract TEXT NOT NULL,
+    authors TEXT NOT NULL,
+    categories TEXT NOT NULL,
+    published_at_utc TEXT NOT NULL,
+    updated_at_utc TEXT,
+    pdf_url TEXT,
+    has_code INTEGER NOT NULL DEFAULT 0,
+    has_code_source TEXT NOT NULL DEFAULT 'none',
+    code_url TEXT,
+    comment TEXT,
+    first_seen_run_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+);
+"""
+
+_CREATE_RUNS = """
+CREATE TABLE IF NOT EXISTS runs (
+    run_id SERIAL PRIMARY KEY,
+    topic_slug TEXT NOT NULL,
+    window_start_utc TEXT NOT NULL,
+    window_end_utc TEXT NOT NULL,
+    display_date_kst TEXT NOT NULL,
+    embedding_mode TEXT NOT NULL,
+    scoring_weights TEXT NOT NULL,
+    detected_rpm INTEGER,
+    detected_daily_limit INTEGER,
+    response_format_supported INTEGER NOT NULL,
+    prompt_versions TEXT NOT NULL,
+    topic_override_fields TEXT NOT NULL,
+    total_collected INTEGER NOT NULL DEFAULT 0,
+    total_filtered INTEGER NOT NULL DEFAULT 0,
+    total_scored INTEGER NOT NULL DEFAULT 0,
+    total_discarded INTEGER NOT NULL DEFAULT 0,
+    total_output INTEGER NOT NULL DEFAULT 0,
+    threshold_used INTEGER NOT NULL DEFAULT 60,
+    threshold_lowered INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'running',
+    errors TEXT
+);
+"""
+
+_CREATE_EVALUATIONS = """
+CREATE TABLE IF NOT EXISTS paper_evaluations (
+    run_id INTEGER NOT NULL,
+    paper_key TEXT NOT NULL,
+    embed_score REAL,
+    llm_base_score INTEGER NOT NULL,
+    flags TEXT NOT NULL,
+    bonus_score INTEGER,
+    final_score REAL,
+    rank INTEGER,
+    tier INTEGER,
+    discarded INTEGER NOT NULL DEFAULT 0,
+    score_lowered INTEGER,
+    multi_topic TEXT,
+    is_remind INTEGER NOT NULL DEFAULT 0,
+    summary_ko TEXT,
+    reason_ko TEXT,
+    insight_ko TEXT,
+    brief_reason TEXT,
+    prompt_ver_score TEXT NOT NULL,
+    prompt_ver_summ TEXT,
+    PRIMARY KEY (run_id, paper_key)
+);
+"""
+
+_CREATE_QUERY_STATS = """
+CREATE TABLE IF NOT EXISTS query_stats (
+    run_id INTEGER NOT NULL,
+    query_text TEXT NOT NULL,
+    collected INTEGER NOT NULL DEFAULT 0,
+    total_available INTEGER,
+    truncated INTEGER NOT NULL DEFAULT 0,
+    retries INTEGER NOT NULL DEFAULT 0,
+    duration_ms INTEGER NOT NULL DEFAULT 0,
+    exception TEXT
+);
+"""
+
+_CREATE_REMIND_TRACKING = """
+CREATE TABLE IF NOT EXISTS remind_tracking (
+    paper_key TEXT NOT NULL,
+    topic_slug TEXT NOT NULL,
+    recommend_count INTEGER NOT NULL DEFAULT 0,
+    last_recommend_run_id INTEGER NOT NULL,
+    PRIMARY KEY (paper_key, topic_slug)
+);
+"""
