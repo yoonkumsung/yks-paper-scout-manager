@@ -936,13 +936,16 @@ class TopicLoopOrchestrator:
             # summary_ko is always the English abstract (no LLM translation)
             merged["summary_ko"] = rp.get("abstract", "")
 
+            # Fallback: use scorer's brief_reason when summarizer fails
+            brief_reason = rp.get("brief_reason", "")
+
             if pk in summary_map:
                 sm = summary_map[pk]
-                merged["reason_ko"] = sm.get("reason_ko", "")
+                merged["reason_ko"] = sm.get("reason_ko", "") or brief_reason
                 merged["insight_ko"] = sm.get("insight_ko", "")
             else:
-                merged.setdefault("reason_ko", "")
-                merged.setdefault("insight_ko", "")
+                merged["reason_ko"] = brief_reason
+                merged["insight_ko"] = ""
             enriched.append(merged)
 
         return enriched
