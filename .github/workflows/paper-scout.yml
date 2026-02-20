@@ -45,11 +45,16 @@ jobs:
 
       - name: Restore config
         run: |
-          if [ -n "${{ secrets.PAPER_SCOUT_CONFIG }}" ]; then
-            echo "${{ secrets.PAPER_SCOUT_CONFIG }}" | base64 -d > config.yaml
+          if [ -n "$PAPER_SCOUT_CONFIG" ]; then
+            printf '%s' "$PAPER_SCOUT_CONFIG" | base64 -d > config.yaml || {
+              echo "::warning::Failed to decode PAPER_SCOUT_CONFIG, falling back to example"
+              [ -f config.example.yaml ] && cp config.example.yaml config.yaml
+            }
           elif [ ! -f config.yaml ] && [ -f config.example.yaml ]; then
             cp config.example.yaml config.yaml
           fi
+        env:
+          PAPER_SCOUT_CONFIG: ${{ secrets.PAPER_SCOUT_CONFIG }}
 
       - name: Restore data cache
         id: cache-data
