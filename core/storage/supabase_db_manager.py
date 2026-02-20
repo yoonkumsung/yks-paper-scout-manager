@@ -52,8 +52,10 @@ class SupabaseDBManager:
             connection_string: PostgreSQL connection string (from SUPABASE_DB_URL).
         """
         self._connection_string = connection_string
+        from core.storage.db_connection import _sanitize_dsn
+
         self._conn = psycopg2.connect(
-            connection_string,
+            _sanitize_dsn(connection_string),
             cursor_factory=psycopg2.extras.RealDictCursor,
         )
         self._conn.autocommit = False
