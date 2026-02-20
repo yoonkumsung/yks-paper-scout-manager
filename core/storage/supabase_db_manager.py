@@ -384,11 +384,15 @@ class SupabaseDBManager:
     ) -> None:
         """Update the status (and optionally errors) of a run."""
         cur = self._conn.cursor()
-        cur.execute(
-            "UPDATE runs SET status = %s, errors = %s WHERE run_id = %s",
-            (status, errors, run_id),
-        )
-        self._conn.commit()
+        try:
+            cur.execute(
+                "UPDATE runs SET status = %s, errors = %s WHERE run_id = %s",
+                (status, errors, run_id),
+            )
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            raise
 
     def update_run_stats(self, run_id: int, **stats: Any) -> None:
         """Update numeric counters / stats on a run record."""
@@ -404,15 +408,22 @@ class SupabaseDBManager:
         filtered = {k: v for k, v in stats.items() if k in allowed}
         if not filtered:
             return
+        # Cast boolean fields to int for PostgreSQL INTEGER columns
+        if "threshold_lowered" in filtered:
+            filtered["threshold_lowered"] = int(filtered["threshold_lowered"])
         set_clause = ", ".join(f"{k} = %s" for k in filtered)
         values = list(filtered.values())
         values.append(run_id)
         cur = self._conn.cursor()
-        cur.execute(
-            f"UPDATE runs SET {set_clause} WHERE run_id = %s",  # noqa: S608
-            values,
-        )
-        self._conn.commit()
+        try:
+            cur.execute(
+                f"UPDATE runs SET {set_clause} WHERE run_id = %s",  # noqa: S608
+                values,
+            )
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            raise
 
     def get_latest_completed_run(self, topic_slug: str) -> RunMeta | None:
         """Return the most recently completed run for a topic."""

@@ -86,6 +86,19 @@ class SearchWindowComputer:
         # Compute window_start from fallback chain
         window_start = self._compute_window_start(topic_slug, window_end)
 
+        # Guard: if window_start >= window_end (e.g. DB returned a time
+        # after today UTC 00:00), clamp window_start to window_end - 24h
+        # so we always search at least a 24-hour range.
+        if window_start >= window_end:
+            logger.warning(
+                "Window inversion detected for %s: start=%s >= end=%s. "
+                "Clamping start to end - 24h.",
+                topic_slug,
+                window_start,
+                window_end,
+            )
+            window_start = window_end - timedelta(hours=24)
+
         return self._apply_buffer(window_start, window_end)
 
     def _compute_window_end(self, now: datetime) -> datetime:
