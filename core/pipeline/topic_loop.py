@@ -1156,4 +1156,7 @@ class TopicLoopOrchestrator:
         cross_domain = agent1_output.get("cross_domain_keywords", [])
         keywords.extend(cross_domain)
 
+        must_keywords = agent1_output.get("query_must_keywords", [])
+        keywords.extend(must_keywords)
+
         return keywords
