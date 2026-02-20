@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPP!C_AI 논문 리포트 (2026-02-20)</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a2e;
+      --card-bg: #f8f9fa;
+      --card-border: #e0e0e0;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --muted: #6b7280;
+      --divider: #e5e7eb;
+      --score-bg: #e5e7eb;
+      --score-fill: #2563eb;
+      --tier2-bg: #f3f4f6;
+      --tag-bg: #fef3c7;
+      --tag-fg: #92400e;
+      --flag-edge: #dbeafe;
+      --flag-realtime: #dcfce7;
+      --flag-code: #f3e8ff;
+      --remind-bg: #fffbeb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --fg: #e2e8f0;
+        --card-bg: #1e293b;
+        --card-border: #334155;
+        --accent: #60a5fa;
+        --accent-light: #1e3a5f;
+        --muted: #94a3b8;
+        --divider: #334155;
+        --score-bg: #334155;
+        --score-fill: #60a5fa;
+        --tier2-bg: #1e293b;
+        --tag-bg: #78350f;
+        --tag-fg: #fef3c7;
+        --flag-edge: #1e3a5f;
+        --flag-realtime: #14532d;
+        --flag-code: #3b0764;
+        --remind-bg: #451a03;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .header { margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .stats span { white-space: nowrap; }
+    .stats span::after { content: ""; }
+    .stats-arrow { color: var(--muted); font-size: 0.75rem; opacity: 0.6; }
+    .below-score { color: #f59e0b; }
+    .window-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.3rem;
+      line-height: 1.6;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .window-label {
+      font-weight: 600;
+      color: var(--fg);
+      margin-right: 0.2rem;
+    }
+    .window-range {
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--divider);
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+    }
+    .window-sep {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    details { margin-bottom: 1rem; }
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before {
+      content: '\25B6';
+      font-size: 0.6em;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    details[open] > summary::before { transform: rotate(90deg); }
+    details[open] summary { border-radius: 4px 4px 0 0; }
+    details .details-content {
+      padding: 0.75rem;
+      border: 1px solid var(--card-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+    }
+
+    .tabs {
+      margin-bottom: 1rem;
+    }
+    .tabs input[type="radio"] { display: none; }
+    .tab-labels {
+      display: flex;
+      border-bottom: 2px solid var(--divider);
+      margin-bottom: 1rem;
+    }
+    .tab-labels label {
+      padding: 0.6rem 1rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-labels label:hover { color: var(--fg); }
+    .tab-content { display: none; }
+    #tab-today:checked ~ .tab-labels label[for="tab-today"],
+    #tab-remind:checked ~ .tab-labels label[for="tab-remind"],
+    #tab-below:checked ~ .tab-labels label[for="tab-below"],
+    #tab-excluded:checked ~ .tab-labels label[for="tab-excluded"] {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    #tab-today:checked ~ .tab-panel-today { display: block; }
+    #tab-remind:checked ~ .tab-panel-remind { display: block; }
+    #tab-below:checked ~ .tab-panel-below { display: block; }
+    #tab-excluded:checked ~ .tab-panel-excluded { display: block; }
+
+    .paper-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .paper-card--collapsed { display: none; }
+    .show-more-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .show-more-btn:hover { background: var(--accent-light); }
+    .paper-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .paper-card .rank {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .paper-card .paper-title {
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+    }
+    .paper-card .paper-title a {
+      color: var(--fg);
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .paper-card .paper-title a:hover { color: var(--accent); }
+
+    .score-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .score-bar {
+      flex: 1;
+      max-width: 200px;
+      height: 8px;
+      background: var(--score-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      max-width: 100%;
+      background: var(--score-fill);
+      border-radius: 4px;
+    }
+    .score-detail { color: var(--muted); font-size: 0.75rem; }
+
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .cat-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .flags {
+      display: flex;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .flag-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .flag-edge { background: var(--flag-edge); }
+    .flag-realtime { background: var(--flag-realtime); }
+    .flag-code { background: var(--flag-code); }
+
+    .lowered-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--tag-bg);
+      color: var(--tag-fg);
+      font-weight: 600;
+    }
+
+    .paper-links {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .paper-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .paper-links a:hover {
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .abstract-section {
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .abstract-section .abstract-full {
+      margin-top: 0.3rem;
+      margin-bottom: 0;
+    }
+    .abstract-section .abstract-full summary {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.2rem 0.4rem;
+      background: transparent;
+      border: 1px solid var(--card-border);
+      display: inline-flex;
+    }
+
+    .cluster-links {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .tier-divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      position: relative;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .tier-divider::before, .tier-divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 35%;
+      border-top: 1px solid var(--divider);
+    }
+    .tier-divider::before { left: 0; }
+    .tier-divider::after { right: 0; }
+
+    /* Unified compact card - used by Tier 2, remind, below-threshold, discarded */
+    .compact-card {
+      background: var(--tier2-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .compact-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+    }
+    .compact-card .rank {
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .compact-card .paper-title {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .compact-card .paper-title a {
+      color: var(--fg);
+    }
+    .compact-card .paper-title a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .compact-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .compact-link {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.3rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+    }
+    .compact-body {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .compact-reason {
+      margin-top: 0.2rem;
+      margin-left: 0.4rem;
+      padding-left: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--accent);
+      line-height: 1.3;
+      border-left: 3px solid var(--accent);
+    }
+    .compact-card .categories {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+    }
+    .recommend-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    /* Modifier: remind */
+    .compact-card--remind { background: var(--remind-bg); }
+    /* Modifier: below threshold */
+    .compact-card--below { opacity: 0.75; }
+    .compact-card--below .score-detail { color: #f59e0b; font-weight: 600; }
+    /* Modifier: discarded */
+    .compact-card--discarded { opacity: 0.7; }
+
+    /* Read state - Gmail-style dimming */
+    .paper-read { opacity: 0.5; }
+    .paper-read .paper-title a { font-weight: 400; }
+
+    .empty-message {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--divider);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    footer p { margin-bottom: 0.3rem; }
+
+    .index-list { list-style: none; }
+    .index-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .index-list li:last-child { border-bottom: none; }
+
+    /* Paper checkbox - matches rank text height */
+    .paper-checkbox {
+      width: 1em;
+      height: 1em;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin: 0;
+    }
+    .compact-card .paper-links {
+      display: inline-flex;
+      gap: 0.4rem;
+      margin: 0;
+      font-size: 0.8rem;
+    }
+
+    /* Download toolbar */
+    .download-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      padding: 0.6rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    }
+    .download-toolbar.visible { display: flex; }
+    body.toolbar-active { padding-bottom: 3.5rem; }
+    .toolbar-selects {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar-btn.primary:hover { opacity: 0.9; }
+    .toolbar-btn.primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  
+<div class="header">
+  <h1>CAPP!C_AI 논문 리포트 (2026-02-20)</h1>
+  <div class="stats">
+    <span title="arXiv에서 수집된 총 논문 수">수집 27편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="키워드 필터 통과">필터 25편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="LLM 평가 후 제외">제외 7편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="점수 50점 미만">미달 6편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="최종 선정된 논문">선정 8편</span>
+  </div>
+  <div class="window-info">
+    <span class="window-label">검색 윈도우</span>
+    <span class="window-range">UTC 2026-02-18 23:30 / KST 2026-02-19 08:30</span>
+    <span class="window-sep">~</span>
+    <span class="window-range">UTC 2026-02-20 00:30 / KST 2026-02-20 09:30</span>
+  </div>
+</div>
+
+
+<details>
+  <summary>검색 키워드</summary>
+  <div class="details-content">
+    autonomous cinematography, camera control, sports filming, highlight detection, event detection, keyframe extraction, video enhancement, video correction, video stylization, image enhancement, image correction, image stylization, pose estimation, human pose, sports biomechanics, action recognition, activity recognition, motion analysis, sports analytics, tactical analysis, performance metrics, multi-object tracking, player tracking, object tracking, edge computing, embedded vision, edge ai, sports vision, real-time processing, video summarization
+  </div>
+</details>
+
+
+<div class="tabs">
+  <input type="radio" name="tabs" id="tab-today" checked>
+  <input type="radio" name="tabs" id="tab-remind">
+  <input type="radio" name="tabs" id="tab-below">
+  <input type="radio" name="tabs" id="tab-excluded">
+  <div class="tab-labels">
+    <label for="tab-today">오늘의 논문 (8)</label>
+    <label for="tab-remind">다시 보기 (14)</label>
+    <label for="tab-below">점수 미달 (0)</label>
+    <label for="tab-excluded">제외 (7)</label>
+  </div>
+
+  <div class="tab-content tab-panel-today">
+    
+      
+      
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.17642v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17642v1" onchange="updateToolbar()">
+          <span class="rank">1위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17642v1">A.R.I.S.: Automated Recycling Identification System for E-Waste Classification Using Deep Learning</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>92.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 92.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:80 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Traditional electronic recycling processes suffer from significant resource loss due to inadequate material separation and identification capabilities, limiting material recovery. We present A.R.I.S.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Traditional electronic recycling processes suffer from significant resource loss due to inadequate material separation and identification capabilities, limiting material recovery. We present A.R.I.S. (Automated Recycling Identification System), a low-cost, portable sorter for shredded e-waste that addresses this efficiency gap. The system employs a YOLOx model to classify metals, plastics, and circuit boards in real time, achieving low inference latency with high detection accuracy. Experimental evaluation yielded 90% overall precision, 82.2% mean average precision (mAP), and 84% sortation purity. By integrating deep learning with established sorting methods, A.R.I.S. enhances material recovery efficiency and lowers barriers to advanced recycling adoption. This work complements broader initiatives in extending product life cycles, supporting trade-in and recycling programs, and reducing environmental impact across the supply chain.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이 논문의 실시간 객체 인식 기술(YOLOx)은 우리 프로젝트의 핵심인 스포츠 경기에서 선수나 장비를 빠르게 식별하는 데 직접 적용 가능합니다. 낮은 inference latency와 높은 정확도가 경기 중 실시간 하이라이트 생성에 중요합니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> YOLOx 모델을 rk3588 엣지 디바이스에 적용해 선수 동작 인식 속도를 개선합니다. inference speed 30fps 이상 유지하며, 실시간으로 주요 장면(예: 골 장면)을 자동 추출해 편집 프로세스의 latency를 50ms 이하로 줄입니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17642v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.17097v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17097v1" onchange="updateToolbar()">
+          <span class="rank">2위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17097v1">AudioChat: Unified Audio Storytelling, Editing, and Understanding with Transfusion Forcing</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>74.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 74.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:65 + bonus:+3
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.SD</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Despite recent breakthroughs, audio foundation models struggle in processing complex multi-source acoustic scenes. We refer to this challenging domain as audio stories, which can have multiple speakers and background/foreground sound effects.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Despite recent breakthroughs, audio foundation models struggle in processing complex multi-source acoustic scenes. We refer to this challenging domain as audio stories, which can have multiple speakers and background/foreground sound effects. Compared to traditional audio processing tasks, audio stories introduce new layers of semantic, temporal, and physical complexity. To address this challenge, we propose AudioChat, a framework for developing audio foundation models that can generate, edit, and understand audio stories. AudioChat introduces a new paradigm in which LLM-based toolcalling agents simulate interactions between users and the system, and these simulated dialogues are used as training data. We also introduce a novel Audio Transfusion Forcing objective to train the AudioChat model, allowing it to simultaneously decompose high-level instructions via structured chain-of-thought reasoning and perform interactive multi-turn audio understanding/generation. To evaluate generation and editing performance, we develop three new metrics that directly measure task performance instead of relying upon distribution-based scoring. We highly encourage readers to visit our demo to better understand the capabilities of AudioChat: https://wanchichen.github.io/audiochat/.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 오디오 기반 자동 스토리텔링 기술로, 비디오 하이라이트 생성과 유사한 개념이지만, 우리 프로젝트의 주된 비디오 분석과 직접적 연관성이 낮아 적용 우선순위가 비교적 낮습니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 주요 적용 분야는 한계적이지만, 오디오 트랜스포머를 활용해 경기 중 관중 반응이나 코치 지시음을 분석해 보조 데이터로 사용 가능합니다. 다만 비디오 콘텐츠 생성에는 제한적으로 기여합니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17097v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.17192v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17192v1" onchange="updateToolbar()">
+          <span class="rank">3위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17192v1">Secure Task Offloading and Resource Allocation Design for Multi-Layer Non-Terrestrial Networks</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>72.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 72.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:60 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.SP</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Remote and resource-constrained Internet-of-Things (IoT) deployments often lack terrestrial connectivity for task offloading, motivating non-terrestrial networks (NTNs) with onboard multiaccess edge computing (MEC) capabilities. Nevertheless, in the presence of malicious actors, authentication needs to be performed to avoid non-authorized nodes from draining the computing resources of the NTN nodes.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Remote and resource-constrained Internet-of-Things (IoT) deployments often lack terrestrial connectivity for task offloading, motivating non-terrestrial networks (NTNs) with onboard multiaccess edge computing (MEC) capabilities. Nevertheless, in the presence of malicious actors, authentication needs to be performed to avoid non-authorized nodes from draining the computing resources of the NTN nodes. As a solution, we propose a four-layer MEC-enabled NTN with unmanned aerial vehicles (UAVs) acting as access nodes, a high altitude platform station (HAPS) acting as coordinator and authenticator, and a constellation of low-Earth orbit satellites (LEOSats) acting as remote MEC servers. We consider a tag-based physical-layer authentication (PLA) scheme to authenticate legitimate users, and formulate a joint task offloading decision and resource allocation for the admitted tasks, which is solved via block coordinate descent. Numerical results show that the PLA scheme is efficient and performs better than the benchmark schemes. We also demonstrate that the proposed scheme is robust against malicious attacks even under relaxed false-alarm constraints.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 엣지 컴퓨팅과 태스크 오프로딩 기술이 rk3588 기기에서 고성능 영상 분석을 위해 간접적으로 중요합니다. 리소스 제약 환경에서 효율적인 계산 분산이 핵심 과제이기 때문입니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 계층적 오프로딩을 도입해 무거운 AI 처리(예: 자세 분석)를 클라우드로 전송합니다. 이를 통해 엣지 디바이스의 inference latency를 100ms 미만으로 유지하고, 실시간 성능을 보장합니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17192v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.17566v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17566v1" onchange="updateToolbar()">
+          <span class="rank">4위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17566v1">A Hybrid Federated Learning Based Ensemble Approach for Lung Disease Diagnosis Leveraging Fusion of SWIN Transformer and CNN</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>68.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 68.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:60 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">The significant advancements in computational power cre- ate a vast opportunity for using Artificial Intelligence in different ap- plications of healthcare and medical science. A Hybrid FL-Enabled Ensemble Approach For Lung Disease Diagnosis Leveraging a Combination of SWIN Transformer and CNN is the combination of cutting-edge technology of AI and Federated Learning.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">The significant advancements in computational power cre- ate a vast opportunity for using Artificial Intelligence in different ap- plications of healthcare and medical science. A Hybrid FL-Enabled Ensemble Approach For Lung Disease Diagnosis Leveraging a Combination of SWIN Transformer and CNN is the combination of cutting-edge technology of AI and Federated Learning. Since, medi- cal specialists and hospitals will have shared data space, based on that data, with the help of Artificial Intelligence and integration of federated learning, we can introduce a secure and distributed system for medical data processing and create an efficient and reliable system. The proposed hybrid model enables the detection of COVID-19 and Pneumonia based on x-ray reports. We will use advanced and the latest available tech- nology offered by Tensorflow and Keras along with Microsoft-developed Vision Transformer, that can help to fight against the pandemic that the world has to fight together as a united. We focused on using the latest available CNN models (DenseNet201, Inception V3, VGG 19) and the Transformer model SWIN Transformer in order to prepare our hy- brid model that can provide a reliable solution as a helping hand for the physician in the medical field. In this research, we will discuss how the Federated learning-based Hybrid AI model can improve the accuracy of disease diagnosis and severity prediction of a patient using the real-time continual learning approach and how the integration of federated learn- ing can ensure hybrid model security and keep the authenticity of the information.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> CNN/Transformer 기술은 적용 가능하나, 의료 영상 분석에 특화되어 스포츠 영상의 동적 움직임 분석과는 도메인 차이가 큽니다. 직접적 연관성은 낮아 활용도가 제한적입니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> SWIN Transformer 구조를 전이 학습해 스포츠 자세 인식 모델에 재활용할 수 있습니다. parameter count 100M 이하로 최적화해 rk3588에서 실시간 구동 가능하도록 적용합니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17566v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.17209v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17209v1" onchange="updateToolbar()">
+          <span class="rank">5위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17209v1">Hierarchical Edge-Cloud Task Offloading in NTN for Remote Healthcare</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>68.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 68.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.NI</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">In this work, we study a hierarchical non-terrestrial network as an edge-cloud platform for remote computing of tasks generated by remote ad-hoc healthcare facility deployments, or internet of medical things (IoMT) devices. We consider a high altitude platform station (HAPS) to provide local multiaccess edge server (MEC) services to a set of remote ground medical devices, and a low-earth orbit (LEO) satellite, serving as a bridge to a remote cloud computing server through a ground gateway (GW), providing a large amount of computing resources to the HAPS.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">In this work, we study a hierarchical non-terrestrial network as an edge-cloud platform for remote computing of tasks generated by remote ad-hoc healthcare facility deployments, or internet of medical things (IoMT) devices. We consider a high altitude platform station (HAPS) to provide local multiaccess edge server (MEC) services to a set of remote ground medical devices, and a low-earth orbit (LEO) satellite, serving as a bridge to a remote cloud computing server through a ground gateway (GW), providing a large amount of computing resources to the HAPS. In this hierarchical system, the HAPS and the cloud server charges the ground users and the HAPS for the use of the spectrum and the computing of their tasks respectively. Each tier seeks to maximize their own utility in a selfish manner. To encourage the prompt computation of the tasks, a local delay cost is assumed. We formulate the optimal per-task cost at each tier that influences the corresponding offloading policies, and find the corresponding optimal bandwidth allocation.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 엣지-클라우드 오프로딩 기술이 간접적으로 유용합니다. 원격 의료 시나리오와 유사하게 스포츠 현장의 리소스 제약을 해결할 수 있어, 프로젝트의 실시간 데이터 처리에 기여합니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> HAPS 모델을 참조해 로컬 엣지(rk3588)에서 기본 분석 후, 고급 작업(예: 전략 시뮬레이션)을 클라우드로 오프로드합니다. 이로써 end-to-end latency를 200ms 이내로 줄이고 시스템 효율성을 높입니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17209v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.17229v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17229v1" onchange="updateToolbar()">
+          <span class="rank">6위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17229v1">Mechanistic Interpretability of Cognitive Complexity in LLMs via Linear Probing using Bloom&#39;s Taxonomy</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>68.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 68.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:60 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.CL</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">The black-box nature of Large Language Models necessitates novel evaluation frameworks that transcend surface-level performance metrics. This study investigates the internal neural representations of cognitive complexity using Bloom&#39;s Taxonomy as a hierarchical lens.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">The black-box nature of Large Language Models necessitates novel evaluation frameworks that transcend surface-level performance metrics. This study investigates the internal neural representations of cognitive complexity using Bloom&#39;s Taxonomy as a hierarchical lens. By analyzing high-dimensional activation vectors from different LLMs, we probe whether different cognitive levels, ranging from basic recall (Remember) to abstract synthesis (Create), are linearly separable within the model&#39;s residual streams. Our results demonstrate that linear classifiers achieve approximately 95% mean accuracy across all Bloom levels, providing strong evidence that cognitive level is encoded in a linearly accessible subspace of the model&#39;s representations. These findings provide evidence that the model resolves the cognitive difficulty of a prompt early in the forward pass, with representations becoming increasingly separable across layers.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> LLM의 인지 수준 분석 기술이 스포츠 경기 해설 생성이나 전략 설명에 활용될 수 있음. 간접적 연관성으로 프로젝트의 AI 분석 기능 강화 가능.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 경기 분석용 LLM 모델 개발 시 블룸 분류 적용해 다양한 인지 수준의 해설 자동 생성. 선수별 전략 설명 정확도 향상에 활용.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17229v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.17182v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17182v1" onchange="updateToolbar()">
+          <span class="rank">7위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17182v1">NRGS-SLAM: Monocular Non-Rigid SLAM for Endoscopy via Deformation-Aware 3D Gaussian Splatting</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>66.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 66.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+3
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.RO</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Visual simultaneous localization and mapping (V-SLAM) is a fundamental capability for autonomous perception and navigation. However, endoscopic scenes violate the rigidity assumption due to persistent soft-tissue deformations, creating a strong coupling ambiguity between camera ego-motion and intrinsic deformation.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Visual simultaneous localization and mapping (V-SLAM) is a fundamental capability for autonomous perception and navigation. However, endoscopic scenes violate the rigidity assumption due to persistent soft-tissue deformations, creating a strong coupling ambiguity between camera ego-motion and intrinsic deformation. Although recent monocular non-rigid SLAM methods have made notable progress, they often lack effective decoupling mechanisms and rely on sparse or low-fidelity scene representations, which leads to tracking drift and limited reconstruction quality. To address these limitations, we propose NRGS-SLAM, a monocular non-rigid SLAM system for endoscopy based on 3D Gaussian Splatting. To resolve the coupling ambiguity, we introduce a deformation-aware 3D Gaussian map that augments each Gaussian primitive with a learnable deformation probability, optimized via a Bayesian self-supervision strategy without requiring external non-rigidity labels. Building on this representation, we design a deformable tracking module that performs robust coarse-to-fine pose estimation by prioritizing low-deformation regions, followed by efficient per-frame deformation updates. A carefully designed deformable mapping module progressively expands and refines the map, balancing representational capacity and computational efficiency. In addition, a unified robust geometric loss incorporates external geometric priors to mitigate the inherent ill-posedness of monocular non-rigid SLAM. Extensive experiments on multiple public endoscopic datasets demonstrate that NRGS-SLAM achieves more accurate camera pose estimation (up to 50\% reduction in RMSE) and higher-quality photo-realistic reconstructions than state-of-the-art methods. Comprehensive ablation studies further validate the effectiveness of our key design choices. Source code will be publicly available upon paper acceptance.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 비강성 SLAM 기술이 스포츠 영상의 움직임 추적에 적용 가능. 선수 동작 같은 비강성 요소 처리로 카메라 추적 정확도 향상.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 3D 가우시안 기반 재구성 기술로 경기장 내 선수 동작 실시간 추적. 저지연(10ms 내)으로 하이라이트 장면 자동 편집에 적용.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17182v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.17393v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.17393v1" onchange="updateToolbar()">
+          <span class="rank">8위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17393v1">Contact-Anchored Proprioceptive Odometry for Quadruped Robots</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>66.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 66.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:50 + bonus:+8
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+          <span class="cat-tag">eess.SP</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Reliable odometry for legged robots without cameras or LiDAR remains challenging due to IMU drift and noisy joint velocity sensing. This paper presents a purely proprioceptive state estimator that uses only IMU and motor measurements to jointly estimate body pose and velocity, with a unified formulation applicable to biped, quadruped, and wheel-legged robots.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Reliable odometry for legged robots without cameras or LiDAR remains challenging due to IMU drift and noisy joint velocity sensing. This paper presents a purely proprioceptive state estimator that uses only IMU and motor measurements to jointly estimate body pose and velocity, with a unified formulation applicable to biped, quadruped, and wheel-legged robots. The key idea is to treat each contacting leg as a kinematic anchor: joint-torque--based foot wrench estimation selects reliable contacts, and the corresponding footfall positions provide intermittent world-frame constraints that suppress long-term drift. To prevent elevation drift during extended traversal, we introduce a lightweight height clustering and time-decay correction that snaps newly recorded footfall heights to previously observed support planes. To improve foot velocity observations under encoder quantization, we apply an inverse-kinematics cubature Kalman filter that directly filters foot-end velocities from joint angles and velocities. The implementation further mitigates yaw drift through multi-contact geometric consistency and degrades gracefully to a kinematics-derived heading reference when IMU yaw constraints are unavailable or unreliable. We evaluate the method on four quadruped platforms (three Astrall robots and a Unitree Go2 EDU) using closed-loop trajectories. On Astrall point-foot robot~A, a $\sim$200\,m horizontal loop and a $\sim$15\,m vertical loop return with 0.1638\,m and 0.219\,m error, respectively; on wheel-legged robot~B, the corresponding errors are 0.2264\,m and 0.199\,m. On wheel-legged robot~C, a $\sim$700\,m horizontal loop yields 7.68\,m error and a $\sim$20\,m vertical loop yields 0.540\,m error. Unitree Go2 EDU closes a $\sim$120\,m horizontal loop with 2.2138\,m error and a $\sim$8\,m vertical loop with less than 0.1\,m vertical error. github.com/ShineMinxing/Ros2Go2Estimator.git</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 접지점 기반 오도메트리가 운동선수 발동작 추적에 유사 적용 가능. 드리프트 오류 감소로 경기 분석 정확도 향상.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 발 접지 센서 데이터와 영상 융합해 선수 이동 경로 추적. 초당 60프레임 처리로 실시간 경기 전략 분석 시스템 구축.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.17393v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+
+      
+      <button class="show-more-btn" id="showMoreBtn" onclick="showAllTier1()">
+        나머지 3편 더 보기
+      </button>
+      
+
+      
+
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-remind">
+    
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17508v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17508v1">Pareto Optimal Benchmarking of AI Models on ARM Cortex Processors for Sustainable Embedded Systems</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">100.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">This work presents a practical benchmarking framework for optimizing artificial intelligence (AI) models on ARM Cortex processors (M0+, M4, M7), focusing on energy efficiency, accuracy, and resource utilization in embedded systems. Through the design of an automated test bench, we provide a systematic approach to evaluate across key performance indicators (KPIs) and identify optimal combinations of processor and AI model. The research highlights a nearlinear correlation between floating-point operations (FLOPs) and inference time, offering a reliable metric for estimating computational demands. Using Pareto analysis, we demonstrate how to balance trade-offs between energy consumption and model accuracy, ensuring that AI applications meet performance requirements without compromising sustainability. Key findings indicate that the M7 processor is ideal for short inference cycles, while the M4 processor offers better energy efficiency for longer inference tasks. The M0+ processor, while less efficient for complex AI models, remains suitable for simpler tasks. This work provides insights for developers, guiding them to design energy-efficient AI systems that deliver high performance in realworld applications.</div>
+        
+        
+        <div class="compact-reason">이 논문은 ARM Cortex 프로세서에서 AI 모델의 에너지 효율성과 성능 최적화 방법을 제안합니다. 핵심은 Pareto 분석을 통한 자원 활용 균형입니다. 에지 디바이스(rk3588)의 실시간 영상 처리에 필수적인 AI 모델 최적화 기술이기 때문에 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17120v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17120v1">HybridPrompt: Bridging Generative Priors and Traditional Codecs for Mobile Streaming</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">98.4</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.IV</span>
+          
+          <span class="cat-tag">cs.MM</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">In Video on Demand (VoD) scenarios, traditional codecs are the industry standard due to their high decoding efficiency. However, they suffer from severe quality degradation under low bandwidth conditions. While emerging generative neural codecs offer significantly higher perceptual quality, their reliance on heavy frame-by-frame generation makes real-time playback on mobile devices impractical. We ask: is it possible to combine the blazing-fast speed of traditional standards with the superior visual fidelity of neural approaches? We present HybridPrompt, the first generative-based video system capable of achieving real-time 1080p decoding at over 150 FPS on a commercial smartphone. Specifically, we employ a hybrid architecture that encodes Keyframes using a generative model while relying on traditional codecs for the remaining frames. A major challenge is that the two paradigms have conflicting objectives: the &#34;hallucinated&#34; details from generative models often misalign with the rigid prediction mechanisms of traditional codecs, causing bitrate inefficiency. To address this, we demonstrate that the traditional decoding process is differentiable, enabling an end-to-end optimization loop. This allows us to use subsequent frames as additional supervision, forcing the generative model to synthesize keyframes that are not only perceptually high-fidelity but also mathematically optimal references for the traditional codec. By integrating a two-stage generation strategy, our system outperforms pure neural baselines by orders of magnitude in speed while achieving an average LPIPS gain of 8% over traditional codecs at 200kbps.</div>
+        
+        
+        <div class="compact-reason">이 논문은 저대역폭 환경에서 고품질 영상 스트리밍을 위한 하이브리드 인코딩 방법을 제안합니다. 핵심은 생성 모델과 전통 코덱의 결합입니다. 에지 디바이스에서 실시간 영상 보정 및 SNS 공유 시 대역폭 효율성을 높일 수 있어 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17574v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17574v1">Hybrid System Planning using a Mixed-Integer ADMM Heuristic and Hybrid Zonotopes</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">92.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+          <span class="cat-tag">eess.SY</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Embedded optimization-based planning for hybrid systems is challenging due to the use of mixed-integer programming, which is computationally intensive and often sensitive to the specific numerical formulation. To address that challenge, this article proposes a framework for motion planning of hybrid systems that pairs hybrid zonotopes - an advanced set representation - with a new alternating direction method of multipliers (ADMM) mixed-integer programming heuristic. A general treatment of piecewise affine (PWA) system reachability analysis using hybrid zonotopes is presented and extended to formulate optimal planning problems. Sets produced using the proposed identities have lower memory complexity and tighter convex relaxations than equivalent sets produced from preexisting techniques. The proposed ADMM heuristic makes efficient use of the hybrid zonotope structure. For planning problems formulated as hybrid zonotopes, the proposed heuristic achieves improved convergence rates as compared to state-of-the-art mixed-integer programming heuristics. The proposed methods for hybrid system planning on embedded hardware are experimentally applied in a combined behavior and motion planning scenario for autonomous driving.</div>
+        
+        
+        <div class="compact-reason">이 논문은 내장 하드웨어용 효율적 모션 플래닝 방법을 제안합니다. 핵심은 하이브리드 존토프와 ADMM 휴리스틱의 결합입니다. 자동 촬영 디바이스의 카메라 움직임 최적화 및 선수 추적 알고리즘에 직접 적용 가능해 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17537v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17537v1">IRIS: Learning-Driven Task-Specific Cinema Robot Arm for Visuomotor Motion Control</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">89.6</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Robotic camera systems enable dynamic, repeatable motion beyond human capabilities, yet their adoption remains limited by the high cost and operational complexity of industrial-grade platforms. We present the Intelligent Robotic Imaging System (IRIS), a task-specific 6-DOF manipulator designed for autonomous, learning-driven cinematic motion control. IRIS integrates a lightweight, fully 3D-printed hardware design with a goal-conditioned visuomotor imitation learning framework based on Action Chunking with Transformers (ACT). The system learns object-aware and perceptually smooth camera trajectories directly from human demonstrations, eliminating the need for explicit geometric programming. The complete platform costs under $1,000 USD, supports a 1.5 kg payload, and achieves approximately 1 mm repeatability. Real-world experiments demonstrate accurate trajectory tracking, reliable autonomous execution, and generalization across diverse cinematic motions.</div>
+        
+        
+        <div class="compact-reason">이 논문은 저비용 학습 기반 로봇 카메라 제어 방법을 제안합니다. 핵심은 인간 시연을 통한 시뮬모터 궤적 학습입니다. 스포츠 경기 자동 촬영을 위한 카메라 포지셔닝 시스템 구축에 핵심 기술이므로 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17196v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17196v1">EntropyPrune: Matrix Entropy Guided Visual Token Pruning for Multimodal Large Language Models</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">88.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Multimodal large language models (MLLMs) incur substantial inference cost due to the processing of hundreds of visual tokens per image. Although token pruning has proven effective for accelerating inference, determining when and where to prune remains largely heuristic. Existing approaches typically rely on static, empirically selected layers, which limit interpretability and transferability across models. In this work, we introduce a matrix-entropy perspective and identify an &#34;Entropy Collapse Layer&#34; (ECL), where the information content of visual representations exhibits a sharp and consistent drop, which provides a principled criterion for selecting the pruning stage. Building on this observation, we propose EntropyPrune, a novel matrix-entropy-guided token pruning framework that quantifies the information value of individual visual tokens and prunes redundant ones without relying on attention maps. Moreover, to enable efficient computation, we exploit the spectral equivalence of dual Gram matrices, reducing the complexity of entropy computation and yielding up to a 64x theoretical speedup. Extensive experiments on diverse multimodal benchmarks demonstrate that EntropyPrune consistently outperforms state-of-the-art pruning methods in both accuracy and efficiency. On LLaVA-1.5-7B, our method achieves a 68.2% reduction in FLOPs while preserving 96.0% of the original performance. Furthermore, EntropyPrune generalizes effectively to high-resolution and video-based models, highlighting the strong robustness and scalability in practical MLLM acceleration. The code will be publicly available at https://github.com/YahongWang1/EntropyPrune.</div>
+        
+        
+        <div class="compact-reason">이 논문은 멀티모달 모델의 시각 토큰 프루닝 방법을 제안합니다. 핵심은 매트릭스 엔트로피 기반 중복 토큰 제거입니다. 스포츠 영상 분석 모델의 추론 속도 향상을 위해 FLOPs 68.2% 감소 기술이 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17155v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17155v1">Powering Up Zeroth-Order Training via Subspace Gradient Orthogonalization</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Zeroth-order (ZO) optimization provides a gradient-free alternative to first-order (FO) methods by estimating gradients via finite differences of function evaluations, and has recently emerged as a memory-efficient paradigm for fine-tuning large-scale models by avoiding backpropagation. However, ZO optimization has a fundamental tension between accuracy and query efficiency. In this work, we show that ZO optimization can be substantially improved by unifying two complementary principles: (i) a projection-based subspace view that reduces gradient estimation variance by exploiting the intrinsic low-rank structure of model updates, and (ii) Muon-style spectral optimization that applies gradient orthogonalization to extract informative spectral structure from noisy ZO gradients. These findings form a unified framework of subspace gradient orthogonalization, which we instantiate in a new method, ZO-Muon, admitting a natural interpretation as a low-rank Muon optimizer in the ZO setting. Extensive experiments on large language models (LLMs) and vision transformers (ViTs) demonstrate that ZO-Muon significantly accelerates convergence and achieves a win-win improvement in accuracy and query/runtime efficiency. Notably, compared to the popular MeZO baseline, ZO-Muon requires only 24.7% of the queries to reach the same SST-2 performance for LLM fine-tuning, and improves accuracy by 25.1% on ViT-B fine-tuning on CIFAR-100.</div>
+        
+        
+        <div class="compact-reason">에지 디바이스에서 메모리 효율적인 모델 학습이 필수적입니다. 제로스 오더 최적화 기술은 RK3588의 제한된 리소스에서 파인튜닝 속도와 정확도를 동시에 개선해 줍니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17558v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17558v1">RetouchIQ: MLLM Agents for Instruction-Based Image Retouching with Generalist Reward</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">82.4</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Recent advances in multimodal large language models (MLLMs) have shown great potential for extending vision-language reasoning to professional tool-based image editing, enabling intuitive and creative editing. A promising direction is to use reinforcement learning (RL) to enable MLLMs to reason about and execute optimal tool-use plans within professional image-editing software. However, training remains challenging due to the lack of reliable, verifiable reward signals that can reflect the inherently subjective nature of creative editing. In this work, we introduce RetouchIQ, a framework that performs instruction-based executable image editing through MLLM agents guided by a generalist reward model. RetouchIQ interprets user-specified editing intentions and generates corresponding, executable image adjustments, bridging high-level aesthetic goals with precise parameter control. To move beyond conventional, rule-based rewards that compute similarity against a fixed reference image using handcrafted metrics, we propose a generalist reward model, an RL fine-tuned MLLM that evaluates edited results through a set of generated metrics on a case-by-case basis. Then, the reward model provides scalar feedback through multimodal reasoning, enabling reinforcement learning with high-quality, instruction-consistent gradients. We curate an extended dataset with 190k instruction-reasoning pairs and establish a new benchmark for instruction-based image editing. Experiments show that RetouchIQ substantially improves both semantic consistency and perceptual quality over previous MLLM-based and diffusion-based editing systems. Our findings demonstrate the potential of generalist reward-driven MLLM agents as flexible, explainable, and executable assistants for professional image editing.</div>
+        
+        
+        <div class="compact-reason">스포츠 이미지 자동 보정 핵심 기술입니다. MLLM 에이전트가 동작 포착 후 전문가 수준 보정을 실시간으로 수행해 제품 경쟁력 향상.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17442v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17442v1">WarpRec: Unifying Academic Rigor and Industrial Scale for Responsible, Reproducible, and Efficient Recommendation</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">82.4</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.IR</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Innovation in Recommender Systems is currently impeded by a fractured ecosystem, where researchers must choose between the ease of in-memory experimentation and the costly, complex rewriting required for distributed industrial engines. To bridge this gap, we present WarpRec, a high-performance framework that eliminates this trade-off through a novel, backend-agnostic architecture. It includes 50+ state-of-the-art algorithms, 40 metrics, and 19 filtering and splitting strategies that seamlessly transition from local execution to distributed training and optimization. The framework enforces ecological responsibility by integrating CodeCarbon for real-time energy tracking, showing that scalability need not come at the cost of scientific integrity or sustainability. Furthermore, WarpRec anticipates the shift toward Agentic AI, leading Recommender Systems to evolve from static ranking engines into interactive tools within the Generative AI ecosystem. In summary, WarpRec not only bridges the gap between academia and industry but also can serve as the architectural backbone for the next generation of sustainable, agent-ready Recommender Systems. Code is available at https://github.com/sisinflab/warprec/</div>
+        
+        
+        <div class="compact-reason">플랫폼의 콘텐츠 추천 기능에 직접 활용 가능합니다. 산업 규모의 효율성을 보장하며 사용자 맞춤형 하이라이트 배포 체계 구축을 가능하게 합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17077v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17077v1">Cross Pseudo Labeling For Weakly Supervised Video Anomaly Detection</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Weakly supervised video anomaly detection aims to detect anomalies and identify abnormal categories with only video-level labels. We propose CPL-VAD, a dual-branch framework with cross pseudo labeling. The binary anomaly detection branch focuses on snippet-level anomaly localization, while the category classification branch leverages vision-language alignment to recognize abnormal event categories. By exchanging pseudo labels, the two branches transfer complementary strengths, combining temporal precision with semantic discrimination. Experiments on XD-Violence and UCF-Crime demonstrate that CPL-VAD achieves state-of-the-art performance in both anomaly detection and abnormal category classification.</div>
+        
+        
+        <div class="compact-reason">경기 하이라이트 자동 탐지 핵심 솔루션입니다. 약한 감독 학습으로 골·파울 등 주요 장면 검출 정확도를 높여 편집 효율성 극대화.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17186v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17186v1">Selective Training for Large Vision Language Models via Visual Information Gain</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Large Vision Language Models (LVLMs) have achieved remarkable progress, yet they often suffer from language bias, producing answers without relying on visual evidence. While prior work attempts to mitigate this issue through decoding strategies, architectural modifications, or curated instruction data, they typically lack a quantitative measure of how much individual training samples or tokens actually benefit from the image. In this work, we introduce Visual Information Gain (VIG), a perplexity-based metric that measures the reduction in prediction uncertainty provided by visual input. VIG enables fine-grained analysis at both sample and token levels, effectively highlighting visually grounded elements such as colors, spatial relations, and attributes. Leveraging this, we propose a VIG-guided selective training scheme that prioritizes high-VIG samples and tokens. This approach improves visual grounding and mitigates language bias, achieving superior performance with significantly reduced supervision by focusing exclusively on visually informative samples and tokens.</div>
+        
+        
+        <div class="compact-reason">시각적 근거 강화 기술로 운동 장면 분석 정확도 향상에 필수적. 언어 편향 감소로 색상, 공간 관계 등 객관적 분석 가능.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17071v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17071v1">AdvSynGNN: Structure-Adaptive Graph Neural Nets via Adversarial Synthesis and Self-Corrective Propagation</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Graph neural networks frequently encounter significant performance degradation when confronted with structural noise or non-homophilous topologies. To address these systemic vulnerabilities, we present AdvSynGNN, a comprehensive architecture designed for resilient node-level representation learning. The proposed framework orchestrates multi-resolution structural synthesis alongside contrastive objectives to establish geometry-sensitive initializations. We develop a transformer backbone that adaptively accommodates heterophily by modulating attention mechanisms through learned topological signals. Central to our contribution is an integrated adversarial propagation engine, where a generative component identifies potential connectivity alterations while a discriminator enforces global coherence. Furthermore, label refinement is achieved through a residual correction scheme guided by per-node confidence metrics, which facilitates precise control over iterative stability. Empirical evaluations demonstrate that this synergistic approach effectively optimizes predictive accuracy across diverse graph distributions while maintaining computational efficiency. The study concludes with practical implementation protocols to ensure the robust deployment of the AdvSynGNN system in large-scale environments.</div>
+        
+        
+        <div class="compact-reason">그래프 신경망 강화로 선수 간 상호작용 분석 가능. 노이즈 내성 높아 실외 경기 변수(광선/장애물)에서도 포즈·전략 예측 안정화.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17625v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17625v1">Catastrophic Forgetting Resilient One-Shot Incremental Federated Learning</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.DC</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Modern big-data systems generate massive, heterogeneous, and geographically dispersed streams that are large-scale and privacy-sensitive, making centralization challenging. While federated learning (FL) provides a privacy-enhancing training mechanism, it assumes a static data flow and learns a collaborative model over multiple rounds, making learning with \textit{incremental} data challenging in limited-communication scenarios. This paper presents One-Shot Incremental Federated Learning (OSI-FL), the first FL framework that addresses the dual challenges of communication overhead and catastrophic forgetting. OSI-FL communicates category-specific embeddings, devised by a frozen vision-language model (VLM) from each client in a single communication round, which a pre-trained diffusion model at the server uses to synthesize new data similar to the client&#39;s data distribution. The synthesized samples are used on the server for training. However, two challenges still persist: i) tasks arriving incrementally need to retrain the global model, and ii) as future tasks arrive, retraining the model introduces catastrophic forgetting. To this end, we augment training with Selective Sample Retention (SSR), which identifies and retains the top-p most informative samples per category and task pair based on sample loss. SSR bounds forgetting by ensuring that representative retained samples are incorporated into training in further iterations. The experimental results indicate that OSI-FL outperforms baselines, including traditional and one-shot FL approaches, in both class-incremental and domain-incremental scenarios across three benchmark datasets.</div>
+        
+        
+        <div class="compact-reason">에지 디바이스 증분 데이터 처리 최적화. 단일 통신으로 프라이버시 보장하며 하이라이트 영상 지속 학습 가능.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17095v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17095v1">FLoRG: Federated Fine-tuning with Low-rank Gram Matrices and Procrustes Alignment</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Parameter-efficient fine-tuning techniques such as low-rank adaptation (LoRA) enable large language models (LLMs) to adapt to downstream tasks efficiently. Federated learning (FL) further facilitates this process by enabling collaborative fine-tuning across distributed clients without sharing private data. However, the use of two separate low-rank matrices in LoRA for federated fine-tuning introduces two types of challenges. The first challenge arises from the error induced by separately aggregating those two low-rank matrices. The second challenge occurs even when the product of two low-rank matrices is aggregated. The server needs to recover factors via matrix decomposition, which is non-unique and can introduce decomposition drift. To tackle the aforementioned challenges, we propose FLoRG, a federated fine-tuning framework which employs a single low-rank matrix for fine-tuning and aggregates its Gram matrix (i.e., the matrix of inner products of its column vectors), eliminating the aggregation error while also reducing the communication overhead. FLoRG minimizes the decomposition drift by introducing a Procrustes alignment approach which aligns the decomposed matrix between consecutive fine-tuning rounds for consistent updates. We theoretically analyze the convergence of FLoRG and prove that adopting the Procrustes alignment results in a tighter convergence bound. Experimental results across multiple LLM fine-tuning benchmarks demonstrate that FLoRG outperforms five state-of-the-art baseline schemes in the downstream task accuracy and can reduce the communication overhead by up to 2041$\times$.</div>
+        
+        
+        <div class="compact-reason">에지 기기 협업 미세 조정 효율성 증대. 통신 오버헤드 2041배 감소로 다수 디바이스 실시간 협업 분석 가능.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17555v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17555v1">GraphThinker: Reinforcing Video Reasoning with Event Graph Thinking</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Video reasoning requires understanding the causal relationships between events in a video. However, such relationships are often implicit and costly to annotate manually. While existing multimodal large language models (MLLMs) often infer event relations through dense captions or video summaries for video reasoning, such modeling still lacks causal understanding. Without explicit causal structure modeling within and across video events, these models suffer from hallucinations during the video reasoning. In this work, we propose GraphThinker, a reinforcement finetuning-based method that constructs structural event-level scene graphs and enhances visual grounding to jointly reduce hallucinations in video reasoning. Specifically, we first employ an MLLM to construct an event-based video scene graph (EVSG) that explicitly models both intra- and inter-event relations, and incorporate these formed scene graphs into the MLLM as an intermediate thinking process. We also introduce a visual attention reward during reinforcement finetuning, which strengthens video grounding and further mitigates hallucinations. We evaluate GraphThinker on two datasets, RexTime and VidHalluc, where it shows superior ability to capture object and event relations with more precise event localization, reducing hallucinations in video reasoning compared to prior methods.</div>
+        
+        
+        <div class="compact-reason">경기 전략 분석 및 자세 교정에 필수적인 비디오 추론 기술입니다. 이벤트 그래프를 통해 스포츠 동작 간 인과관계 정밀 분석이 가능합니다.</div>
+        
+      </div>
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-below">
+    
+      <div class="empty-message">
+        점수 미달 논문이 없습니다.
+      </div>
+    
+  </div>
+
+  <div class="tab-content tab-panel-excluded">
+    
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.17085v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17085v1">ComptonUNet: A Deep Learning Model for GRB Localization with Compton Cameras under Noisy and Low-Statistic Conditions</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">astro-ph.IM</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">우주 물리학 분야로 스포츠 촬영과 무관함</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.17098v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17098v1">Deep Reinforcement Learning for Optimal Portfolio Allocation: A Comparative Study with Mean-Variance Optimization</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">q-fin.PM</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">금융 분야로 스포츠 촬영과 무관함</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.17478v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17478v1">QuPAINT: Physics-Aware Instruction Tuning Approach to Quantum Material Discovery</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">연구가 양자 재료 발견에 집중되어 스포츠 AI 촬영 장치와 관련 없음</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.17276v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17276v1">RLGT: A reinforcement learning framework for extremal graph theory</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">math.CO</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">그래프 이론에 대한 강화 학습 프레임워크로 스포츠와 무관</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.17318v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17318v1">Evaluating Malleable Job Scheduling in HPC Clusters using Real-World Workloads</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.DC</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">HPC 클러스터의 작업 스케줄링에 관한 연구로 스포츠 AI와 무관</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.17023v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17023v1">Environment-Aware Network-Level Design of Generalized Pinching-Antenna Systems--Part I: Traffic-Aware Case</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.SP</span>
+          
+          <span class="cat-tag">cs.IT</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">안테나 시스템 설계에 관한 연구로 스포츠 AI와 무관</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.17602v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17602v1">MolHIT: Advancing Molecular-Graph Generation with Hierarchical Discrete Diffusion Models</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">Molecular generation unrelated</div>
+        
+      </div>
+      
+    
+  </div>
+</div>
+
+<div class="download-toolbar" id="downloadToolbar">
+  <div class="toolbar-selects">
+    <button class="toolbar-btn" onclick="toggleSelect('all')">All</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier1')">Tier 1</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier2')">Tier 2</button>
+    <button class="toolbar-btn" onclick="toggleSelect('none')">Deselect</button>
+  </div>
+  <button class="toolbar-btn primary" id="downloadBtn" onclick="downloadSelected()">Download 0 PDFs</button>
+</div>
+
+<footer>
+  <p>이 리포트는 arXiv API를 사용하여 생성되었습니다.</p>
+  <p>arXiv 논문의 저작권은 각 저자에게 있습니다.</p>
+  <p>Thank you to arXiv for use of its open access interoperability.</p>
+  <p>run_id: 4 | embedding: en_synthetic
+    | weights: {&#39;embed&#39;: 0.35, &#39;llm&#39;: 0.55, &#39;recency&#39;: 0.1}</p>
+</footer>
+
+<script>
+var READ_KEY = 'paperscout_read';
+var SUPABASE_CFG = {
+  enabled: true,
+  url: 'https://qcvlnebvjzkgbbxainsk.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjdmxuZWJ2anprZ2JieGFpbnNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0ODcyNTgsImV4cCI6MjA4NzA2MzI1OH0.Z53_RbpMnN3U6eyMlIxq-4h16hhvhawDzjKDb_iSNvI'
+};
+
+/* localStorage helpers */
+function getLocalRead() {
+  try { return JSON.parse(localStorage.getItem(READ_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveLocalRead(arr) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+/* Supabase helpers */
+function supabaseHeaders() {
+  return {
+    'apikey': SUPABASE_CFG.key,
+    'Authorization': 'Bearer ' + SUPABASE_CFG.key,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
+  };
+}
+
+function fetchReadFromSupabase() {
+  if (!SUPABASE_CFG.enabled) return Promise.resolve([]);
+  return fetch(SUPABASE_CFG.url + '/rest/v1/read_papers?select=paper_url', {
+    headers: supabaseHeaders()
+  })
+  .then(function(r) { return r.ok ? r.json() : []; })
+  .then(function(rows) { return rows.map(function(r) { return r.paper_url; }); })
+  .catch(function() { return []; });
+}
+
+function markReadOnSupabase(url) {
+  if (!SUPABASE_CFG.enabled || !url) return;
+  fetch(SUPABASE_CFG.url + '/rest/v1/read_papers', {
+    method: 'POST',
+    headers: Object.assign({}, supabaseHeaders(), {'Prefer': 'return=minimal,resolution=ignore-duplicates'}),
+    body: JSON.stringify({ paper_url: url })
+  }).catch(function() {});
+}
+
+/* Unified read state */
+var _readCache = null;
+
+function getReadPapers() {
+  if (_readCache) return _readCache;
+  _readCache = getLocalRead();
+  return _readCache;
+}
+
+function markAsRead(url) {
+  if (!url) return;
+  var read = getReadPapers();
+  if (read.indexOf(url) === -1) {
+    read.push(url);
+    _readCache = read;
+    saveLocalRead(read);
+  }
+  markReadOnSupabase(url);
+}
+
+function isRead(url) {
+  return getReadPapers().indexOf(url) !== -1;
+}
+
+function applyReadState() {
+  var cards = document.querySelectorAll('[data-paper-url]');
+  var remindHidden = 0;
+  cards.forEach(function(card) {
+    var url = card.dataset.paperUrl;
+    if (!isRead(url)) return;
+    // Remind tab: hide read papers entirely
+    if (card.classList.contains('compact-card--remind')) {
+      card.style.display = 'none';
+      remindHidden++;
+    } else {
+      card.classList.add('paper-read');
+    }
+  });
+  // Update remind tab count
+  var remindLabel = document.querySelector('label[for="tab-remind"]');
+  if (remindLabel) {
+    var total = document.querySelectorAll('.compact-card--remind').length;
+    var visible = total - remindHidden;
+    remindLabel.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 (' + visible + ')';
+  }
+  // Show empty message if all remind papers are hidden
+  var remindPanel = document.querySelector('.tab-panel-remind');
+  if (remindPanel) {
+    var visibleCards = remindPanel.querySelectorAll('.compact-card--remind:not([style*="display: none"])');
+    var emptyMsg = remindPanel.querySelector('.empty-message');
+    if (visibleCards.length === 0 && !emptyMsg) {
+      var msg = document.createElement('div');
+      msg.className = 'empty-message';
+      msg.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 \uB17C\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.';
+      remindPanel.appendChild(msg);
+    }
+  }
+}
+
+function trackClicks() {
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var card = link.closest('[data-paper-url]');
+    if (!card) return;
+    markAsRead(card.dataset.paperUrl);
+    card.classList.add('paper-read');
+    // If remind card, hide after brief delay
+    if (card.classList.contains('compact-card--remind')) {
+      setTimeout(function() {
+        card.style.display = 'none';
+        applyReadState();
+      }, 200);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Apply localStorage state immediately for fast UX
+  applyReadState();
+  trackClicks();
+  // Then merge Supabase data for cross-device sync
+  fetchReadFromSupabase().then(function(remote) {
+    if (!remote || remote.length === 0) return;
+    var local = getLocalRead();
+    var merged = local.slice();
+    var changed = false;
+    remote.forEach(function(url) {
+      if (merged.indexOf(url) === -1) {
+        merged.push(url);
+        changed = true;
+      }
+    });
+    if (changed) {
+      _readCache = merged;
+      saveLocalRead(merged);
+      applyReadState();
+    }
+  });
+});
+
+function showAllTier1() {
+  document.querySelectorAll('.paper-card--collapsed').forEach(function(el) {
+    el.classList.remove('paper-card--collapsed');
+  });
+  var btn = document.getElementById('showMoreBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+function toggleSelect(filter) {
+  var boxes = document.querySelectorAll('.tab-panel-today .paper-checkbox');
+  boxes.forEach(function(cb) {
+    if (filter === 'none') { cb.checked = false; }
+    else if (filter === 'all') { cb.checked = true; }
+    else if (filter === 'tier1') { cb.checked = cb.dataset.tier === '1'; }
+    else if (filter === 'tier2') { cb.checked = cb.dataset.tier === '2'; }
+  });
+  updateToolbar();
+}
+
+function updateToolbar() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var toolbar = document.getElementById('downloadToolbar');
+  var btn = document.getElementById('downloadBtn');
+  var count = 0;
+  checked.forEach(function(cb) { if (cb.dataset.pdf) count++; });
+  if (checked.length > 0) {
+    toolbar.classList.add('visible');
+    document.body.classList.add('toolbar-active');
+    btn.textContent = 'Download ' + count + ' PDFs';
+    btn.disabled = (count === 0);
+  } else {
+    toolbar.classList.remove('visible');
+    document.body.classList.remove('toolbar-active');
+  }
+}
+
+function downloadSelected() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var urls = [];
+  checked.forEach(function(cb) { if (cb.dataset.pdf) urls.push(cb.dataset.pdf); });
+  if (urls.length === 0) return;
+  urls.forEach(function(url, i) {
+    setTimeout(function() { window.open(url, '_blank'); }, i * 300);
+  });
+}
+</script>
+
+</body>
+</html>
