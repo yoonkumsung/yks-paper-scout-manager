@@ -602,6 +602,22 @@ class SupabaseDBManager:
             (multi_topic, run_id, paper_key),
         )
 
+    def get_seen_paper_keys(self, rolling_days: int = 30) -> set[tuple[str, str]]:
+        """Return (paper_key, topic_slug) pairs evaluated within rolling_days."""
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=rolling_days)).isoformat()
+        cur = self._conn.cursor()
+        cur.execute(
+            """
+            SELECT DISTINCT pe.paper_key, r.topic_slug
+              FROM paper_evaluations pe
+              JOIN runs r ON pe.run_id = r.run_id
+             WHERE r.window_start_utc >= %s
+            """,
+            (cutoff,),
+        )
+        rows = cur.fetchall()
+        return {(row["paper_key"], row["topic_slug"]) for row in rows}
+
     def commit(self) -> None:
         """Commit pending database changes."""
         self._conn.commit()

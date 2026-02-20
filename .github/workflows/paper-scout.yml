@@ -29,7 +29,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 jobs:
@@ -63,30 +63,11 @@ jobs:
           path: |
             data/keyword_cache.json
             data/model_caps.json
+            data/issue_map.json
+            data/weekly_done.flag
           key: paper-scout-data-${{ github.sha }}
           restore-keys: |
             paper-scout-data-
-
-      - name: Restore keyword cache
-        run: |
-          if [ -n "${{ secrets.PAPER_SCOUT_KEYWORD_CACHE }}" ]; then
-            mkdir -p data
-            echo "${{ secrets.PAPER_SCOUT_KEYWORD_CACHE }}" | base64 -d > data/keyword_cache.json
-          fi
-
-      - name: Restore model caps
-        run: |
-          if [ -n "${{ secrets.PAPER_SCOUT_MODEL_CAPS }}" ]; then
-            mkdir -p data
-            echo "${{ secrets.PAPER_SCOUT_MODEL_CAPS }}" | base64 -d > data/model_caps.json
-          fi
-
-      - name: Restore last success
-        run: |
-          if [ ! -f data/last_success.json ] && [ -n "${{ secrets.PAPER_SCOUT_LAST_SUCCESS }}" ]; then
-            mkdir -p data
-            echo "${{ secrets.PAPER_SCOUT_LAST_SUCCESS }}" | base64 -d > data/last_success.json
-          fi
 
       - name: Check schedule enabled
         id: schedule-check
@@ -154,17 +135,9 @@ jobs:
           path: |
             data/keyword_cache.json
             data/model_caps.json
+            data/issue_map.json
+            data/weekly_done.flag
           key: paper-scout-data-${{ github.sha }}
-
-      - name: Commit metadata
-        if: (success() || failure()) && steps.schedule-check.outputs.skip != 'true'
-        run: |
-          git config user.name "paper-scout[bot]"
-          git config user.email "paper-scout[bot]@users.noreply.github.com"
-          git add -f data/seen_items.jsonl data/issue_map.json data/usage/ data/weekly_done.flag data/last_success.json data/model_caps.json 2>/dev/null || true
-          git diff --cached --quiet || git commit -m "chore: update metadata [skip ci]"
-          git push
-        continue-on-error: true
 
 
       - name: Upload debug artifacts

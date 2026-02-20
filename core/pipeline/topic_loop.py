@@ -555,9 +555,6 @@ class TopicLoopOrchestrator:
                 dedup.mark_seen(sp.get("paper_key", ""), slug)
             dedup.save_seen_items()
 
-            # Update last_success.json
-            self._search_window.update_last_success(slug, window_end)
-
             # GitHub Issue upsert (optional, skip on missing config)
             self._step_github_issue(
                 topic, display_date_kst, summarized_papers, total_output
