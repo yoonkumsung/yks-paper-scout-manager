@@ -654,6 +654,25 @@ class PostLoopProcessor:
                         else:
                             shutil.copy2(src, dst)
 
+                    # Ensure git user config is set in worktree (needed in CI)
+                    subprocess.run(
+                        ["git", "config", "user.name", "paper-scout[bot]"],
+                        cwd=worktree_dir,
+                        capture_output=True,
+                        timeout=10,
+                    )
+                    subprocess.run(
+                        [
+                            "git",
+                            "config",
+                            "user.email",
+                            "paper-scout[bot]@users.noreply.github.com",
+                        ],
+                        cwd=worktree_dir,
+                        capture_output=True,
+                        timeout=10,
+                    )
+
                     # Git add, commit, push in worktree
                     subprocess.run(
                         ["git", "add", "-A"],
