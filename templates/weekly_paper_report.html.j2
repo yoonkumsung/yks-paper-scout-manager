@@ -1,0 +1,770 @@
+{% extends "base.html.j2" %}
+
+{% block title %}Weekly Paper Report: {{ date_str }}{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1>Weekly Paper Report</h1>
+  <div class="stats">
+    <span>{{ date_str }}</span>
+    <span>ISO {{ iso_year }}-W{{ "%02d"|format(iso_week) }}</span>
+  </div>
+</div>
+
+<div class="tabs">
+  {# Fix #2: Tab order A-B-C-D-E #}
+  <input type="radio" name="intel-tab" id="intel-tab-exec" checked>
+  <input type="radio" name="intel-tab" id="intel-tab-radar">
+  <input type="radio" name="intel-tab" id="intel-tab-top">
+  <input type="radio" name="intel-tab" id="intel-tab-product">
+  <input type="radio" name="intel-tab" id="intel-tab-network">
+
+  <div class="tab-labels">
+    <label for="intel-tab-exec">A. Executive</label>
+    <label for="intel-tab-radar">B. Tech Radar</label>
+    <label for="intel-tab-top">C. Top Papers</label>
+    <label for="intel-tab-product">D. Product</label>
+    <label for="intel-tab-network">E. Network</label>
+  </div>
+
+  {# ================================================================ #}
+  {# Section A: Executive Summary                                      #}
+  {# ================================================================ #}
+  {% set exec = sections.get("executive", {}) %}
+  {% set metrics = exec.get("metrics", {}) %}
+  <div class="tab-content intel-panel-exec">
+    <div class="intel-section-desc">
+      이번 주 논문 수집/평가 핵심 지표와 4주간 추세를 요약합니다.
+    </div>
+
+    {# LLM Briefing #}
+    {% if exec.get("llm_briefing") %}
+    <div class="intel-briefing">
+      <div class="intel-briefing-icon">AI</div>
+      <div class="intel-briefing-text">{{ exec.llm_briefing }}</div>
+    </div>
+    {% endif %}
+
+    {# KPI Cards #}
+    {% if metrics %}
+    <div class="intel-kpi-grid">
+      {% for label, key, wow_key in [
+        ("Evaluated", "total_evaluated", ""),
+        ("Tier 1", "tier1_count", ""),
+        ("cs.CV", "cs_cv_count", "cs_cv_wow"),
+        ("Keyword Hits", "keyword_hits", "keyword_hits_wow"),
+        ("Avg Score", "avg_score", "avg_score_wow"),
+      ] %}
+      <div class="intel-kpi-card">
+        <div class="intel-kpi-value">{{ metrics.get(key, 0) }}</div>
+        <div class="intel-kpi-label">{{ label }}</div>
+        {% if wow_key and metrics.get(wow_key) is not none and metrics.get(wow_key) != "N/A" %}
+        <div class="intel-kpi-wow {% if metrics.get(wow_key, 0) is number and metrics.get(wow_key, 0) > 0 %}wow-up{% elif metrics.get(wow_key, 0) is number and metrics.get(wow_key, 0) < 0 %}wow-down{% endif %}">
+          {% if metrics.get(wow_key, 0) is number %}{{ "+" if metrics.get(wow_key, 0) > 0 }}{% endif %}{{ metrics.get(wow_key) }} vs prev
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Fix #1: 4-Week Trend with visual bars #}
+    {% set trends = exec.get("trends_4week", {}) %}
+    {% if trends.get("total_papers") %}
+    {% set max_papers = trends.total_papers|max if trends.total_papers|max > 0 else 1 %}
+    {% set max_cv = trends.cs_cv|max if trends.cs_cv and trends.cs_cv|max > 0 else 1 %}
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>4주간 추세</span>
+        <span class="intel-trend-badge {% if trends.trend_direction == 'uptrend' %}trend-up{% elif trends.trend_direction == 'downtrend' %}trend-down{% else %}trend-stable{% endif %}">
+          {% if trends.trend_direction == 'uptrend' %}&#9650; 상승{% elif trends.trend_direction == 'downtrend' %}&#9660; 하락{% else %}&#9654; 안정{% endif %}
+        </span>
+      </div>
+      <div class="intel-trend-chart">
+        {% for i in range(trends.total_papers|length) %}
+        <div class="intel-trend-row">
+          <div class="intel-trend-label">W{{ i + 1 }}{% if i == trends.total_papers|length - 1 %} <span class="intel-this-week">now</span>{% endif %}</div>
+          <div class="intel-trend-bars">
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-papers" style="width: {{ (trends.total_papers[i] / max_papers * 100)|round }}%;">
+                <span>{{ trends.total_papers[i] }}</span>
+              </div>
+            </div>
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-cv" style="width: {{ (trends.cs_cv[i] / max_papers * 100)|round }}%;">
+                <span>{{ trends.cs_cv[i] }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="intel-trend-score">{{ trends.avg_score[i] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="intel-trend-legend">
+        <span><span class="intel-legend-dot" style="background: var(--accent);"></span>Total Papers</span>
+        <span><span class="intel-legend-dot" style="background: #3b82f6;"></span>cs.CV</span>
+        <span class="intel-legend-score">Score &#8594;</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Fix #1: Categories with progress bars #}
+    {% set categories = exec.get("categories", []) %}
+    {% if categories %}
+    {% set max_cat = categories[0].count if categories and categories[0].count > 0 else 1 %}
+    <div class="intel-card">
+      <div class="intel-card-header">상위 카테고리</div>
+      <div class="intel-cat-list">
+        {% for cat in categories %}
+        <div class="intel-cat-row">
+          <div class="intel-cat-name">
+            <span class="cat-tag">{{ cat.name }}</span>
+          </div>
+          <div class="intel-cat-bar-wrap">
+            <div class="intel-cat-bar" style="width: {{ (cat.count / max_cat * 100)|round }}%;"></div>
+          </div>
+          <div class="intel-cat-count">{{ cat.count }}</div>
+          <div class="intel-cat-wow {% if cat.wow_pct is string and cat.wow_pct.startswith('+') %}wow-up{% elif cat.wow_pct is string and cat.wow_pct.startswith('-') %}wow-down{% endif %}">
+            {{ cat.wow_pct }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# Remind status #}
+    {% set remind = exec.get("remind", {}) %}
+    {% if remind %}
+    <div class="intel-remind-bar">
+      <span class="intel-remind-item">
+        <span class="intel-remind-dot" style="background: #22c55e;"></span>
+        Graduated <strong>{{ remind.graduated_count }}</strong>
+      </span>
+      <span class="intel-remind-item">
+        <span class="intel-remind-dot" style="background: #f59e0b;"></span>
+        Active <strong>{{ remind.active_count }}</strong>
+      </span>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ================================================================ #}
+  {# Section B: Tech Radar                                             #}
+  {# ================================================================ #}
+  {% set radar = sections.get("tech_radar", {}) %}
+  <div class="tab-content intel-panel-radar">
+    <div class="intel-section-desc">
+      설정된 키워드의 이번 주 등장 빈도, 4주 추세, 자동 탐지된 신규/부상 키워드를 분석합니다.
+    </div>
+
+    {# TF-IDF: Emerging Keywords (most important, show first) #}
+    {% set tfidf = radar.get("tfidf", {}) %}
+    {% set tfidf_kws = tfidf.get("keywords", []) %}
+    {% if tfidf_kws %}
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>자동 탐지 키워드</span>
+        <span class="intel-card-sub">TF-IDF 분석으로 이번 주 논문에서 자동 추출한 주요 키워드</span>
+      </div>
+      <div class="intel-tfidf-grid">
+        {% for kw in tfidf_kws %}
+        <div class="intel-tfidf-tag intel-tfidf-{{ kw.classification|lower }}">
+          <span class="intel-tfidf-label">{{ kw.classification }}</span>
+          <span class="intel-tfidf-name">{{ kw.keyword }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="intel-tfidf-legend">
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-new">NEW</span> 이번 주 새로 등장</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-rising">RISING</span> 급격히 증가</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-stable">STABLE</span> 유지</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-falling">FALLING</span> 감소 중</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-disappeared">GONE</span> 사라짐</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Keyword Tracking Groups #}
+    {% set kw_groups = radar.get("keyword_groups", {}) %}
+    {% if kw_groups %}
+    {% for group_name, group_data in kw_groups.items() %}
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>{{ group_name }}</span>
+        <span class="intel-card-sub">추적 키워드의 이번 주 등장 및 4주 추세</span>
+      </div>
+      {% if group_data.get("llm_analysis") %}
+      <div class="intel-briefing" style="margin-bottom: 0.8rem;">
+        <div class="intel-briefing-icon">AI</div>
+        <div class="intel-briefing-text">{{ group_data.llm_analysis }}</div>
+      </div>
+      {% endif %}
+      <div class="intel-kw-list">
+        {% for kw in group_data.get("keywords", []) %}
+        {% set max_spark = kw.sparkline_4w|max if kw.sparkline_4w and kw.sparkline_4w|max > 0 else 1 %}
+        <div class="intel-kw-row">
+          <div class="intel-kw-name">{{ kw.keyword }}</div>
+          <div class="intel-kw-count">
+            <strong>{{ kw.count }}</strong>
+            {% if kw.count_wow is number and kw.count_wow != 0 %}
+            <span class="{% if kw.count_wow > 0 %}wow-up{% else %}wow-down{% endif %}">
+              {{ "+" if kw.count_wow > 0 }}{{ kw.count_wow }}
+            </span>
+            {% elif kw.count_wow == "N/A" %}
+            <span class="wow-na">N/A</span>
+            {% endif %}
+          </div>
+          <div class="intel-kw-spark">
+            {% for val in kw.sparkline_4w %}
+            <div class="intel-spark-bar" style="height: {{ (val / max_spark * 24)|round|int }}px;" title="W{{ loop.index }}: {{ val }}"></div>
+            {% endfor %}
+          </div>
+          <div class="intel-kw-papers">
+            {% for p in kw.get("papers", [])[:2] %}
+            <a href="{{ p.url }}" class="intel-kw-paper-link" title="{{ p.title }}">{{ p.title[:45] }}{% if p.title|length > 45 %}...{% endif %} <span class="intel-kw-paper-score">{{ p.score }}</span></a>
+            {% endfor %}
+            {% if not kw.get("papers") %}
+            <span class="intel-muted">-</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {# Co-occurrence #}
+    {% set co_occ = radar.get("co_occurrence", []) %}
+    {% if co_occ %}
+    {% set max_co = co_occ[0].count if co_occ else 1 %}
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>키워드 동시 출현</span>
+        <span class="intel-card-sub">같은 논문에서 함께 등장한 키워드 조합</span>
+      </div>
+      <div class="intel-co-list">
+        {% for item in co_occ %}
+        <div class="intel-co-row">
+          <div class="intel-co-pair">
+            <span class="intel-co-kw">{{ item.pair[0] }}</span>
+            <span class="intel-co-plus">+</span>
+            <span class="intel-co-kw">{{ item.pair[1] }}</span>
+          </div>
+          <div class="intel-co-bar-wrap">
+            <div class="intel-co-bar" style="width: {{ (item.count / max_co * 100)|round }}%;"></div>
+          </div>
+          <div class="intel-co-count">{{ item.count }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not kw_groups and not co_occ and not tfidf_kws %}
+    <div class="empty-message">Tech Radar 데이터가 없습니다. config.yaml에서 키워드를 설정해주세요.</div>
+    {% endif %}
+  </div>
+
+  {# ================================================================ #}
+  {# Section C: Top Papers                                             #}
+  {# ================================================================ #}
+  {% set top = sections.get("top_papers", {}) %}
+  {% set papers = top.get("papers", []) %}
+  <div class="tab-content intel-panel-top">
+    <div class="intel-section-desc">
+      이번 주 평가 점수 기준 상위 논문과 2회 추천된 졸업(Graduated) 논문입니다.
+    </div>
+
+    {% if papers %}
+    {% for p in papers %}
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#{{ loop.index }}</span>
+        <span class="paper-title">
+          <a href="{{ p.url }}">{{ p.title }}</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: {{ [p.final_score|default(0), 100]|min }}%;"></div>
+        </div>
+        <span class="score-detail">{{ p.final_score|default(0) }}</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">{{ p.topic_slug }}</span>
+        {% if p.re_appeared %}
+        <span class="lowered-tag">re-appeared</span>
+        {% endif %}
+      </div>
+      {% if p.keyword_tags %}
+      <div class="categories">
+        {% for t in p.keyword_tags %}
+        <span class="cat-tag" style="background: var(--tag-bg); color: var(--tag-fg);">{{ t }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if p.categories %}
+      <div class="categories">
+        {% for c in p.categories %}
+        <span class="cat-tag">{{ c }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if p.summary_ko %}
+      <div class="abstract-section">{{ p.summary_ko }}</div>
+      {% endif %}
+      {% if p.reason_ko %}
+      <div class="compact-reason">{{ p.reason_ko }}</div>
+      {% endif %}
+      {# Fix #3: "abs" -> "View Paper" #}
+      <div class="paper-links">
+        <a href="{{ p.url|replace('/abs/', '/pdf/') }}">PDF</a>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-message">이번 주 등록된 논문이 없습니다.</div>
+    {% endif %}
+
+    {% set graduated = top.get("graduated_reminds", []) %}
+    {% if graduated %}
+    <div class="tier-divider">Graduated (2회 추천 완료)</div>
+    {% for g in graduated %}
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="{{ g.url }}">{{ g.title }}</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">{{ g.final_score|default("N/A") }}</span>
+          <span class="recommend-count">{{ g.graduation_date }}</span>
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+
+  {# ================================================================ #}
+  {# Section D: Product Intelligence                                   #}
+  {# ================================================================ #}
+  {% set product = sections.get("product_intel", {}) %}
+  <div class="tab-content intel-panel-product">
+    <div class="intel-section-desc">
+      설정된 제품 라인별로 관련 논문을 분류하고, 주간 동향과 핵심 논문을 보여줍니다.
+    </div>
+
+    {# LLM Strategy #}
+    {% if product.get("llm_strategy") %}
+    <div class="intel-briefing">
+      <div class="intel-briefing-icon">AI</div>
+      <div class="intel-briefing-text">{{ product.llm_strategy }}</div>
+    </div>
+    {% endif %}
+
+    {# Product Line Cards #}
+    {% set plines = product.get("product_lines", []) %}
+    {% if plines %}
+    {% set max_pl = plines|map(attribute='papers_count')|max if plines and plines|map(attribute='papers_count')|max > 0 else 1 %}
+    <div class="intel-product-grid">
+      {% for pl in plines %}
+      <div class="intel-product-card">
+        <div class="intel-product-header">
+          <span class="intel-product-rank">#{{ loop.index }}</span>
+          <span class="intel-product-name">{{ pl.name }}</span>
+          {% if pl.count_wow is number and pl.count_wow > 0 %}
+          <span class="intel-product-badge wow-up">+{{ pl.count_wow }}</span>
+          {% elif pl.count_wow is number and pl.count_wow < 0 %}
+          <span class="intel-product-badge wow-down">{{ pl.count_wow }}</span>
+          {% endif %}
+        </div>
+
+        <div class="intel-product-stats">
+          <div class="intel-product-stat">
+            <div class="intel-product-stat-val">{{ pl.papers_count }}</div>
+            <div class="intel-product-stat-label">Papers</div>
+          </div>
+          <div class="intel-product-stat">
+            <div class="intel-product-stat-val">{{ pl.avg_score|round(1) }}</div>
+            <div class="intel-product-stat-label">Avg Score</div>
+          </div>
+        </div>
+
+        {# 4-week mini trend bar #}
+        {% if pl.trend_4w %}
+        {% set max_t = pl.trend_4w|max if pl.trend_4w|max > 0 else 1 %}
+        <div class="intel-product-trend">
+          <div class="intel-product-trend-label">4주 추세</div>
+          <div class="intel-product-trend-bars">
+            {% for val in pl.trend_4w %}
+            <div class="intel-product-trend-col">
+              <div class="intel-product-trend-bar" style="height: {{ (val / max_t * 32)|round|int }}px;{% if loop.last %} background: var(--accent);{% endif %}"></div>
+              <div class="intel-product-trend-val">{{ val }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Top paper #}
+        {% if pl.top_paper %}
+        <div class="intel-product-top">
+          <div class="intel-product-top-label">Top Paper</div>
+          <a href="{{ pl.top_paper.url }}" class="intel-product-top-link">{{ pl.top_paper.title }}</a>
+          <span class="intel-product-top-score">{{ pl.top_paper.score }}</span>
+        </div>
+        {% endif %}
+
+        {# Paper list #}
+        {% if pl.papers %}
+        <div class="intel-product-papers">
+          {% for p in pl.papers %}
+          <div class="intel-product-paper-row">
+            <span class="intel-product-paper-title">{{ p.title }}</span>
+            <span class="intel-product-paper-score">{{ p.score }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-message">제품 라인이 설정되지 않았거나 매칭 논문이 없습니다.</div>
+    {% endif %}
+  </div>
+
+  {# ================================================================ #}
+  {# Section E: Research Network                                       #}
+  {# ================================================================ #}
+  {% set research = sections.get("research_net", {}) %}
+  <div class="tab-content intel-panel-network">
+    <div class="intel-section-desc">
+      최근 4주간 고점수(60+) 논문을 2편 이상 발표한 주목할 연구자와, 주요 학회에 제출된 논문을 추적합니다.
+    </div>
+
+    {# Notable Authors as profile cards #}
+    {% set authors = research.get("notable_authors", []) %}
+    {% if authors %}
+    <div class="intel-card">
+      <div class="intel-card-header">주목할 연구자</div>
+      <div class="intel-author-grid">
+        {% for a in authors %}
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">{{ a.name[0]|upper if a.name else "?" }}</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">{{ a.name }}</div>
+            <div class="intel-author-stats">
+              <span title="4주간 논문 수">{{ a.count }} papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="평균 점수">avg {{ a.avg_score|round(1) }}</span>
+            </div>
+            {% if a.get("this_week") %}
+            <div class="intel-author-papers">
+              {% for p in a.this_week %}
+              <a href="{{ p.url }}" class="intel-author-paper-link">{{ p.title[:50] }}{% if p.title|length > 50 %}...{% endif %}</a>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# Conference Detections as badge cards #}
+    {% set confs = research.get("conference_papers", []) %}
+    {% if confs %}
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>학회 논문 감지</span>
+        <span class="intel-card-sub">comment/title 필드에서 학회명이 감지된 논문</span>
+      </div>
+      <div class="intel-conf-list">
+        {% for c in confs %}
+        <div class="intel-conf-row">
+          <div class="intel-conf-badge">{{ c.conference }}{% if c.year %} {{ c.year }}{% endif %}</div>
+          <div class="intel-conf-paper">
+            <a href="{{ c.url }}">{{ c.title }}</a>
+          </div>
+          <div class="intel-conf-score">{{ c.final_score }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not authors and not confs %}
+    <div class="empty-message">Research Network 데이터가 없습니다.</div>
+    {% endif %}
+  </div>
+</div>
+
+{# ================================================================ #}
+{# Intelligence-specific styles                                      #}
+{# ================================================================ #}
+<style>
+  /* Tab switching */
+  #intel-tab-exec:checked ~ .tab-labels label[for="intel-tab-exec"],
+  #intel-tab-radar:checked ~ .tab-labels label[for="intel-tab-radar"],
+  #intel-tab-top:checked ~ .tab-labels label[for="intel-tab-top"],
+  #intel-tab-product:checked ~ .tab-labels label[for="intel-tab-product"],
+  #intel-tab-network:checked ~ .tab-labels label[for="intel-tab-network"] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  #intel-tab-exec:checked ~ .intel-panel-exec { display: block; }
+  #intel-tab-radar:checked ~ .intel-panel-radar { display: block; }
+  #intel-tab-top:checked ~ .intel-panel-top { display: block; }
+  #intel-tab-product:checked ~ .intel-panel-product { display: block; }
+  #intel-tab-network:checked ~ .intel-panel-network { display: block; }
+
+  /* Section description */
+  .intel-section-desc {
+    font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;
+    padding: 0.6rem 0.8rem; background: var(--card-bg); border-radius: 6px;
+    border-left: 3px solid var(--accent); line-height: 1.5;
+  }
+
+  /* AI Briefing */
+  .intel-briefing {
+    display: flex; gap: 0.6rem; align-items: flex-start;
+    padding: 0.8rem; background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; margin-bottom: 1rem;
+  }
+  .intel-briefing-icon {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: white; font-size: 0.7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intel-briefing-text { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
+
+  /* KPI Grid */
+  .intel-kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.5rem; margin-bottom: 1rem;
+  }
+  .intel-kpi-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 0.8rem; text-align: center;
+  }
+  .intel-kpi-value { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+  .intel-kpi-label { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+  .intel-kpi-wow { font-size: 0.7rem; margin-top: 0.25rem; font-weight: 600; }
+
+  /* WoW colors */
+  .wow-up { color: #22c55e; }
+  .wow-down { color: #ef4444; }
+  .wow-na { color: var(--muted); font-size: 0.7rem; }
+
+  /* Generic card */
+  .intel-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 1rem; margin-bottom: 0.8rem;
+  }
+  .intel-card-header {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-weight: 700; font-size: 0.95rem; margin-bottom: 0.8rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--card-border);
+  }
+  .intel-card-sub { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+
+  /* 4-Week Trend Chart */
+  .intel-trend-chart { display: flex; flex-direction: column; gap: 0.4rem; }
+  .intel-trend-row { display: flex; align-items: center; gap: 0.5rem; }
+  .intel-trend-label { width: 50px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-align: right; }
+  .intel-this-week {
+    font-size: 0.6rem; background: var(--accent); color: white;
+    padding: 0 4px; border-radius: 3px; vertical-align: middle;
+  }
+  .intel-trend-bars { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .intel-bar-group { height: 16px; }
+  .intel-bar {
+    height: 100%; border-radius: 3px; min-width: 2px;
+    display: flex; align-items: center; transition: width 0.3s;
+  }
+  .intel-bar span { font-size: 0.7rem; font-weight: 600; padding-left: 6px; color: white; white-space: nowrap; }
+  .intel-bar-papers { background: var(--accent); }
+  .intel-bar-cv { background: #3b82f6; }
+  .intel-trend-score {
+    width: 40px; text-align: right; font-size: 0.8rem;
+    font-weight: 600; color: var(--fg);
+  }
+  .intel-trend-legend {
+    display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;
+    font-size: 0.75rem; color: var(--muted);
+  }
+  .intel-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  .intel-legend-score { margin-left: auto; }
+  .intel-trend-badge {
+    font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+  }
+  .trend-up { background: #22c55e20; color: #22c55e; }
+  .trend-down { background: #ef444420; color: #ef4444; }
+  .trend-stable { background: #6b728020; color: #6b7280; }
+
+  /* Category bars */
+  .intel-cat-list { display: flex; flex-direction: column; gap: 0.35rem; }
+  .intel-cat-row { display: flex; align-items: center; gap: 0.5rem; }
+  .intel-cat-name { width: 70px; }
+  .intel-cat-bar-wrap { flex: 1; height: 18px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .intel-cat-bar { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; opacity: 0.7; }
+  .intel-cat-count { width: 35px; text-align: right; font-size: 0.85rem; font-weight: 600; }
+  .intel-cat-wow { width: 55px; text-align: right; font-size: 0.75rem; font-weight: 600; }
+
+  /* Remind bar */
+  .intel-remind-bar {
+    display: flex; gap: 1.5rem; margin-top: 0.8rem; padding: 0.5rem 0.8rem;
+    background: var(--card-bg); border-radius: 6px; font-size: 0.85rem;
+  }
+  .intel-remind-item { display: flex; align-items: center; gap: 0.4rem; }
+  .intel-remind-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Muted text */
+  .intel-muted { color: var(--muted); font-size: 0.8rem; }
+
+  /* TF-IDF tags */
+  .intel-tfidf-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+  .intel-tfidf-tag {
+    display: inline-flex; flex-direction: column; align-items: center;
+    padding: 0.4rem 0.7rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500;
+  }
+  .intel-tfidf-label { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.8; }
+  .intel-tfidf-name { margin-top: 1px; }
+  .intel-tfidf-new { background: #22c55e18; border: 1px solid #22c55e; color: #16a34a; }
+  .intel-tfidf-rising { background: #3b82f618; border: 1px solid #3b82f6; color: #2563eb; }
+  .intel-tfidf-stable { background: #6b728018; border: 1px solid #9ca3af; color: #6b7280; }
+  .intel-tfidf-falling { background: #ef444418; border: 1px solid #ef4444; color: #dc2626; }
+  .intel-tfidf-disappeared { background: #6b728010; border: 1px dashed #9ca3af; color: #9ca3af; text-decoration: line-through; }
+  .intel-tfidf-legend {
+    display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.7rem; color: var(--muted);
+    margin-top: 0.4rem;
+  }
+  .intel-tfidf-tag-sm {
+    display: inline-block; padding: 1px 5px; border-radius: 3px;
+    font-size: 0.6rem; font-weight: 700; vertical-align: middle;
+  }
+
+  /* Keyword tracking rows */
+  .intel-kw-list { display: flex; flex-direction: column; gap: 0.3rem; }
+  .intel-kw-row {
+    display: grid; grid-template-columns: 160px 80px 60px 1fr;
+    align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+  }
+  .intel-kw-row:hover { background: var(--bg); }
+  .intel-kw-name { font-weight: 600; font-size: 0.88rem; }
+  .intel-kw-count { font-size: 0.85rem; }
+  .intel-kw-spark { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+  .intel-spark-bar {
+    width: 10px; background: var(--accent); border-radius: 2px 2px 0 0;
+    min-height: 2px; opacity: 0.6; transition: opacity 0.2s;
+  }
+  .intel-spark-bar:last-child { opacity: 1; }
+  .intel-kw-papers { display: flex; flex-direction: column; gap: 2px; }
+  .intel-kw-paper-link {
+    font-size: 0.78rem; color: var(--fg); text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .intel-kw-paper-link:hover { color: var(--accent); }
+  .intel-kw-paper-score {
+    font-size: 0.7rem; font-weight: 600; color: var(--accent);
+    margin-left: 4px;
+  }
+
+  /* Co-occurrence */
+  .intel-co-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .intel-co-row { display: flex; align-items: center; gap: 0.5rem; }
+  .intel-co-pair { display: flex; align-items: center; gap: 0.3rem; min-width: 250px; }
+  .intel-co-kw {
+    background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 4px;
+    font-size: 0.8rem; font-weight: 500;
+  }
+  .intel-co-plus { font-size: 0.7rem; color: var(--muted); }
+  .intel-co-bar-wrap { flex: 1; height: 14px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .intel-co-bar { height: 100%; background: #8b5cf6; border-radius: 3px; opacity: 0.6; }
+  .intel-co-count { width: 30px; text-align: right; font-size: 0.85rem; font-weight: 600; }
+
+  /* Product Intelligence */
+  .intel-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.8rem; }
+  .intel-product-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;
+  }
+  .intel-product-header { display: flex; align-items: center; gap: 0.5rem; }
+  .intel-product-rank {
+    font-size: 0.75rem; font-weight: 700; color: var(--accent);
+    background: var(--bg); width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intel-product-name { font-weight: 700; font-size: 1rem; flex: 1; }
+  .intel-product-badge { font-size: 0.75rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 4px; }
+  .intel-product-badge.wow-up { background: #22c55e20; }
+  .intel-product-badge.wow-down { background: #ef444420; }
+  .intel-product-stats { display: flex; gap: 1.5rem; }
+  .intel-product-stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+  .intel-product-stat-label { font-size: 0.7rem; color: var(--muted); }
+  .intel-product-trend { }
+  .intel-product-trend-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .intel-product-trend-bars { display: flex; align-items: flex-end; gap: 6px; height: 40px; }
+  .intel-product-trend-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .intel-product-trend-bar { width: 24px; background: var(--card-border); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.3s; }
+  .intel-product-trend-val { font-size: 0.65rem; color: var(--muted); }
+  .intel-product-top { }
+  .intel-product-top-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.15rem; }
+  .intel-product-top-link { font-size: 0.85rem; color: var(--fg); text-decoration: none; }
+  .intel-product-top-link:hover { color: var(--accent); }
+  .intel-product-top-score { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-left: 0.3rem; }
+  .intel-product-papers { border-top: 1px solid var(--card-border); padding-top: 0.4rem; }
+  .intel-product-paper-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.15rem 0; }
+  .intel-product-paper-title { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .intel-product-paper-score { font-weight: 600; color: var(--fg); margin-left: 0.5rem; }
+
+  /* Author Cards */
+  .intel-author-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+  .intel-author-card { display: flex; gap: 0.8rem; padding: 0.6rem; border-radius: 6px; }
+  .intel-author-card:hover { background: var(--bg); }
+  .intel-author-avatar {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+    background: var(--accent); color: white; font-weight: 700; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intel-author-info { flex: 1; min-width: 0; }
+  .intel-author-name { font-weight: 700; font-size: 0.95rem; }
+  .intel-author-stats { font-size: 0.8rem; color: var(--muted); margin-top: 0.1rem; }
+  .intel-author-sep { margin: 0 0.2rem; }
+  .intel-author-papers { margin-top: 0.3rem; display: flex; flex-direction: column; gap: 2px; }
+  .intel-author-paper-link {
+    font-size: 0.8rem; color: var(--fg); text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  }
+  .intel-author-paper-link:hover { color: var(--accent); }
+
+  /* Conference badges */
+  .intel-conf-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .intel-conf-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0; }
+  .intel-conf-badge {
+    flex-shrink: 0; background: var(--accent); color: white;
+    padding: 0.25rem 0.6rem; border-radius: 4px;
+    font-size: 0.8rem; font-weight: 700; min-width: 80px; text-align: center;
+  }
+  .intel-conf-paper { flex: 1; min-width: 0; }
+  .intel-conf-paper a {
+    font-size: 0.88rem; color: var(--fg); text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  }
+  .intel-conf-paper a:hover { color: var(--accent); }
+  .intel-conf-score { font-size: 0.85rem; font-weight: 600; color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .intel-kw-row { grid-template-columns: 1fr; gap: 0.2rem; }
+    .intel-co-pair { min-width: auto; flex-wrap: wrap; }
+    .intel-product-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<footer>
+  <p>Generated by Paper Scout Weekly Paper Report</p>
+</footer>
+{% endblock %}

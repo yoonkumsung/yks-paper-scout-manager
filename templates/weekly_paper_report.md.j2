@@ -1,0 +1,161 @@
+# Weekly Paper Report: {{ date_str }}
+
+> ISO {{ iso_year }}-W{{ "%02d"|format(iso_week) }}
+
+{% set exec = sections.get("executive", {}) %}
+{% set metrics = exec.get("metrics", {}) %}
+{% if metrics %}
+## A. Executive Summary
+
+{% if exec.get("llm_briefing") %}
+{{ exec.llm_briefing }}
+
+{% endif %}
+| Metric | Value | WoW |
+|--------|-------|-----|
+| Evaluated | {{ metrics.total_evaluated }} | - |
+| Tier 1 | {{ metrics.tier1_count }} | - |
+| cs.CV | {{ metrics.cs_cv_count }} | {{ metrics.cs_cv_wow }} |
+| Keyword Hits | {{ metrics.keyword_hits }} | {{ metrics.keyword_hits_wow }} |
+| Avg Score | {{ metrics.avg_score }} | {{ metrics.avg_score_wow }} |
+
+{% set trends = exec.get("trends_4week", {}) %}
+{% if trends.get("total_papers") %}
+### 4-Week Trend ({{ trends.trend_direction }})
+
+| Week | Papers | cs.CV | Avg Score |
+|------|--------|-------|-----------|
+{% for i in range(trends.total_papers|length) %}
+| W{{ i + 1 }} | {{ trends.total_papers[i] }} | {{ trends.cs_cv[i] }} | {{ trends.avg_score[i] }} |
+{% endfor %}
+{% endif %}
+
+{% set categories = exec.get("categories", []) %}
+{% if categories %}
+### Top Categories
+
+| Category | Count | WoW % |
+|----------|-------|-------|
+{% for cat in categories %}
+| {{ cat.name }} | {{ cat.count }} | {{ cat.wow_pct }} |
+{% endfor %}
+{% endif %}
+
+{% set remind = exec.get("remind", {}) %}
+{% if remind %}
+- Graduated Reminds: {{ remind.graduated_count }}
+- Active Reminds: {{ remind.active_count }}
+{% endif %}
+{% endif %}
+
+{% set tech = sections.get("tech_radar", {}) %}
+{% if tech %}
+## B. Tech Radar
+
+{% set kw_groups = tech.get("keyword_groups", {}) %}
+{% for group_name, group_data in kw_groups.items() %}
+### {{ group_name }}
+
+{% if group_data.get("llm_analysis") %}
+> {{ group_data.llm_analysis }}
+
+{% endif %}
+| Keyword | Count | WoW | 4W |
+|---------|-------|-----|----|
+{% for kw in group_data.get("keywords", []) %}
+| {{ kw.keyword }} | {{ kw.count }} | {{ kw.count_wow }} | {{ kw.sparkline_4w|join("-") }} |
+{% endfor %}
+
+{% endfor %}
+{% set co_occ = tech.get("co_occurrence", []) %}
+{% if co_occ %}
+### Co-occurrence
+
+| Pair | Count |
+|------|-------|
+{% for item in co_occ %}
+| {{ item.pair|join(" + ") }} | {{ item.count }} |
+{% endfor %}
+{% endif %}
+
+{% set tfidf_kws = tech.get("tfidf", {}).get("keywords", []) %}
+{% if tfidf_kws %}
+### TF-IDF Keywords
+
+{% for kw in tfidf_kws %}`{{ kw.keyword }}` ({{ kw.classification }}) {% endfor %}
+
+{% endif %}
+{% endif %}
+
+{% set top = sections.get("top_papers", {}) %}
+{% set papers = top.get("papers", []) %}
+{% if papers %}
+## C. Top Papers
+
+{% for p in papers %}
+### {{ loop.index }}. {{ p.title }}{% if p.re_appeared %} (re-appeared){% endif %}
+
+- **Score**: {{ p.final_score }} | **Topic**: {{ p.topic_slug }}
+- **URL**: [{{ p.url }}]({{ p.url }})
+{% if p.keyword_tags %}- **Tags**: {% for t in p.keyword_tags %}`{{ t }}` {% endfor %}
+{% endif %}
+{% if p.summary_ko %}- {{ p.summary_ko }}{% endif %}
+{% if p.reason_ko %}- {{ p.reason_ko }}{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% set graduated = top.get("graduated_reminds", []) %}
+{% if graduated %}
+### Graduated Reminds
+
+{% for g in graduated %}
+- **{{ g.title }}** (score: {{ g.final_score|default("N/A") }}, graduated: {{ g.graduation_date }})
+  [{{ g.url }}]({{ g.url }})
+{% endfor %}
+{% endif %}
+
+{% set product = sections.get("product_intel", {}) %}
+{% if product %}
+## D. Product Intelligence
+
+{% if product.get("llm_strategy") %}
+> {{ product.llm_strategy }}
+
+{% endif %}
+{% for pl in product.get("product_lines", []) %}
+### {{ pl.name }} ({{ pl.papers_count }} papers, avg {{ pl.avg_score|round(1) }}){% if pl.count_wow is number and pl.count_wow != 0 %} [{{ "+" if pl.count_wow > 0 }}{{ pl.count_wow }}]{% endif %}
+
+{% if pl.trend_4w %}- 4W: {{ pl.trend_4w|join(" → ") }}{% endif %}
+{% if pl.top_paper %}- **Top**: [{{ pl.top_paper.title }}]({{ pl.top_paper.url }}) ({{ pl.top_paper.score }}){% endif %}
+{% for p in pl.get("papers", []) %}
+  - {{ p.title }} ({{ p.score }})
+{% endfor %}
+
+{% endfor %}
+{% endif %}
+
+{% set research = sections.get("research_net", {}) %}
+{% if research %}
+## E. Research Network
+
+{% set authors = research.get("notable_authors", []) %}
+{% if authors %}
+### Notable Authors
+
+| Author | Papers | Avg Score |
+|--------|--------|-----------|
+{% for a in authors %}
+| {{ a.name }} | {{ a.count }} | {{ a.avg_score|round(1) }} |
+{% endfor %}
+{% endif %}
+
+{% set confs = research.get("conference_papers", []) %}
+{% if confs %}
+### Conference Detections
+
+{% for c in confs %}
+- **{{ c.conference }}{% if c.year %} {{ c.year }}{% endif %}**: [{{ c.title }}]({{ c.url }}) ({{ c.final_score }})
+{% endfor %}
+{% endif %}
+{% endif %}

@@ -9,7 +9,7 @@ import argparse
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -244,16 +244,31 @@ def run_pipeline(args: argparse.Namespace) -> int:
                 report_dir = config.output.get("report_dir", "tmp/reports")
                 md_path = ""
                 html_path = ""
+                md_content = ""
+                html_content = ""
+                suffix = "_weekly_summary"
 
                 # --- Weekly summary data ---
-                try:
-                    from core.pipeline.weekly_summary import generate_weekly_summary
-                    summary_data = generate_weekly_summary(
-                        db_path=db_path, date_str=today_str,
-                        provider=_provider, connection_string=_conn_str,
-                    )
-                except Exception:
-                    logger.warning("Weekly summary generation failed (non-fatal)", exc_info=True)
+                intel_cfg = config.weekly.get("intelligence", {})
+                if intel_cfg.get("enabled", False):
+                    try:
+                        from core.pipeline.weekly_intelligence import generate_weekly_intelligence
+                        summary_data, md_content, html_content = generate_weekly_intelligence(
+                            db_path=db_path, date_str=today_str, config=config,
+                            provider=_provider, connection_string=_conn_str,
+                            rate_limiter=rate_limiter,
+                        )
+                    except Exception:
+                        logger.warning("Weekly intelligence generation failed (non-fatal)", exc_info=True)
+                else:
+                    try:
+                        from core.pipeline.weekly_summary import generate_weekly_summary
+                        summary_data = generate_weekly_summary(
+                            db_path=db_path, date_str=today_str,
+                            provider=_provider, connection_string=_conn_str,
+                        )
+                    except Exception:
+                        logger.warning("Weekly summary generation failed (non-fatal)", exc_info=True)
 
                 # --- Weekly charts ---
                 try:
@@ -275,22 +290,27 @@ def run_pipeline(args: argparse.Namespace) -> int:
                 # --- Step A: Render HTML and MD ---
                 try:
                     from pathlib import Path
-                    from core.pipeline.weekly_summary import (
-                        render_weekly_summary_html,
-                        render_weekly_summary_md,
-                    )
-
                     Path(report_dir).mkdir(parents=True, exist_ok=True)
 
-                    md_content = render_weekly_summary_md(summary_data, today_str)
-                    md_path = os.path.join(report_dir, f"{today_str}_weekly_summary.md")
+                    if intel_cfg.get("enabled", False):
+                        # Intelligence mode: md_content and html_content already set
+                        suffix = "_weekly_paper_report"
+                    else:
+                        from core.pipeline.weekly_summary import (
+                            render_weekly_summary_html,
+                            render_weekly_summary_md,
+                        )
+                        md_content = render_weekly_summary_md(summary_data, today_str)
+                        html_content = render_weekly_summary_html(
+                            summary_data, today_str, chart_paths=chart_files,
+                        )
+                        suffix = "_weekly_summary"
+
+                    md_path = os.path.join(report_dir, f"{today_str}{suffix}.md")
                     with open(md_path, "w", encoding="utf-8") as f:
                         f.write(md_content)
 
-                    html_content = render_weekly_summary_html(
-                        summary_data, today_str, chart_paths=chart_files,
-                    )
-                    html_path = os.path.join(report_dir, f"{today_str}_weekly_summary.html")
+                    html_path = os.path.join(report_dir, f"{today_str}{suffix}.html")
                     with open(html_path, "w", encoding="utf-8") as f:
                         f.write(html_content)
                     logger.info("Weekly report files: %s, %s", md_path, html_path)
@@ -362,7 +382,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                         gh_pages_url = None
                         if "link" in send_modes and gh_pages_base:
                             gh_pages_url = (
-                                f"{gh_pages_base}/{today_str}_weekly_summary.html"
+                                f"{gh_pages_base}/{today_str}{suffix}.html"
                             )
 
                         display_date = datetime.now(timezone.utc).strftime("%y년 %m월 %d일")
@@ -373,17 +393,37 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
                         allowed_fmts = [f for f in send_modes if f in ("md", "html")]
 
+                        # Build weekly-specific custom message with date range
+                        ref_date = datetime.strptime(today_str, "%Y%m%d")
+                        week_start = ref_date - timedelta(days=ref_date.weekday() + 7)
+                        week_end = week_start + timedelta(days=6)
+                        # Use total evaluated papers count (not just top 10)
+                        sections = summary_data.get("sections", {})
+                        exec_metrics = sections.get("executive", {}).get("metrics", {})
+                        paper_count = exec_metrics.get("total_evaluated", 0)
+                        if paper_count == 0:
+                            paper_count = len(summary_data.get("top_papers", []))
+                        custom_msg = (
+                            f"{week_start.strftime('%y%m%d')}~"
+                            f"{week_end.strftime('%y%m%d')} "
+                            f"Weekly Paper Report"
+                            f" (논문 {paper_count}편)"
+                        )
+                        if gh_pages_url:
+                            custom_msg += f"\n\n{gh_pages_url}"
+
                         payload = NotifyPayload(
                             topic_slug="weekly-summary",
-                            topic_name="Weekly Summary",
+                            topic_name="Weekly Paper Report",
                             display_date=display_date,
                             keywords=[],
-                            total_output=len(summary_data.get("top_papers", [])),
+                            total_output=paper_count or 1,
                             file_paths=file_paths_notify,
                             gh_pages_url=gh_pages_url,
                             notify_mode="file",
                             allowed_formats=allowed_fmts or ["md"],
                             event_type="complete",
+                            custom_message=custom_msg,
                         )
                         success = notifier.notify(payload)
                         if success:

@@ -192,6 +192,46 @@ weekly:
     published_max_days: 90
   visualization:
     enabled: false
+  intelligence:
+    enabled: false
+    must_track_keywords:
+      groups:
+        model_architecture:
+          - transformer
+          - diffusion
+          - attention
+        technique_optimization:
+          - pruning
+          - quantization
+          - distillation
+        domain_application:
+          - autonomous driving
+          - medical imaging
+          - robotics
+    product_lines:
+      search_engine:
+        - visual search
+        - image retrieval
+        - visual understanding
+      content_creation:
+        - image generation
+        - video generation
+        - style transfer
+    conferences:
+      - CVPR
+      - ICCV
+      - ECCV
+      - NeurIPS
+      - ICML
+      - AAAI
+    top_papers_count: 10
+    tfidf_top_n: 20
+    trend_weeks: 4
+    llm:
+      model: ''
+      enabled: true
+      max_input_tokens_per_call: 8000
+      delay_between_calls_sec: 3
 local_ui:
   host: 127.0.0.1
   port: 8585

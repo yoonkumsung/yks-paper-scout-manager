@@ -124,6 +124,18 @@ CREATE TABLE IF NOT EXISTS remind_tracking (
 );
 """
 
+_CREATE_WEEKLY_SNAPSHOTS = """
+CREATE TABLE IF NOT EXISTS weekly_snapshots (
+    iso_year    INTEGER NOT NULL,
+    iso_week    INTEGER NOT NULL,
+    snapshot_date TEXT NOT NULL,
+    section     TEXT NOT NULL,
+    data_json   TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (iso_year, iso_week, section)
+);
+"""
+
 
 def _dt_to_iso(dt: datetime | None) -> str | None:
     """Convert a datetime to ISO 8601 string or return None."""
@@ -190,6 +202,7 @@ class DBManager:
         cur.execute(_CREATE_RUNS)
         cur.execute(_CREATE_QUERY_STATS)
         cur.execute(_CREATE_REMIND_TRACKING)
+        cur.execute(_CREATE_WEEKLY_SNAPSHOTS)
         self._conn.commit()
 
     # ==================================================================

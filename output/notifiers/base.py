@@ -47,6 +47,7 @@ class NotifyPayload:
     event_type: str = "complete"  # "start" or "complete"
     categories: List[str] = field(default_factory=list)
     search_window: Optional[str] = None  # e.g. "2026-02-17 ~ 2026-02-18"
+    custom_message: Optional[str] = None  # Override build_message() output
 
 
 class NotifierBase(ABC):
@@ -161,6 +162,7 @@ class NotifierBase(ABC):
         """Build the notification message text.
 
         Format:
+        - Custom message: use ``payload.custom_message`` as-is.
         - Start event:
           ``{topic_name} 논문 수집을 시작합니다.``
         - Normal (DevSpec 11-2):
@@ -169,6 +171,8 @@ class NotifierBase(ABC):
         - Zero-result (DevSpec 11-7):
           ``{date}, 오늘은 {topic_name} 관련 신규 논문이 없습니다.``
         """
+        if payload.custom_message:
+            return payload.custom_message
         if payload.event_type == "start":
             return self._build_start_message(payload)
         if payload.total_output == 0:

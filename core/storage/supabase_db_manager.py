@@ -92,6 +92,7 @@ class SupabaseDBManager:
         cur.execute(_CREATE_EVALUATIONS)
         cur.execute(_CREATE_QUERY_STATS)
         cur.execute(_CREATE_REMIND_TRACKING)
+        cur.execute(_CREATE_WEEKLY_SNAPSHOTS)
         self._conn.commit()
 
     # ==================================================================
@@ -846,5 +847,17 @@ CREATE TABLE IF NOT EXISTS remind_tracking (
     recommend_count INTEGER NOT NULL DEFAULT 0,
     last_recommend_run_id INTEGER NOT NULL,
     PRIMARY KEY (paper_key, topic_slug)
+);
+"""
+
+_CREATE_WEEKLY_SNAPSHOTS = """
+CREATE TABLE IF NOT EXISTS weekly_snapshots (
+    iso_year    INTEGER NOT NULL,
+    iso_week    INTEGER NOT NULL,
+    snapshot_date TEXT NOT NULL,
+    section     TEXT NOT NULL,
+    data_json   JSONB NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (iso_year, iso_week, section)
 );
 """

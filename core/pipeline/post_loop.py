@@ -269,7 +269,7 @@ class PostLoopProcessor:
             if report_entry:
                 reports.append(report_entry)
 
-            # Use the last completed topic's report data for latest.html
+            # Use the last completed topic's report data for daily report
             report_data = self._load_latest_report_data(slug, report_dir)
             if report_data is not None:
                 latest_report_data = report_data
@@ -282,24 +282,32 @@ class PostLoopProcessor:
                 template_dir=template_dir,
             )
 
-        # Generate latest.html (with Supabase JS read tracking) and
-        # latest_readonly.html (without Supabase JS) for gh-pages.
+        # Generate date-specific daily report HTML files for gh-pages.
+        # Format: YYMMDD_daily_paper_report.html (with Supabase JS)
+        #         YYMMDD_daily_paper_report_readonly.html (without)
         # Channels choose which variant to link via their ``send`` list.
         if latest_report_data is not None:
-            # Primary latest.html with Supabase JS
+            daily_filename = self._build_daily_report_filename(
+                latest_report_data
+            )
+            daily_readonly_filename = daily_filename.replace(
+                ".html", "_readonly.html"
+            )
+            # Primary daily report with Supabase JS
             generate_latest_html(
                 report_data=latest_report_data,
                 output_dir=report_dir,
                 template_dir=template_dir,
                 read_sync=(self._config.read_sync or None),
+                filename=daily_filename,
             )
-            # Read-only latest_readonly.html without Supabase JS
+            # Read-only daily report without Supabase JS
             generate_latest_html(
                 report_data=latest_report_data,
                 output_dir=report_dir,
                 template_dir=template_dir,
                 read_sync=None,
-                filename="latest_readonly.html",
+                filename=daily_readonly_filename,
             )
 
     # ------------------------------------------------------------------
@@ -384,14 +392,19 @@ class PostLoopProcessor:
                     has_md = "md" in send_modes and "md" in file_paths
 
                     # Choose the gh_pages URL for the message
+                    # Use date-specific filename: YYMMDD_daily_paper_report.html
+                    daily_fn = self._date_to_daily_filename(display_date)
                     channel_gh_pages_url: Optional[str] = None
                     if has_link:
                         channel_gh_pages_url = (
-                            f"{gh_pages_base_url}/latest.html"
+                            f"{gh_pages_base_url}/{daily_fn}"
                         )
                     elif has_readonly_link:
+                        readonly_fn = daily_fn.replace(
+                            ".html", "_readonly.html"
+                        )
                         channel_gh_pages_url = (
-                            f"{gh_pages_base_url}/latest_readonly.html"
+                            f"{gh_pages_base_url}/{readonly_fn}"
                         )
 
                     if not has_link and not has_readonly_link and not has_md:
@@ -745,26 +758,44 @@ class PostLoopProcessor:
 
     @staticmethod
     def _prune_old_reports(deploy_dir: str, retention_days: int) -> None:
-        """Remove date directories older than retention_days from deploy dir."""
+        """Remove old reports from deploy dir.
+
+        Prunes both date directories (YYYY-MM-DD/) and root-level daily
+        report files (YYMMDD_daily_paper_report*.html) older than
+        retention_days.
+        """
         import re
         from datetime import datetime, timedelta
 
         cutoff = datetime.now() - timedelta(days=retention_days)
-        date_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+        date_dir_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+        daily_file_pattern = re.compile(
+            r"^(\d{6})_daily_paper_report(?:_readonly)?\.html$"
+        )
 
         for item in os.listdir(deploy_dir):
-            if not date_pattern.match(item):
-                continue
             item_path = os.path.join(deploy_dir, item)
-            if not os.path.isdir(item_path):
-                continue
-            try:
-                dir_date = datetime.strptime(item, "%Y-%m-%d")
-                if dir_date < cutoff:
-                    shutil.rmtree(item_path)
-                    logger.info("gh-pages: pruned old report dir %s", item)
-            except ValueError:
-                continue
+
+            # Prune date directories (YYYY-MM-DD)
+            if date_dir_pattern.match(item) and os.path.isdir(item_path):
+                try:
+                    dir_date = datetime.strptime(item, "%Y-%m-%d")
+                    if dir_date < cutoff:
+                        shutil.rmtree(item_path)
+                        logger.info("gh-pages: pruned old report dir %s", item)
+                except ValueError:
+                    continue
+
+            # Prune daily report files (YYMMDD_daily_paper_report*.html)
+            m = daily_file_pattern.match(item)
+            if m and os.path.isfile(item_path):
+                try:
+                    file_date = datetime.strptime(m.group(1), "%y%m%d")
+                    if file_date < cutoff:
+                        os.remove(item_path)
+                        logger.info("gh-pages: pruned old report file %s", item)
+                except ValueError:
+                    continue
 
     # ------------------------------------------------------------------
     # Step 5: Cleanup
@@ -859,6 +890,41 @@ class PostLoopProcessor:
                         )
                         return None
         return None
+
+    @staticmethod
+    def _build_daily_report_filename(report_data: Dict[str, Any]) -> str:
+        """Build date-specific daily report filename from report metadata.
+
+        Format: YYMMDD_daily_paper_report.html
+        Example: 260216_daily_paper_report.html (for 2026-02-16)
+        """
+        date_str = report_data.get("meta", {}).get("date", "")
+        if date_str:
+            # YYYY-MM-DD -> YYMMDD
+            compact = date_str[2:].replace("-", "")
+        else:
+            from datetime import datetime, timedelta, timezone
+            kst = timezone(timedelta(hours=9))
+            compact = datetime.now(kst).strftime("%y%m%d")
+        return f"{compact}_daily_paper_report.html"
+
+    @staticmethod
+    def _date_to_daily_filename(display_date: str) -> str:
+        """Convert display_date (YYYY-MM-DD) to daily report filename.
+
+        Args:
+            display_date: Date string in YYYY-MM-DD format.
+
+        Returns:
+            Filename like '260216_daily_paper_report.html'.
+        """
+        if display_date and len(display_date) >= 10:
+            compact = display_date[2:10].replace("-", "")
+        else:
+            from datetime import datetime, timedelta, timezone
+            kst = timezone(timedelta(hours=9))
+            compact = datetime.now(kst).strftime("%y%m%d")
+        return f"{compact}_daily_paper_report.html"
 
     def _get_display_date(self, slug: str) -> str:
         """Get the display date from the latest completed run."""

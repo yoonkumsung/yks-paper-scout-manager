@@ -292,6 +292,21 @@ _SECTION_DEFAULTS: dict[str, dict] = {
     },
     "weekly": {
         "enabled": False,
+        "intelligence": {
+            "enabled": False,
+            "must_track_keywords": {"groups": {}},
+            "product_lines": {},
+            "conferences": [],
+            "top_papers_count": 10,
+            "tfidf_top_n": 20,
+            "trend_weeks": 4,
+            "llm": {
+                "model": "",
+                "enabled": True,
+                "max_input_tokens_per_call": 8000,
+                "delay_between_calls_sec": 3,
+            },
+        },
     },
     "local_ui": {
         "host": "127.0.0.1",

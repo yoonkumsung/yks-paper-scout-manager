@@ -58,9 +58,10 @@ class NotifyConfig:
             Defaults to ["complete"] for backward compatibility.
         send: List of delivery modes for this channel.
             Valid values: "link", "readonly_link", "md".
-            - "link": GitHub Pages URL (latest.html with Supabase JS).
-            - "readonly_link": GitHub Pages URL (latest_readonly.html,
-              no Supabase JS).
+            - "link": GitHub Pages URL (YYMMDD_daily_paper_report.html
+              with Supabase JS).
+            - "readonly_link": GitHub Pages URL
+              (YYMMDD_daily_paper_report_readonly.html, no Supabase JS).
             - "md": Markdown file attachment.
             Defaults to ["link"] for backward compatibility.
     """

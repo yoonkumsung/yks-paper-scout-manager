@@ -154,7 +154,7 @@ def prune_old_directories(
             kept_dirs.append(dir_info.path.name)
 
     # Verify root files are preserved
-    for root_file in ["index.html", "latest.html"]:
+    for root_file in ["index.html"]:
         root_path = base_path / root_file
         if root_path.exists():
             logger.debug(f"Root file preserved: {root_file}")

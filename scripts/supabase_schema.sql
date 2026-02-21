@@ -88,6 +88,16 @@ CREATE TABLE IF NOT EXISTS remind_tracking (
     PRIMARY KEY (paper_key, topic_slug)
 );
 
+CREATE TABLE IF NOT EXISTS weekly_snapshots (
+    iso_year    INTEGER NOT NULL,
+    iso_week    INTEGER NOT NULL,
+    snapshot_date TEXT NOT NULL,
+    section     TEXT NOT NULL,
+    data_json   JSONB NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (iso_year, iso_week, section)
+);
+
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_runs_topic_slug ON runs (topic_slug);
 CREATE INDEX IF NOT EXISTS idx_runs_status ON runs (topic_slug, status);
