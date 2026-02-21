@@ -260,7 +260,7 @@ def generate_weekly_charts(
         if scores:
             score_chart_path = os.path.join(
                 output_dir,
-                f"score_distribution_{date_str}.png"
+                "chart_score_dist.png"
             )
             result = generate_score_distribution(
                 scores,

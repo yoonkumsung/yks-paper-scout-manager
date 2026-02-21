@@ -219,13 +219,24 @@ def _run_weekly_background(run_id: str) -> None:
         report_dir = config.output.get("report_dir", "tmp/reports")
         Path(report_dir).mkdir(parents=True, exist_ok=True)
 
+        # Build weekly folder name using calendar year + ISO week
+        from datetime import date as date_cls
+        ref_date = date_cls.today()
+        _, iso_week, _ = ref_date.isocalendar()
+        yy = f"{ref_date.year % 100:02d}"
+        mm = f"{ref_date.month:02d}"
+        ww = f"{iso_week:02d}"
+        weekly_folder = f"{yy}{mm}W{ww}_weekly_report"
+        weekly_dir = os.path.join(report_dir, weekly_folder)
+        Path(weekly_dir).mkdir(parents=True, exist_ok=True)
+
         if md_content:
-            md_path = os.path.join(report_dir, f"{today_str}_weekly_paper_report.md")
+            md_path = os.path.join(weekly_dir, "report.md")
             with open(md_path, "w", encoding="utf-8") as f:
                 f.write(md_content)
 
         if html_content:
-            html_path = os.path.join(report_dir, f"{today_str}_weekly_paper_report.html")
+            html_path = os.path.join(weekly_dir, "report.html")
             with open(html_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
 

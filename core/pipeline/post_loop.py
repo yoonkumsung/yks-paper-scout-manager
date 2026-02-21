@@ -282,32 +282,31 @@ class PostLoopProcessor:
                 template_dir=template_dir,
             )
 
-        # Generate date-specific daily report HTML files for gh-pages.
-        # Format: YYMMDD_daily_paper_report.html (with Supabase JS)
-        #         YYMMDD_daily_paper_report_readonly.html (without)
+        # Generate consolidated daily report HTML files into the daily folder.
+        # Format: YYMMDD_daily_report/report.html (with Supabase JS)
+        #         YYMMDD_daily_report/report_readonly.html (without)
         # Channels choose which variant to link via their ``send`` list.
         if latest_report_data is not None:
-            daily_filename = self._build_daily_report_filename(
+            daily_folder = self._build_daily_report_folder(
                 latest_report_data
             )
-            daily_readonly_filename = daily_filename.replace(
-                ".html", "_readonly.html"
-            )
+            daily_dir = os.path.join(report_dir, daily_folder)
+            os.makedirs(daily_dir, exist_ok=True)
             # Primary daily report with Supabase JS
             generate_latest_html(
                 report_data=latest_report_data,
-                output_dir=report_dir,
+                output_dir=daily_dir,
                 template_dir=template_dir,
                 read_sync=(self._config.read_sync or None),
-                filename=daily_filename,
+                filename="report.html",
             )
             # Read-only daily report without Supabase JS
             generate_latest_html(
                 report_data=latest_report_data,
-                output_dir=report_dir,
+                output_dir=daily_dir,
                 template_dir=template_dir,
                 read_sync=None,
-                filename=daily_readonly_filename,
+                filename="report_readonly.html",
             )
 
     # ------------------------------------------------------------------
@@ -392,19 +391,16 @@ class PostLoopProcessor:
                     has_md = "md" in send_modes and "md" in file_paths
 
                     # Choose the gh_pages URL for the message
-                    # Use date-specific filename: YYMMDD_daily_paper_report.html
-                    daily_fn = self._date_to_daily_filename(display_date)
+                    # Use folder-based URL: YYMMDD_daily_report/report.html
+                    daily_folder = self._date_to_daily_folder(display_date)
                     channel_gh_pages_url: Optional[str] = None
                     if has_link:
                         channel_gh_pages_url = (
-                            f"{gh_pages_base_url}/{daily_fn}"
+                            f"{gh_pages_base_url}/{daily_folder}/report.html"
                         )
                     elif has_readonly_link:
-                        readonly_fn = daily_fn.replace(
-                            ".html", "_readonly.html"
-                        )
                         channel_gh_pages_url = (
-                            f"{gh_pages_base_url}/{readonly_fn}"
+                            f"{gh_pages_base_url}/{daily_folder}/report_readonly.html"
                         )
 
                     if not has_link and not has_readonly_link and not has_md:
@@ -652,9 +648,17 @@ class PostLoopProcessor:
                                     os.remove(path)
 
                     # Run prune script if retention configured
-                    retention_days = gh_pages_cfg.get("retention_days", 90)
-                    if retention_days and keep_files:
-                        self._prune_old_reports(worktree_dir, retention_days)
+                    daily_retention = gh_pages_cfg.get(
+                        "daily_retention_days",
+                        gh_pages_cfg.get("retention_days", 90),
+                    )
+                    weekly_retention = gh_pages_cfg.get(
+                        "weekly_retention_days", 0
+                    )
+                    if daily_retention and keep_files:
+                        self._prune_old_reports(
+                            worktree_dir, daily_retention, weekly_retention
+                        )
 
                     # Copy report files to worktree
                     for item in os.listdir(report_dir):
@@ -757,45 +761,79 @@ class PostLoopProcessor:
             return False
 
     @staticmethod
-    def _prune_old_reports(deploy_dir: str, retention_days: int) -> None:
+    def _prune_old_reports(
+        deploy_dir: str,
+        daily_retention_days: int,
+        weekly_retention_days: int = 0,
+    ) -> None:
         """Remove old reports from deploy dir.
 
-        Prunes both date directories (YYYY-MM-DD/) and root-level daily
-        report files (YYMMDD_daily_paper_report*.html) older than
-        retention_days.
+        Prunes daily report folders (YYMMDD_daily_report/), legacy date
+        directories (YYYY-MM-DD/), and legacy root-level files. Weekly
+        report folders are kept permanently when weekly_retention_days=0.
         """
         import re
         from datetime import datetime, timedelta
 
-        cutoff = datetime.now() - timedelta(days=retention_days)
-        date_dir_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-        daily_file_pattern = re.compile(
+        cutoff = datetime.now() - timedelta(days=daily_retention_days)
+
+        # New folder patterns
+        daily_dir_pattern = re.compile(r"^(\d{6})_daily_report$")
+        weekly_dir_pattern = re.compile(r"^(\d{4})W(\d{2})_weekly_report$")
+        # Legacy patterns
+        legacy_date_dir = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+        legacy_daily_file = re.compile(
             r"^(\d{6})_daily_paper_report(?:_readonly)?\.html$"
+        )
+        legacy_weekly_file = re.compile(
+            r"^(\d{8})_weekly_(?:summary|paper_report)\.(?:html|md)$"
         )
 
         for item in os.listdir(deploy_dir):
             item_path = os.path.join(deploy_dir, item)
 
-            # Prune date directories (YYYY-MM-DD)
-            if date_dir_pattern.match(item) and os.path.isdir(item_path):
+            # Skip index.html (always preserve)
+            if item == "index.html":
+                continue
+
+            # New daily folders: YYMMDD_daily_report/
+            m = daily_dir_pattern.match(item)
+            if m and os.path.isdir(item_path):
+                try:
+                    dir_date = datetime.strptime(m.group(1), "%y%m%d")
+                    if dir_date < cutoff:
+                        shutil.rmtree(item_path)
+                        logger.info("gh-pages: pruned old daily folder %s", item)
+                except ValueError:
+                    pass
+                continue
+
+            # Weekly folders: YYMMWNN_weekly_report/ — permanent (skip)
+            if weekly_dir_pattern.match(item) and os.path.isdir(item_path):
+                continue
+
+            # Legacy date directories (YYYY-MM-DD/)
+            if legacy_date_dir.match(item) and os.path.isdir(item_path):
                 try:
                     dir_date = datetime.strptime(item, "%Y-%m-%d")
                     if dir_date < cutoff:
                         shutil.rmtree(item_path)
-                        logger.info("gh-pages: pruned old report dir %s", item)
+                        logger.info("gh-pages: pruned legacy date dir %s", item)
                 except ValueError:
-                    continue
+                    pass
+                continue
 
-            # Prune daily report files (YYMMDD_daily_paper_report*.html)
-            m = daily_file_pattern.match(item)
-            if m and os.path.isfile(item_path):
-                try:
-                    file_date = datetime.strptime(m.group(1), "%y%m%d")
-                    if file_date < cutoff:
-                        os.remove(item_path)
-                        logger.info("gh-pages: pruned old report file %s", item)
-                except ValueError:
-                    continue
+            # Legacy root-level daily files — always delete
+            if legacy_daily_file.match(item) and os.path.isfile(item_path):
+                os.remove(item_path)
+                logger.info("gh-pages: removed legacy daily file %s", item)
+                continue
+
+            # Legacy root-level weekly files — always delete
+            if legacy_weekly_file.match(item) and os.path.isfile(item_path):
+                os.remove(item_path)
+                logger.info("gh-pages: removed legacy weekly file %s", item)
+                continue
 
     # ------------------------------------------------------------------
     # Step 5: Cleanup
@@ -892,31 +930,30 @@ class PostLoopProcessor:
         return None
 
     @staticmethod
-    def _build_daily_report_filename(report_data: Dict[str, Any]) -> str:
-        """Build date-specific daily report filename from report metadata.
+    def _build_daily_report_folder(report_data: Dict[str, Any]) -> str:
+        """Build daily report folder name from report metadata.
 
-        Format: YYMMDD_daily_paper_report.html
-        Example: 260216_daily_paper_report.html (for 2026-02-16)
+        Format: YYMMDD_daily_report
+        Example: 260216_daily_report (for 2026-02-16)
         """
         date_str = report_data.get("meta", {}).get("date", "")
-        if date_str:
-            # YYYY-MM-DD -> YYMMDD
-            compact = date_str[2:].replace("-", "")
+        if date_str and len(date_str) >= 10:
+            compact = date_str[2:10].replace("-", "")
         else:
             from datetime import datetime, timedelta, timezone
             kst = timezone(timedelta(hours=9))
             compact = datetime.now(kst).strftime("%y%m%d")
-        return f"{compact}_daily_paper_report.html"
+        return f"{compact}_daily_report"
 
     @staticmethod
-    def _date_to_daily_filename(display_date: str) -> str:
-        """Convert display_date (YYYY-MM-DD) to daily report filename.
+    def _date_to_daily_folder(display_date: str) -> str:
+        """Convert display_date (YYYY-MM-DD) to daily report folder name.
 
         Args:
             display_date: Date string in YYYY-MM-DD format.
 
         Returns:
-            Filename like '260216_daily_paper_report.html'.
+            Folder name like '260216_daily_report'.
         """
         if display_date and len(display_date) >= 10:
             compact = display_date[2:10].replace("-", "")
@@ -924,7 +961,7 @@ class PostLoopProcessor:
             from datetime import datetime, timedelta, timezone
             kst = timezone(timedelta(hours=9))
             compact = datetime.now(kst).strftime("%y%m%d")
-        return f"{compact}_daily_paper_report.html"
+        return f"{compact}_daily_report"
 
     def _get_display_date(self, slug: str) -> str:
         """Get the display date from the latest completed run."""

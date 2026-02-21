@@ -106,14 +106,23 @@ def _get_keyword_frequency(
     topic_keywords: Dict[str, Dict[str, int]] = {}
 
     # Scan date directories that fall within the range
+    daily_dir_re = re.compile(r"^(\d{6})_daily_report$")
+
     for entry in sorted(os.listdir(report_root)):
         date_dir = report_root / entry
         if not date_dir.is_dir():
             continue
-        # Directory names are YYYYMMDD
-        if not re.fullmatch(r"\d{8}", entry):
+        # Support both new (YYMMDD_daily_report) and legacy (YYYYMMDD) formats
+        m_daily = daily_dir_re.match(entry)
+        if m_daily:
+            # Convert YYMMDD to YYYYMMDD for date comparison
+            yymmdd = m_daily.group(1)
+            date_cmp = f"20{yymmdd}"
+        elif re.fullmatch(r"\d{8}", entry):
+            date_cmp = entry
+        else:
             continue
-        if entry < start_cmp or entry > end_cmp:
+        if date_cmp < start_cmp or date_cmp > end_cmp:
             continue
 
         # Find JSON report files: {YYYYMMDD}_paper_{slug}.json

@@ -141,7 +141,9 @@ output:
     enabled: true
     base_url: https://USERNAME.github.io/REPO_NAME
     keep_files: true
-    retention_days: 90
+    daily_retention_days: 180     # Days to keep daily report folders (default: 180)
+    weekly_retention_days: 0      # 0 = permanent (never delete weekly reports)
+    retention_days: 90            # Deprecated: fallback if daily_retention_days missing
   github_issue:
     enabled: false
     body_max_chars: 60000

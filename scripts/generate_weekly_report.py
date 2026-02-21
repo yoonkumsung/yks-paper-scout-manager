@@ -65,8 +65,17 @@ def main():
         print(f"❌ Failed to generate summary: {e}")
         return 1
 
+    # Build weekly folder name using calendar year + ISO week
+    ref_date = date_obj.date() if hasattr(date_obj, 'date') else date_obj
+    _, iso_week, _ = ref_date.isocalendar()
+    yy = f"{ref_date.year % 100:02d}"
+    mm = f"{ref_date.month:02d}"
+    ww = f"{iso_week:02d}"
+    weekly_folder = output_dir / f"{yy}{mm}W{ww}_weekly_report"
+    weekly_folder.mkdir(parents=True, exist_ok=True)
+
     # Render markdown
-    md_output = output_dir / f"{args.date}_weekly_summary.md"
+    md_output = weekly_folder / "report.md"
     md_content = render_weekly_summary_md(summary_data, args.date)
     md_output.write_text(md_content, encoding="utf-8")
     print(f"✅ Markdown: {md_output}")
@@ -77,14 +86,14 @@ def main():
         from core.pipeline.weekly_viz import generate_weekly_charts, is_viz_available
         if is_viz_available():
             date_iso = date_obj.strftime("%Y-%m-%d")
-            chart_paths = generate_weekly_charts(args.db, date_iso, str(output_dir))
+            chart_paths = generate_weekly_charts(args.db, date_iso, str(weekly_folder))
             for cp in chart_paths:
                 print(f"✅ Chart: {cp}")
     except Exception:
         pass
 
     # Render HTML
-    html_output = output_dir / f"{args.date}_weekly_summary.html"
+    html_output = weekly_folder / "report.html"
     html_content = render_weekly_summary_html(summary_data, args.date, chart_paths=chart_paths)
     html_output.write_text(html_content, encoding="utf-8")
     print(f"✅ HTML: {html_output}")

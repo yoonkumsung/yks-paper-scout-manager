@@ -978,7 +978,8 @@ class TopicLoopOrchestrator:
         from output.render.html_generator import generate_report_html
 
         output_dir = self._config.output.get("report_dir", "tmp/reports")
-        date_subdir = "%s/%s" % (output_dir, display_date_kst)
+        compact_date = display_date_kst[2:10].replace("-", "")  # "2026-02-16" -> "260216"
+        date_subdir = "%s/%s_daily_report" % (output_dir, compact_date)
 
         display_title = "%s 논문 리포트 (%s)" % (
             topic.name, display_date_kst

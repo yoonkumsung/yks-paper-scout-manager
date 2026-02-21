@@ -2,9 +2,10 @@
 
 Generates HTML report files using Jinja2 templates following devspec 10-2.
 Produces:
-  - ``reports/YYYY-MM-DD/{YYYYMMDD}_paper_{slug}.html`` -- per-topic report
+  - ``YYMMDD_daily_report/{YYYYMMDD}_paper_{slug}.html`` -- per-topic report
+  - ``YYMMDD_daily_report/report.html`` -- consolidated daily report
+  - ``YYMMDD_daily_report/report_readonly.html`` -- readonly variant
   - ``index.html`` -- topic list with date navigation
-  - ``latest.html`` -- always-overwritten bookmark URL
 
 Security: Jinja2 autoescape=True, no ``|safe`` filter usage.
 

@@ -1,10 +1,15 @@
 """Prune old report directories from gh-pages deployment.
 
 This script deletes report directories older than the retention period
-while preserving root-level index.html and latest.html files.
+while preserving root-level index.html and weekly report folders.
+
+Supports three directory formats:
+- New daily: YYMMDD_daily_report/
+- New weekly: YYMMWNN_weekly_report/ (permanent by default)
+- Legacy: YYYY-MM-DD/ (pruned by daily retention)
 
 Usage:
-    python scripts/prune_gh_pages.py --publish-dir tmp/reports --retention-days 90
+    python scripts/prune_gh_pages.py --publish-dir tmp/reports --daily-retention-days 180
     python scripts/prune_gh_pages.py --dry-run
 """
 
@@ -33,6 +38,7 @@ class DirectoryInfo(NamedTuple):
 
     path: Path
     date: datetime.date
+    dir_type: str  # "daily", "weekly", "legacy"
 
 
 class PruneSummary(NamedTuple):
@@ -44,82 +50,156 @@ class PruneSummary(NamedTuple):
     kept_dirs: list[str]
 
 
-# Date pattern for YYYY-MM-DD directories
-DATE_PATTERN = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
+# Directory patterns
+DAILY_DIR_PATTERN = re.compile(r"^(\d{6})_daily_report$")
+WEEKLY_DIR_PATTERN = re.compile(r"^(\d{4})W(\d{2})_weekly_report$")
+LEGACY_DATE_PATTERN = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
+
+# Legacy root-level file patterns (always cleaned up)
+LEGACY_DAILY_FILE = re.compile(
+    r"^(\d{6})_daily_paper_report(?:_readonly)?\.html$"
+)
+LEGACY_WEEKLY_FILE = re.compile(
+    r"^(\d{8})_weekly_(?:summary|paper_report)\.(?:html|md)$"
+)
 
 
-def find_dated_directories(base_dir: str) -> list[DirectoryInfo]:
-    """Find all YYYY-MM-DD directories under reports/.
+def find_report_directories(base_dir: str) -> list[DirectoryInfo]:
+    """Find all report directories (daily, weekly, legacy).
+
+    Scans the base directory directly (not a reports/ subfolder).
 
     Args:
-        base_dir: Base directory containing reports/ folder
+        base_dir: Directory containing report folders.
 
     Returns:
-        List of DirectoryInfo tuples with path and parsed date
+        List of DirectoryInfo tuples with path, parsed date, and type.
     """
     base_path = Path(base_dir)
-    reports_dir = base_path / "reports"
 
-    if not reports_dir.exists():
-        logger.debug(f"Reports directory not found: {reports_dir}")
+    if not base_path.exists():
+        logger.debug("Directory not found: %s", base_path)
         return []
 
-    if not reports_dir.is_dir():
-        logger.warning(f"Reports path exists but is not a directory: {reports_dir}")
+    if not base_path.is_dir():
+        logger.warning("Path exists but is not a directory: %s", base_path)
         return []
 
-    dated_dirs: list[DirectoryInfo] = []
+    dirs: list[DirectoryInfo] = []
 
-    for entry in reports_dir.iterdir():
+    for entry in base_path.iterdir():
         if not entry.is_dir():
             continue
 
-        match = DATE_PATTERN.match(entry.name)
-        if not match:
-            logger.debug(f"Skipping non-date directory: {entry.name}")
+        # New daily folders: YYMMDD_daily_report
+        m = DAILY_DIR_PATTERN.match(entry.name)
+        if m:
+            try:
+                date_obj = datetime.datetime.strptime(
+                    m.group(1), "%y%m%d"
+                ).date()
+                dirs.append(DirectoryInfo(path=entry, date=date_obj, dir_type="daily"))
+            except ValueError:
+                logger.warning("Invalid date in daily dir: %s", entry.name)
             continue
 
-        try:
-            year, month, day = map(int, match.groups())
-            date_obj = datetime.date(year, month, day)
-            dated_dirs.append(DirectoryInfo(path=entry, date=date_obj))
-        except ValueError as e:
-            logger.warning(f"Invalid date in directory name {entry.name}: {e}")
+        # Weekly folders: YYMMWNN_weekly_report
+        m = WEEKLY_DIR_PATTERN.match(entry.name)
+        if m:
+            try:
+                yymm = m.group(1)
+                year = 2000 + int(yymm[:2])
+                month = int(yymm[2:4])
+                date_obj = datetime.date(year, month, 1)
+                dirs.append(DirectoryInfo(path=entry, date=date_obj, dir_type="weekly"))
+            except ValueError:
+                logger.warning("Invalid date in weekly dir: %s", entry.name)
             continue
 
-    logger.info(f"Found {len(dated_dirs)} dated directories")
-    return dated_dirs
+        # Legacy: YYYY-MM-DD
+        m = LEGACY_DATE_PATTERN.match(entry.name)
+        if m:
+            try:
+                year, month, day = map(int, m.groups())
+                date_obj = datetime.date(year, month, day)
+                dirs.append(DirectoryInfo(path=entry, date=date_obj, dir_type="legacy"))
+            except ValueError:
+                logger.warning("Invalid date in legacy dir: %s", entry.name)
+            continue
+
+    logger.info(
+        "Found %d report directories (daily=%d, weekly=%d, legacy=%d)",
+        len(dirs),
+        sum(1 for d in dirs if d.dir_type == "daily"),
+        sum(1 for d in dirs if d.dir_type == "weekly"),
+        sum(1 for d in dirs if d.dir_type == "legacy"),
+    )
+    return dirs
+
+
+def _cleanup_legacy_files(base_dir: str, dry_run: bool = False) -> list[str]:
+    """Remove legacy root-level report files.
+
+    Returns list of deleted filenames.
+    """
+    base_path = Path(base_dir)
+    deleted: list[str] = []
+
+    if not base_path.is_dir():
+        return deleted
+
+    for entry in base_path.iterdir():
+        if not entry.is_file():
+            continue
+        if entry.name == "index.html":
+            continue
+
+        if LEGACY_DAILY_FILE.match(entry.name) or LEGACY_WEEKLY_FILE.match(entry.name):
+            if dry_run:
+                logger.info("[DRY RUN] Would delete legacy file: %s", entry.name)
+            else:
+                entry.unlink()
+                logger.info("Deleted legacy file: %s", entry.name)
+            deleted.append(entry.name)
+
+    return deleted
 
 
 def prune_old_directories(
     base_dir: str,
-    retention_days: int,
+    daily_retention_days: int = 180,
+    weekly_retention_days: int = 0,
     dry_run: bool = False,
 ) -> PruneSummary:
     """Delete report directories older than retention period.
 
     Args:
-        base_dir: Base directory containing reports/ folder
-        retention_days: Number of days to keep (older directories are deleted)
-        dry_run: If True, print what would be deleted without actually deleting
+        base_dir: Directory containing report folders.
+        daily_retention_days: Days to keep daily and legacy folders.
+        weekly_retention_days: Days to keep weekly folders. 0 = permanent.
+        dry_run: If True, print what would be deleted without deleting.
 
     Returns:
-        PruneSummary with deletion statistics
+        PruneSummary with deletion statistics.
     """
-    if retention_days < 0:
-        raise ValueError(f"retention_days must be non-negative, got {retention_days}")
+    if daily_retention_days < 0:
+        raise ValueError(
+            f"daily_retention_days must be non-negative, got {daily_retention_days}"
+        )
 
     base_path = Path(base_dir)
 
-    # Verify base directory exists
     if not base_path.exists():
         raise FileNotFoundError(f"Base directory not found: {base_dir}")
 
-    # Find all dated directories
-    dated_dirs = find_dated_directories(base_dir)
+    # Find all report directories
+    report_dirs = find_report_directories(base_dir)
 
-    if not dated_dirs:
-        logger.info("No dated directories found")
+    # Also clean up legacy root-level files
+    legacy_files = _cleanup_legacy_files(base_dir, dry_run=dry_run)
+
+    if not report_dirs and not legacy_files:
+        logger.info("No report directories or legacy files found")
         return PruneSummary(
             deleted_count=0,
             kept_count=0,
@@ -127,37 +207,56 @@ def prune_old_directories(
             kept_dirs=[],
         )
 
-    # Calculate cutoff date
-    cutoff_date = datetime.date.today() - datetime.timedelta(days=retention_days)
-    logger.info(f"Cutoff date: {cutoff_date} (retention: {retention_days} days)")
+    daily_cutoff = datetime.date.today() - datetime.timedelta(days=daily_retention_days)
+    logger.info(
+        "Daily cutoff: %s (retention: %d days)", daily_cutoff, daily_retention_days
+    )
 
-    deleted_dirs: list[str] = []
+    deleted_dirs: list[str] = list(legacy_files)
     kept_dirs: list[str] = []
 
-    for dir_info in dated_dirs:
-        if dir_info.date < cutoff_date:
-            # Directory is too old, delete it
-            if dry_run:
-                logger.info(f"[DRY RUN] Would delete: {dir_info.path.name}")
+    for dir_info in report_dirs:
+        if dir_info.dir_type == "weekly":
+            # Weekly folders: permanent if weekly_retention_days == 0
+            if weekly_retention_days == 0:
+                kept_dirs.append(dir_info.path.name)
+                continue
+            weekly_cutoff = datetime.date.today() - datetime.timedelta(
+                days=weekly_retention_days
+            )
+            if dir_info.date < weekly_cutoff:
+                if dry_run:
+                    logger.info("[DRY RUN] Would delete: %s", dir_info.path.name)
+                else:
+                    try:
+                        shutil.rmtree(dir_info.path)
+                        logger.info("Deleted weekly: %s", dir_info.path.name)
+                    except OSError as e:
+                        logger.error("Failed to delete %s: %s", dir_info.path.name, e)
+                        continue
+                deleted_dirs.append(dir_info.path.name)
             else:
-                try:
-                    shutil.rmtree(dir_info.path)
-                    logger.info(f"Deleted: {dir_info.path.name}")
-                except OSError as e:
-                    logger.error(f"Failed to delete {dir_info.path.name}: {e}")
-                    continue
+                kept_dirs.append(dir_info.path.name)
 
-            deleted_dirs.append(dir_info.path.name)
-        else:
-            # Directory is recent, keep it
-            logger.debug(f"Keeping: {dir_info.path.name}")
-            kept_dirs.append(dir_info.path.name)
+        elif dir_info.dir_type in ("daily", "legacy"):
+            if dir_info.date < daily_cutoff:
+                if dry_run:
+                    logger.info("[DRY RUN] Would delete: %s", dir_info.path.name)
+                else:
+                    try:
+                        shutil.rmtree(dir_info.path)
+                        logger.info("Deleted: %s", dir_info.path.name)
+                    except OSError as e:
+                        logger.error("Failed to delete %s: %s", dir_info.path.name, e)
+                        continue
+                deleted_dirs.append(dir_info.path.name)
+            else:
+                kept_dirs.append(dir_info.path.name)
 
     # Verify root files are preserved
-    for root_file in ["index.html"]:
-        root_path = base_path / root_file
-        if root_path.exists():
-            logger.debug(f"Root file preserved: {root_file}")
+    root_index = base_path / "index.html"
+    if root_index.exists():
+        logger.debug("Root file preserved: index.html")
 
     return PruneSummary(
         deleted_count=len(deleted_dirs),
@@ -178,13 +277,13 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Prune directories older than 90 days
-  python scripts/prune_gh_pages.py --publish-dir tmp/reports --retention-days 90
+  # Prune daily directories older than 180 days
+  python scripts/prune_gh_pages.py --publish-dir tmp/reports --daily-retention-days 180
 
   # Dry run to preview what would be deleted
   python scripts/prune_gh_pages.py --publish-dir tmp/reports --dry-run
 
-  # Use default settings (tmp/reports, 90 days retention)
+  # Use default settings (tmp/reports, 180 days daily, permanent weekly)
   python scripts/prune_gh_pages.py
         """,
     )
@@ -197,10 +296,25 @@ Examples:
     )
 
     parser.add_argument(
+        "--daily-retention-days",
+        type=int,
+        default=180,
+        help="Days to keep daily report folders (default: 180)",
+    )
+
+    parser.add_argument(
+        "--weekly-retention-days",
+        type=int,
+        default=0,
+        help="Days to keep weekly report folders, 0=permanent (default: 0)",
+    )
+
+    # Backward compat alias
+    parser.add_argument(
         "--retention-days",
         type=int,
-        default=90,
-        help="Number of days to keep (default: 90)",
+        default=None,
+        help="Deprecated: use --daily-retention-days instead",
     )
 
     parser.add_argument(
@@ -222,30 +336,39 @@ Examples:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
+    # Backward compat: --retention-days fallback
+    daily_retention = args.daily_retention_days
+    if args.retention_days is not None:
+        logger.warning("--retention-days is deprecated, use --daily-retention-days")
+        if daily_retention == 180:
+            daily_retention = args.retention_days
+
     logger.info("=" * 60)
     logger.info("Starting gh-pages pruning script")
-    logger.info(f"Publish directory: {args.publish_dir}")
-    logger.info(f"Retention period: {args.retention_days} days")
-    logger.info(f"Dry run mode: {args.dry_run}")
+    logger.info("Publish directory: %s", args.publish_dir)
+    logger.info("Daily retention: %d days", daily_retention)
+    logger.info("Weekly retention: %s", "permanent" if args.weekly_retention_days == 0 else f"{args.weekly_retention_days} days")
+    logger.info("Dry run mode: %s", args.dry_run)
     logger.info("=" * 60)
 
     try:
         summary = prune_old_directories(
             base_dir=args.publish_dir,
-            retention_days=args.retention_days,
+            daily_retention_days=daily_retention,
+            weekly_retention_days=args.weekly_retention_days,
             dry_run=args.dry_run,
         )
 
         # Print summary
         logger.info("=" * 60)
         logger.info("Pruning Summary:")
-        logger.info(f"  Deleted: {summary.deleted_count} directories")
-        logger.info(f"  Kept: {summary.kept_count} directories")
+        logger.info("  Deleted: %d items", summary.deleted_count)
+        logger.info("  Kept: %d items", summary.kept_count)
 
         if summary.deleted_dirs:
-            logger.info("  Deleted directories:")
+            logger.info("  Deleted items:")
             for dir_name in sorted(summary.deleted_dirs):
-                logger.info(f"    - {dir_name}")
+                logger.info("    - %s", dir_name)
 
         if args.dry_run:
             logger.info("[DRY RUN] No actual changes were made")
@@ -256,7 +379,7 @@ Examples:
         return 0
 
     except Exception as e:
-        logger.error(f"Pruning failed: {e}", exc_info=args.verbose)
+        logger.error("Pruning failed: %s", e, exc_info=args.verbose)
         return 1
 
 

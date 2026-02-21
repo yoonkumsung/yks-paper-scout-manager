@@ -285,6 +285,10 @@ _SECTION_DEFAULTS: dict[str, dict] = {
         "report_dir": "tmp/reports",
         "report_format": "html",
         "template_dir": "templates",
+        "gh_pages": {
+            "daily_retention_days": 180,
+            "weekly_retention_days": 0,
+        },
     },
     "notifications": {
         "on_zero_results": True,

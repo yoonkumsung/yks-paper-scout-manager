@@ -246,7 +246,14 @@ def run_pipeline(args: argparse.Namespace) -> int:
                 html_path = ""
                 md_content = ""
                 html_content = ""
-                suffix = "_weekly_summary"
+
+                # Build weekly folder name using calendar year + ISO week
+                ref_date_obj = datetime.now(timezone.utc).date()
+                _, iso_week, _ = ref_date_obj.isocalendar()
+                yy = f"{ref_date_obj.year % 100:02d}"
+                mm = f"{ref_date_obj.month:02d}"
+                ww = f"{iso_week:02d}"
+                weekly_folder_name = f"{yy}{mm}W{ww}_weekly_report"
 
                 # --- Weekly summary data ---
                 intel_cfg = config.weekly.get("intelligence", {})
@@ -276,8 +283,12 @@ def run_pipeline(args: argparse.Namespace) -> int:
                     if viz_enabled:
                         from core.pipeline.weekly_viz import generate_weekly_charts
                         today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                        # Output charts into weekly folder
+                        weekly_chart_dir = os.path.join(report_dir, weekly_folder_name)
+                        os.makedirs(weekly_chart_dir, exist_ok=True)
                         chart_files = generate_weekly_charts(
                             db_path=db_path, date_str=today_iso,
+                            output_dir=weekly_chart_dir,
                             provider=_provider, connection_string=_conn_str,
                         )
                         if chart_files:
@@ -292,10 +303,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                     from pathlib import Path
                     Path(report_dir).mkdir(parents=True, exist_ok=True)
 
-                    if intel_cfg.get("enabled", False):
-                        # Intelligence mode: md_content and html_content already set
-                        suffix = "_weekly_paper_report"
-                    else:
+                    if not intel_cfg.get("enabled", False):
                         from core.pipeline.weekly_summary import (
                             render_weekly_summary_html,
                             render_weekly_summary_md,
@@ -304,13 +312,16 @@ def run_pipeline(args: argparse.Namespace) -> int:
                         html_content = render_weekly_summary_html(
                             summary_data, today_str, chart_paths=chart_files,
                         )
-                        suffix = "_weekly_summary"
 
-                    md_path = os.path.join(report_dir, f"{today_str}{suffix}.md")
+                    # Write into weekly folder
+                    weekly_dir = os.path.join(report_dir, weekly_folder_name)
+                    Path(weekly_dir).mkdir(parents=True, exist_ok=True)
+
+                    md_path = os.path.join(weekly_dir, "report.md")
                     with open(md_path, "w", encoding="utf-8") as f:
                         f.write(md_content)
 
-                    html_path = os.path.join(report_dir, f"{today_str}{suffix}.html")
+                    html_path = os.path.join(weekly_dir, "report.html")
                     with open(html_path, "w", encoding="utf-8") as f:
                         f.write(html_content)
                     logger.info("Weekly report files: %s, %s", md_path, html_path)
@@ -382,7 +393,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                         gh_pages_url = None
                         if "link" in send_modes and gh_pages_base:
                             gh_pages_url = (
-                                f"{gh_pages_base}/{today_str}{suffix}.html"
+                                f"{gh_pages_base}/{weekly_folder_name}/report.html"
                             )
 
                         display_date = datetime.now(timezone.utc).strftime("%y년 %m월 %d일")
