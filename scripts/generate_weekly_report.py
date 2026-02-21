@@ -74,12 +74,6 @@ def main():
     weekly_folder = output_dir / f"{yy}{mm}W{ww}_weekly_report"
     weekly_folder.mkdir(parents=True, exist_ok=True)
 
-    # Render markdown
-    md_output = weekly_folder / "report.md"
-    md_content = render_weekly_summary_md(summary_data, args.date)
-    md_output.write_text(md_content, encoding="utf-8")
-    print(f"✅ Markdown: {md_output}")
-
     # Generate charts (if viz available)
     chart_paths = []
     try:
@@ -92,11 +86,23 @@ def main():
     except Exception:
         pass
 
-    # Render HTML
-    html_output = weekly_folder / "report.html"
-    html_content = render_weekly_summary_html(summary_data, args.date, chart_paths=chart_paths)
-    html_output.write_text(html_content, encoding="utf-8")
-    print(f"✅ HTML: {html_output}")
+    # Render per-topic reports
+    topic_slugs = list(summary_data.get("keyword_freq", {}).keys())
+    if not topic_slugs:
+        topic_slugs = list(summary_data.get("score_trends", {}).keys())
+
+    for slug in topic_slugs:
+        md_content = render_weekly_summary_md(summary_data, args.date, topic_slug=slug)
+        md_output = weekly_folder / f"report_{slug}.md"
+        md_output.write_text(md_content, encoding="utf-8")
+        print(f"✅ Markdown ({slug}): {md_output}")
+
+        html_content = render_weekly_summary_html(
+            summary_data, args.date, chart_paths=chart_paths, topic_slug=slug,
+        )
+        html_output = weekly_folder / f"report_{slug}.html"
+        html_output.write_text(html_content, encoding="utf-8")
+        print(f"✅ HTML ({slug}): {html_output}")
 
     # Print summary stats
     print("\n📈 Summary Statistics:")

@@ -59,9 +59,9 @@ class NotifyConfig:
         send: List of delivery modes for this channel.
             Valid values: "link", "readonly_link", "md".
             - "link": GitHub Pages URL
-              ({YYMMDD}_daily_report/report.html with Supabase JS).
+              ({YYMMDD}_daily_report/report_{slug}.html with Supabase JS).
             - "readonly_link": GitHub Pages URL
-              ({YYMMDD}_daily_report/report_readonly.html, no Supabase JS).
+              ({YYMMDD}_daily_report/report_{slug}_readonly.html, no Supabase JS).
             - "md": Markdown file attachment.
             Defaults to ["link"] for backward compatibility.
     """

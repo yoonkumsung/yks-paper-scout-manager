@@ -85,17 +85,22 @@ def create_app(
         reports_dir = Path("tmp/reports").resolve()
         if not reports_dir.exists():
             abort(404)
-        filename = subpath or "index.html"
-        target = reports_dir / filename
-        if target.exists() and target.is_file():
-            return send_from_directory(str(reports_dir), filename)
-        # If no specific file requested, list available reports
-        if not subpath:
-            html_files = sorted(reports_dir.glob("**/*.html"), reverse=True)
-            if html_files:
-                # Serve the most recent report
-                rel = html_files[0].relative_to(reports_dir)
-                return send_from_directory(str(reports_dir), str(rel))
+        # Serve specific file if requested
+        if subpath:
+            target = reports_dir / subpath
+            if target.exists() and target.is_file():
+                return send_from_directory(str(reports_dir), subpath)
+            abort(404)
+        # Serve index.html if it exists
+        index_path = reports_dir / "index.html"
+        if index_path.exists():
+            return send_from_directory(str(reports_dir), "index.html")
+        # Fallback: serve the most recently modified HTML report
+        html_files = list(reports_dir.glob("**/*.html"))
+        if html_files:
+            newest = max(html_files, key=lambda p: p.stat().st_mtime)
+            rel = newest.relative_to(reports_dir)
+            return send_from_directory(str(reports_dir), str(rel))
         abort(404)
 
     @app.errorhandler(404)

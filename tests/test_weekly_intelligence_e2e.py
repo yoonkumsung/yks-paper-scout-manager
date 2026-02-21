@@ -139,9 +139,10 @@ class TestWeeklyIntelligenceE2E:
                 iso_week INTEGER NOT NULL,
                 snapshot_date TEXT NOT NULL,
                 section TEXT NOT NULL,
+                topic_slug TEXT NOT NULL DEFAULT 'all',
                 data_json TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                PRIMARY KEY (iso_year, iso_week, section)
+                PRIMARY KEY (iso_year, iso_week, section, topic_slug)
             )
         """)
         conn.commit()
@@ -425,7 +426,7 @@ class TestWeeklyIntelligenceE2E:
             CREATE TABLE IF NOT EXISTS runs (run_id INTEGER PRIMARY KEY AUTOINCREMENT, topic_slug TEXT NOT NULL, window_start_utc TEXT NOT NULL, window_end_utc TEXT NOT NULL, display_date_kst TEXT NOT NULL, embedding_mode TEXT NOT NULL, scoring_weights TEXT NOT NULL, detected_rpm INTEGER, detected_daily_limit INTEGER, response_format_supported INTEGER NOT NULL, prompt_versions TEXT NOT NULL, topic_override_fields TEXT NOT NULL, total_collected INTEGER NOT NULL DEFAULT 0, total_filtered INTEGER NOT NULL DEFAULT 0, total_scored INTEGER NOT NULL DEFAULT 0, total_discarded INTEGER NOT NULL DEFAULT 0, total_output INTEGER NOT NULL DEFAULT 0, threshold_used INTEGER NOT NULL DEFAULT 60, threshold_lowered INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'running', errors TEXT);
             CREATE TABLE IF NOT EXISTS paper_evaluations (run_id INTEGER NOT NULL, paper_key TEXT NOT NULL, embed_score REAL, llm_base_score INTEGER NOT NULL, flags TEXT NOT NULL, bonus_score INTEGER, final_score REAL, rank INTEGER, tier INTEGER, discarded INTEGER NOT NULL DEFAULT 0, score_lowered INTEGER, multi_topic TEXT, is_remind INTEGER NOT NULL DEFAULT 0, summary_ko TEXT, reason_ko TEXT, insight_ko TEXT, brief_reason TEXT, prompt_ver_score TEXT NOT NULL, prompt_ver_summ TEXT, PRIMARY KEY (run_id, paper_key));
             CREATE TABLE IF NOT EXISTS remind_tracking (paper_key TEXT NOT NULL, topic_slug TEXT NOT NULL, recommend_count INTEGER NOT NULL DEFAULT 0, last_recommend_run_id INTEGER NOT NULL, PRIMARY KEY (paper_key, topic_slug));
-            CREATE TABLE IF NOT EXISTS weekly_snapshots (iso_year INTEGER NOT NULL, iso_week INTEGER NOT NULL, snapshot_date TEXT NOT NULL, section TEXT NOT NULL, data_json TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (iso_year, iso_week, section));
+            CREATE TABLE IF NOT EXISTS weekly_snapshots (iso_year INTEGER NOT NULL, iso_week INTEGER NOT NULL, snapshot_date TEXT NOT NULL, section TEXT NOT NULL, topic_slug TEXT NOT NULL DEFAULT 'all', data_json TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (iso_year, iso_week, section, topic_slug));
         """)
         conn.commit()
         conn.close()

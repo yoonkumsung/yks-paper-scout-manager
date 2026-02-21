@@ -29,10 +29,12 @@ class WeeklyDataContext:
         ph: str,
         config: dict,
         reference_date: datetime,
+        topic_slug: str | None = None,
     ) -> None:
         self.config = config
         self.reference_date = reference_date
         self.trend_weeks = config.get("trend_weeks", 4)
+        self.topic_slug = topic_slug
 
         # Compute ISO year/week for the reference date
         iso_cal = reference_date.isocalendar()
@@ -42,7 +44,7 @@ class WeeklyDataContext:
         # Compute week boundaries (Monday-based, 4 weeks back)
         self.week_boundaries = self._compute_week_boundaries(reference_date, self.trend_weeks)
 
-        # Load all data
+        # Load all data (filtered by topic_slug if provided)
         self.papers_by_week: list[list[dict]] = self._load_papers(conn, ph)
         self.all_papers_deduped: list[dict] = self._deduplicate_all_papers()
         self.reminds: list[dict] = self._load_reminds(conn, ph)
@@ -83,6 +85,7 @@ class WeeklyDataContext:
         newest_end = self.week_boundaries[-1][1]
 
         cursor = conn.cursor()
+        topic_filter = f"AND r.topic_slug = {ph}" if self.topic_slug else ""
         query = f"""
         SELECT
             p.paper_key, p.title, p.abstract, p.url, p.authors,
@@ -99,10 +102,14 @@ class WeeklyDataContext:
             AND r.window_start_utc < {ph}
             AND pe.discarded = 0
             AND r.status = 'completed'
+            {topic_filter}
         ORDER BY pe.final_score DESC
         """
+        params = [oldest_start, newest_end]
+        if self.topic_slug:
+            params.append(self.topic_slug)
         try:
-            cursor.execute(query, (oldest_start, newest_end))
+            cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
         except Exception:
             logger.warning("Failed to load papers for weekly intelligence", exc_info=True)
@@ -149,7 +156,8 @@ class WeeklyDataContext:
             return []
 
         cursor = conn.cursor()
-        query = """
+        topic_filter = f"WHERE rt.topic_slug = {ph}" if self.topic_slug else ""
+        query = f"""
         SELECT
             rt.paper_key, rt.topic_slug, rt.recommend_count,
             rt.last_recommend_run_id,
@@ -162,10 +170,12 @@ class WeeklyDataContext:
         LEFT JOIN paper_evaluations pe
             ON rt.paper_key = pe.paper_key
             AND rt.last_recommend_run_id = pe.run_id
+        {topic_filter}
         ORDER BY rt.recommend_count DESC, pe.final_score DESC
         """
+        params = (self.topic_slug,) if self.topic_slug else ()
         try:
-            cursor.execute(query)
+            cursor.execute(query, params)
             rows = cursor.fetchall()
             return [self._row_to_dict(row) for row in rows]
         except Exception:
@@ -181,13 +191,17 @@ class WeeklyDataContext:
         prev_week = prev_iso[1]
 
         cursor = conn.cursor()
+        topic_filter = f" AND topic_slug = {ph}" if self.topic_slug else ""
         query = f"""
         SELECT section, data_json
         FROM weekly_snapshots
-        WHERE iso_year = {ph} AND iso_week = {ph}
+        WHERE iso_year = {ph} AND iso_week = {ph}{topic_filter}
         """
+        params: list = [prev_year, prev_week]
+        if self.topic_slug:
+            params.append(self.topic_slug)
         try:
-            cursor.execute(query, (prev_year, prev_week))
+            cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
         except Exception:
             logger.warning("Failed to load prev snapshot (table may not exist yet)", exc_info=True)

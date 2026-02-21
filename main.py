@@ -173,9 +173,8 @@ def run_pipeline(args: argparse.Namespace) -> int:
         try:
             from output.notifiers.error_alert import send_error_alert
             from output.notifiers.registry import NotifierRegistry
-            from datetime import datetime as _dt
 
-            display_date = _dt.now(timezone.utc).strftime("%y년 %m월 %d일")
+            display_date = datetime.now(timezone.utc).strftime("%y년 %m월 %d일")
             registry = NotifierRegistry()
             # Try to find a notifier from any configured topic
             for t_spec in config.topics:
@@ -242,10 +241,6 @@ def run_pipeline(args: argparse.Namespace) -> int:
                 summary_data: dict = {}
                 chart_files: list = []
                 report_dir = config.output.get("report_dir", "tmp/reports")
-                md_path = ""
-                html_path = ""
-                md_content = ""
-                html_content = ""
 
                 # Build weekly folder name using calendar year + ISO week
                 ref_date_obj = datetime.now(timezone.utc).date()
@@ -255,18 +250,28 @@ def run_pipeline(args: argparse.Namespace) -> int:
                 ww = f"{iso_week:02d}"
                 weekly_folder_name = f"{yy}{mm}W{ww}_weekly_report"
 
-                # --- Weekly summary data ---
+                # --- Weekly summary data (per-topic) ---
                 intel_cfg = config.weekly.get("intelligence", {})
+                # Collect topic slugs from config
+                weekly_topic_slugs = [t.slug for t in config.topics] if config.topics else []
+                # Per-topic results: {slug: (summary_data, md_content, html_content)}
+                weekly_per_topic: dict = {}
+
                 if intel_cfg.get("enabled", False):
-                    try:
-                        from core.pipeline.weekly_intelligence import generate_weekly_intelligence
-                        summary_data, md_content, html_content = generate_weekly_intelligence(
-                            db_path=db_path, date_str=today_str, config=config,
-                            provider=_provider, connection_string=_conn_str,
-                            rate_limiter=rate_limiter,
-                        )
-                    except Exception:
-                        logger.warning("Weekly intelligence generation failed (non-fatal)", exc_info=True)
+                    from core.pipeline.weekly_intelligence import generate_weekly_intelligence
+                    for slug in weekly_topic_slugs:
+                        try:
+                            s_data, s_md, s_html = generate_weekly_intelligence(
+                                db_path=db_path, date_str=today_str, config=config,
+                                provider=_provider, connection_string=_conn_str,
+                                rate_limiter=rate_limiter, topic_slug=slug,
+                            )
+                            weekly_per_topic[slug] = (s_data, s_md, s_html)
+                        except Exception:
+                            logger.warning("Weekly intelligence failed for %s (non-fatal)", slug, exc_info=True)
+                    # Keep summary_data from first topic for notification stats
+                    if weekly_per_topic:
+                        summary_data = next(iter(weekly_per_topic.values()))[0]
                 else:
                     try:
                         from core.pipeline.weekly_summary import generate_weekly_summary
@@ -303,28 +308,43 @@ def run_pipeline(args: argparse.Namespace) -> int:
                     from pathlib import Path
                     Path(report_dir).mkdir(parents=True, exist_ok=True)
 
-                    if not intel_cfg.get("enabled", False):
+                    # Write into weekly folder (per-topic reports)
+                    weekly_dir = os.path.join(report_dir, weekly_folder_name)
+                    Path(weekly_dir).mkdir(parents=True, exist_ok=True)
+
+                    if intel_cfg.get("enabled", False):
+                        # LLM intelligence mode: per-topic reports
+                        for slug, (_, s_md, s_html) in weekly_per_topic.items():
+                            if s_md:
+                                md_path = os.path.join(weekly_dir, f"report_{slug}.md")
+                                with open(md_path, "w", encoding="utf-8") as f:
+                                    f.write(s_md)
+                            if s_html:
+                                html_path = os.path.join(weekly_dir, f"report_{slug}.html")
+                                with open(html_path, "w", encoding="utf-8") as f:
+                                    f.write(s_html)
+                            logger.info("Weekly intel report (%s): md=%s, html=%s", slug, bool(s_md), bool(s_html))
+                    else:
+                        # Non-LLM mode: per-topic reports
                         from core.pipeline.weekly_summary import (
                             render_weekly_summary_html,
                             render_weekly_summary_md,
                         )
-                        md_content = render_weekly_summary_md(summary_data, today_str)
-                        html_content = render_weekly_summary_html(
-                            summary_data, today_str, chart_paths=chart_files,
-                        )
-
-                    # Write into weekly folder
-                    weekly_dir = os.path.join(report_dir, weekly_folder_name)
-                    Path(weekly_dir).mkdir(parents=True, exist_ok=True)
-
-                    md_path = os.path.join(weekly_dir, "report.md")
-                    with open(md_path, "w", encoding="utf-8") as f:
-                        f.write(md_content)
-
-                    html_path = os.path.join(weekly_dir, "report.html")
-                    with open(html_path, "w", encoding="utf-8") as f:
-                        f.write(html_content)
-                    logger.info("Weekly report files: %s, %s", md_path, html_path)
+                        topic_slugs = list(summary_data.get("keyword_freq", {}).keys())
+                        if not topic_slugs:
+                            topic_slugs = list(summary_data.get("score_trends", {}).keys())
+                        for slug in topic_slugs:
+                            slug_md = render_weekly_summary_md(summary_data, today_str, topic_slug=slug)
+                            slug_html = render_weekly_summary_html(
+                                summary_data, today_str, chart_paths=chart_files, topic_slug=slug,
+                            )
+                            md_path = os.path.join(weekly_dir, f"report_{slug}.md")
+                            with open(md_path, "w", encoding="utf-8") as f:
+                                f.write(slug_md)
+                            html_path = os.path.join(weekly_dir, f"report_{slug}.html")
+                            with open(html_path, "w", encoding="utf-8") as f:
+                                f.write(slug_html)
+                            logger.info("Weekly report (%s): %s, %s", slug, md_path, html_path)
                 except Exception:
                     logger.warning("Weekly report rendering failed (non-fatal)", exc_info=True)
 
@@ -390,17 +410,30 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
                     if notifier is not None:
                         gh_pages_base = gh_pages_cfg.get("base_url", "").rstrip("/")
-                        gh_pages_url = None
-                        if "link" in send_modes and gh_pages_base:
-                            gh_pages_url = (
-                                f"{gh_pages_base}/{weekly_folder_name}/report.html"
-                            )
 
                         display_date = datetime.now(timezone.utc).strftime("%y년 %m월 %d일")
 
+                        # Collect per-topic report URLs and MD paths
+                        if weekly_per_topic:
+                            topic_slugs_for_notify = list(weekly_per_topic.keys())
+                        else:
+                            topic_slugs_for_notify = list(summary_data.get("keyword_freq", {}).keys())
+                            if not topic_slugs_for_notify:
+                                topic_slugs_for_notify = list(summary_data.get("score_trends", {}).keys())
+
+                        gh_pages_url = None
+                        topic_urls: list = []
+                        if "link" in send_modes and gh_pages_base and topic_slugs_for_notify:
+                            for slug in topic_slugs_for_notify:
+                                url = f"{gh_pages_base}/{weekly_folder_name}/report_{slug}.html"
+                                topic_urls.append((slug, url))
+                            gh_pages_url = topic_urls[0][1] if topic_urls else None
+
                         file_paths_notify: dict = {}
-                        if "md" in send_modes and md_path and os.path.exists(md_path):
-                            file_paths_notify["md"] = os.path.abspath(md_path)
+                        if "md" in send_modes and topic_slugs_for_notify:
+                            first_md = os.path.join(weekly_dir, f"report_{topic_slugs_for_notify[0]}.md")
+                            if os.path.exists(first_md):
+                                file_paths_notify["md"] = os.path.abspath(first_md)
 
                         allowed_fmts = [f for f in send_modes if f in ("md", "html")]
 
@@ -409,19 +442,28 @@ def run_pipeline(args: argparse.Namespace) -> int:
                         week_start = ref_date - timedelta(days=ref_date.weekday() + 7)
                         week_end = week_start + timedelta(days=6)
                         # Use total evaluated papers count (not just top 10)
-                        sections = summary_data.get("sections", {})
-                        exec_metrics = sections.get("executive", {}).get("metrics", {})
-                        paper_count = exec_metrics.get("total_evaluated", 0)
-                        if paper_count == 0:
-                            paper_count = len(summary_data.get("top_papers", []))
+                        paper_count = 0
+                        if weekly_per_topic:
+                            for _slug, (_sd, _, _) in weekly_per_topic.items():
+                                sec = _sd.get("sections", {})
+                                em = sec.get("executive", {}).get("metrics", {})
+                                paper_count += em.get("total_evaluated", 0) or len(_sd.get("top_papers", []))
+                        else:
+                            sections = summary_data.get("sections", {})
+                            exec_metrics = sections.get("executive", {}).get("metrics", {})
+                            paper_count = exec_metrics.get("total_evaluated", 0)
+                            if paper_count == 0:
+                                paper_count = len(summary_data.get("top_papers", []))
                         custom_msg = (
                             f"{week_start.strftime('%y%m%d')}~"
                             f"{week_end.strftime('%y%m%d')} "
                             f"Weekly Paper Report"
                             f" (논문 {paper_count}편)"
                         )
-                        if gh_pages_url:
-                            custom_msg += f"\n\n{gh_pages_url}"
+                        if topic_urls:
+                            custom_msg += "\n"
+                            for slug, url in topic_urls:
+                                custom_msg += f"\n{slug}: {url}"
 
                         payload = NotifyPayload(
                             topic_slug="weekly-summary",

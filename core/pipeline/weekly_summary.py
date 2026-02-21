@@ -125,9 +125,9 @@ def _get_keyword_frequency(
         if date_cmp < start_cmp or date_cmp > end_cmp:
             continue
 
-        # Find JSON report files: {YYYYMMDD}_paper_{slug}.json
+        # Find JSON report files: {YYMMDD}_paper_{slug}.json (or legacy {YYYYMMDD})
         for fname in os.listdir(date_dir):
-            m = re.match(r"\d{8}_paper_(.+)\.json$", fname)
+            m = re.match(r"\d{6,8}_paper_(.+)\.json$", fname)
             if not m:
                 continue
             slug = m.group(1)
@@ -320,28 +320,39 @@ def _get_graduated_reminds(
     ]
 
 
-def render_weekly_summary_md(summary_data: dict, date_str: str) -> str:
+def render_weekly_summary_md(
+    summary_data: dict,
+    date_str: str,
+    topic_slug: str | None = None,
+) -> str:
     """Render summary data to markdown string.
 
     Args:
         summary_data: Summary data from generate_weekly_summary
         date_str: Date in YYYYMMDD format
+        topic_slug: If provided, filter all data to this topic only.
 
     Returns:
         str: Markdown formatted summary
     """
     lines = []
-    lines.append(f"# Weekly Summary: {date_str}")
+    header = f"# Weekly Summary: {date_str}"
+    if topic_slug:
+        header += f" ({topic_slug})"
+    lines.append(header)
     lines.append("")
 
     # Keyword Frequency
-    lines.append("## Top Keywords per Topic")
+    lines.append("## Top Keywords")
     lines.append("")
     keyword_freq = summary_data.get("keyword_freq", {})
+    if topic_slug:
+        keyword_freq = {k: v for k, v in keyword_freq.items() if k == topic_slug}
     if keyword_freq:
-        for topic_slug, keywords in sorted(keyword_freq.items()):
-            lines.append(f"### {topic_slug}")
-            lines.append("")
+        for slug, keywords in sorted(keyword_freq.items()):
+            if not topic_slug:
+                lines.append(f"### {slug}")
+                lines.append("")
             for kw, count in keywords:
                 lines.append(f"- **{kw}**: {count}")
             lines.append("")
@@ -350,13 +361,16 @@ def render_weekly_summary_md(summary_data: dict, date_str: str) -> str:
         lines.append("")
 
     # Score Trends
-    lines.append("## Daily Average Scores per Topic")
+    lines.append("## Daily Average Scores")
     lines.append("")
     score_trends = summary_data.get("score_trends", {})
+    if topic_slug:
+        score_trends = {k: v for k, v in score_trends.items() if k == topic_slug}
     if score_trends:
-        for topic_slug, trends in sorted(score_trends.items()):
-            lines.append(f"### {topic_slug}")
-            lines.append("")
+        for slug, trends in sorted(score_trends.items()):
+            if not topic_slug:
+                lines.append(f"### {slug}")
+                lines.append("")
             lines.append("| Date | Avg Score |")
             lines.append("|------|-----------|")
             for date, avg_score in trends:
@@ -367,14 +381,17 @@ def render_weekly_summary_md(summary_data: dict, date_str: str) -> str:
         lines.append("")
 
     # Top Papers
-    lines.append("## Top 3 Papers This Week")
+    lines.append("## Top Papers This Week")
     lines.append("")
     top_papers = summary_data.get("top_papers", [])
+    if topic_slug:
+        top_papers = [p for p in top_papers if p.get("topic_slug") == topic_slug]
     if top_papers:
         for i, paper in enumerate(top_papers, 1):
             lines.append(f"### {i}. {paper['title']}")
             lines.append(f"- **Score**: {paper['final_score']}")
-            lines.append(f"- **Topic**: {paper['topic_slug']}")
+            if not topic_slug:
+                lines.append(f"- **Topic**: {paper['topic_slug']}")
             lines.append(f"- **URL**: [{paper['url']}]({paper['url']})")
             lines.append("")
     else:
@@ -385,9 +402,11 @@ def render_weekly_summary_md(summary_data: dict, date_str: str) -> str:
     lines.append("## Graduated Remind Papers (2nd Recommendation)")
     lines.append("")
     graduated = summary_data.get("graduated_reminds", [])
+    if topic_slug:
+        graduated = [p for p in graduated if p.get("topic_slug") == topic_slug]
     if graduated:
         for paper in graduated:
-            lines.append(f"- **{paper['title']}** ({paper['topic_slug']})")
+            lines.append(f"- **{paper['title']}**")
             lines.append(f"  - URL: [{paper['url']}]({paper['url']})")
             lines.append("")
     else:
@@ -397,23 +416,33 @@ def render_weekly_summary_md(summary_data: dict, date_str: str) -> str:
     return "\n".join(lines)
 
 
-def render_weekly_summary_html(summary_data: dict, date_str: str, chart_paths: list[str] | None = None) -> str:
+def render_weekly_summary_html(
+    summary_data: dict,
+    date_str: str,
+    chart_paths: list[str] | None = None,
+    topic_slug: str | None = None,
+) -> str:
     """Render summary data to HTML string (simple inline-styled HTML).
 
     Args:
         summary_data: Summary data from generate_weekly_summary
         date_str: Date in YYYYMMDD format
         chart_paths: Optional list of chart image file paths to embed
+        topic_slug: If provided, filter all data to this topic only.
 
     Returns:
         str: HTML formatted summary
     """
+    title = f"Weekly Summary: {date_str}"
+    if topic_slug:
+        title += f" ({html.escape(topic_slug)})"
+
     lines = []
     lines.append("<!DOCTYPE html>")
     lines.append("<html>")
     lines.append("<head>")
     lines.append("<meta charset='UTF-8'>")
-    lines.append(f"<title>Weekly Summary: {date_str}</title>")
+    lines.append(f"<title>{title}</title>")
     lines.append("<style>")
     lines.append("body { font-family: Arial, sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; }")
     lines.append("h1 { color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }")
@@ -428,14 +457,17 @@ def render_weekly_summary_html(summary_data: dict, date_str: str, chart_paths: l
     lines.append("</style>")
     lines.append("</head>")
     lines.append("<body>")
-    lines.append(f"<h1>Weekly Summary: {date_str}</h1>")
+    lines.append(f"<h1>{title}</h1>")
 
     # Keyword Frequency
-    lines.append("<h2>Top Keywords per Topic</h2>")
+    lines.append("<h2>Top Keywords</h2>")
     keyword_freq = summary_data.get("keyword_freq", {})
+    if topic_slug:
+        keyword_freq = {k: v for k, v in keyword_freq.items() if k == topic_slug}
     if keyword_freq:
-        for topic_slug, keywords in sorted(keyword_freq.items()):
-            lines.append(f"<h3>{html.escape(str(topic_slug))}</h3>")
+        for slug, keywords in sorted(keyword_freq.items()):
+            if not topic_slug:
+                lines.append(f"<h3>{html.escape(str(slug))}</h3>")
             lines.append("<ul>")
             for kw, count in keywords:
                 lines.append(f"<li><strong>{html.escape(str(kw))}</strong>: {count}</li>")
@@ -444,11 +476,14 @@ def render_weekly_summary_html(summary_data: dict, date_str: str, chart_paths: l
         lines.append("<p><em>No keyword data available</em></p>")
 
     # Score Trends
-    lines.append("<h2>Daily Average Scores per Topic</h2>")
+    lines.append("<h2>Daily Average Scores</h2>")
     score_trends = summary_data.get("score_trends", {})
+    if topic_slug:
+        score_trends = {k: v for k, v in score_trends.items() if k == topic_slug}
     if score_trends:
-        for topic_slug, trends in sorted(score_trends.items()):
-            lines.append(f"<h3>{html.escape(str(topic_slug))}</h3>")
+        for slug, trends in sorted(score_trends.items()):
+            if not topic_slug:
+                lines.append(f"<h3>{html.escape(str(slug))}</h3>")
             lines.append("<table>")
             lines.append("<tr><th>Date</th><th>Avg Score</th></tr>")
             for date, avg_score in trends:
@@ -470,17 +505,20 @@ def render_weekly_summary_html(summary_data: dict, date_str: str, chart_paths: l
                 continue
 
     # Top Papers
-    lines.append("<h2>Top 3 Papers This Week</h2>")
+    lines.append("<h2>Top Papers This Week</h2>")
     top_papers = summary_data.get("top_papers", [])
+    if topic_slug:
+        top_papers = [p for p in top_papers if p.get("topic_slug") == topic_slug]
     if top_papers:
         for i, paper in enumerate(top_papers, 1):
             escaped_title = html.escape(str(paper['title']))
-            escaped_topic = html.escape(str(paper['topic_slug']))
             escaped_url = html.escape(str(paper['url']))
             lines.append(f"<h3>{i}. {escaped_title}</h3>")
             lines.append("<ul>")
             lines.append(f"<li><strong>Score</strong>: {paper['final_score']}</li>")
-            lines.append(f"<li><strong>Topic</strong>: {escaped_topic}</li>")
+            if not topic_slug:
+                escaped_topic = html.escape(str(paper['topic_slug']))
+                lines.append(f"<li><strong>Topic</strong>: {escaped_topic}</li>")
             lines.append(f"<li><strong>URL</strong>: <a href='{escaped_url}'>{escaped_url}</a></li>")
             lines.append("</ul>")
     else:
@@ -489,13 +527,14 @@ def render_weekly_summary_html(summary_data: dict, date_str: str, chart_paths: l
     # Graduated Reminds
     lines.append("<h2>Graduated Remind Papers (2nd Recommendation)</h2>")
     graduated = summary_data.get("graduated_reminds", [])
+    if topic_slug:
+        graduated = [p for p in graduated if p.get("topic_slug") == topic_slug]
     if graduated:
         lines.append("<ul>")
         for paper in graduated:
             escaped_title = html.escape(str(paper['title']))
-            escaped_topic = html.escape(str(paper['topic_slug']))
             escaped_url = html.escape(str(paper['url']))
-            lines.append(f"<li><strong>{escaped_title}</strong> ({escaped_topic})")
+            lines.append(f"<li><strong>{escaped_title}</strong>")
             lines.append(f"<br>URL: <a href='{escaped_url}'>{escaped_url}</a></li>")
         lines.append("</ul>")
     else:

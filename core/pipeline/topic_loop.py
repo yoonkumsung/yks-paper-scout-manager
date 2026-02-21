@@ -219,11 +219,11 @@ class TopicLoopOrchestrator:
         manual_date_from = self._run_options.get("date_from")
         if manual_date_from:
             display_date_kst = manual_date_from  # Already YYYY-MM-DD
-            date_compact = manual_date_from.replace("-", "")
+            date_compact = manual_date_from.replace("-", "")[2:]
         else:
             kst_now = datetime.now(_KST_OFFSET)
             display_date_kst = kst_now.strftime("%Y-%m-%d")
-            date_compact = kst_now.strftime("%Y%m%d")
+            date_compact = kst_now.strftime("%y%m%d")
 
         # Prompt versions
         prompt_versions = {

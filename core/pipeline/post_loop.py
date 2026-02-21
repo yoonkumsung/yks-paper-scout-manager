@@ -257,7 +257,6 @@ class PostLoopProcessor:
 
         # Build reports list for index page
         reports: List[Dict[str, str]] = []
-        latest_report_data: Optional[Dict[str, Any]] = None
 
         for topic_info in completed:
             slug = topic_info["slug"]
@@ -269,10 +268,9 @@ class PostLoopProcessor:
             if report_entry:
                 reports.append(report_entry)
 
-            # Use the last completed topic's report data for daily report
-            report_data = self._load_latest_report_data(slug, report_dir)
-            if report_data is not None:
-                latest_report_data = report_data
+        # Add weekly report entries to index
+        weekly_entries = self._find_weekly_report_entries(report_dir)
+        reports.extend(weekly_entries)
 
         # Generate index.html
         if reports:
@@ -282,31 +280,33 @@ class PostLoopProcessor:
                 template_dir=template_dir,
             )
 
-        # Generate consolidated daily report HTML files into the daily folder.
-        # Format: YYMMDD_daily_report/report.html (with Supabase JS)
-        #         YYMMDD_daily_report/report_readonly.html (without)
+        # Generate per-topic daily report HTML files into the daily folder.
+        # Format: YYMMDD_daily_report/report_{slug}.html (with Supabase JS)
+        #         YYMMDD_daily_report/report_{slug}_readonly.html (without)
         # Channels choose which variant to link via their ``send`` list.
-        if latest_report_data is not None:
-            daily_folder = self._build_daily_report_folder(
-                latest_report_data
-            )
+        for topic_info in completed:
+            slug = topic_info["slug"]
+            report_data = self._load_latest_report_data(slug, report_dir)
+            if report_data is None:
+                continue
+            daily_folder = self._build_daily_report_folder(report_data)
             daily_dir = os.path.join(report_dir, daily_folder)
             os.makedirs(daily_dir, exist_ok=True)
             # Primary daily report with Supabase JS
             generate_latest_html(
-                report_data=latest_report_data,
+                report_data=report_data,
                 output_dir=daily_dir,
                 template_dir=template_dir,
                 read_sync=(self._config.read_sync or None),
-                filename="report.html",
+                filename=f"report_{slug}.html",
             )
             # Read-only daily report without Supabase JS
             generate_latest_html(
-                report_data=latest_report_data,
+                report_data=report_data,
                 output_dir=daily_dir,
                 template_dir=template_dir,
                 read_sync=None,
-                filename="report_readonly.html",
+                filename=f"report_{slug}_readonly.html",
             )
 
     # ------------------------------------------------------------------
@@ -391,16 +391,16 @@ class PostLoopProcessor:
                     has_md = "md" in send_modes and "md" in file_paths
 
                     # Choose the gh_pages URL for the message
-                    # Use folder-based URL: YYMMDD_daily_report/report.html
+                    # Use per-topic URL: YYMMDD_daily_report/report_{slug}.html
                     daily_folder = self._date_to_daily_folder(display_date)
                     channel_gh_pages_url: Optional[str] = None
                     if has_link:
                         channel_gh_pages_url = (
-                            f"{gh_pages_base_url}/{daily_folder}/report.html"
+                            f"{gh_pages_base_url}/{daily_folder}/report_{slug}.html"
                         )
                     elif has_readonly_link:
                         channel_gh_pages_url = (
-                            f"{gh_pages_base_url}/{daily_folder}/report_readonly.html"
+                            f"{gh_pages_base_url}/{daily_folder}/report_{slug}_readonly.html"
                         )
 
                     if not has_link and not has_readonly_link and not has_md:
@@ -892,9 +892,12 @@ class PostLoopProcessor:
     def _find_report_entry(
         self, slug: str, topic_name: str, report_dir: str
     ) -> Optional[Dict[str, str]]:
-        """Find the most recent report file for a topic.
+        """Find the most recent daily report file for a topic.
 
-        Returns a dict with topic_slug, topic_name, date, filepath
+        Searches for daily reports (``YYMMDD_paper_{slug}.html``).
+        Weekly reports are handled separately by ``_find_weekly_report_entries``.
+
+        Returns a dict with topic_slug, topic_name, date, filepath, report_type
         or None if not found.
         """
         for date_str, date_dir in self._iter_report_dirs(report_dir):
@@ -908,8 +911,40 @@ class PostLoopProcessor:
                         "topic_name": topic_name,
                         "date": date_str,
                         "filepath": rel_path,
+                        "report_type": "daily",
                     }
         return None
+
+    def _find_weekly_report_entries(
+        self, report_dir: str
+    ) -> List[Dict[str, str]]:
+        """Find weekly report entries across all weekly folders.
+
+        Returns list of dicts with topic_slug, topic_name, date, filepath,
+        report_type for each per-topic weekly report found.
+        """
+        entries: List[Dict[str, str]] = []
+        weekly_pattern = re.compile(r"^\d{4}W\d{2}_weekly_report$")
+
+        for date_str, date_dir in self._iter_report_dirs(report_dir):
+            if not weekly_pattern.match(date_str):
+                continue
+            for fname in os.listdir(date_dir):
+                match = re.match(r"^report_(.+)\.html$", fname)
+                if match and not fname.endswith("_readonly.html"):
+                    slug = match.group(1)
+                    topic_name = self._find_topic_name(slug)
+                    rel_path = os.path.relpath(
+                        os.path.join(date_dir, fname), report_dir
+                    )
+                    entries.append({
+                        "topic_slug": slug,
+                        "topic_name": f"[Weekly] {topic_name}",
+                        "date": date_str,
+                        "filepath": rel_path,
+                        "report_type": "weekly",
+                    })
+        return entries
 
     def _load_latest_report_data(
         self, slug: str, report_dir: str

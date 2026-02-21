@@ -28,12 +28,16 @@ def latest() -> tuple[Any, int]:
 
     Returns the most recent report from weekly_snapshots table,
     assembled from all section rows.
+
+    Query params:
+        topic_slug: Filter by topic slug (optional).
     """
     from core.storage.db_connection import get_connection
 
     db_path = current_app.config["DB_PATH"]
     provider = current_app.config.get("DB_PROVIDER", "sqlite")
     conn_str = current_app.config.get("SUPABASE_DB_URL")
+    topic_slug = request.args.get("topic_slug")
 
     try:
         with get_connection(db_path, provider, conn_str) as (conn, ph):
@@ -59,12 +63,16 @@ def latest() -> tuple[Any, int]:
                 latest_year = latest_row[0]
                 latest_week = latest_row[1]
 
-            # Get all sections for that week
-            cursor.execute(
+            # Get all sections for that week, optionally filtered by topic
+            topic_filter = f" AND topic_slug = {ph}" if topic_slug else ""
+            query = (
                 f"SELECT section, data_json, snapshot_date FROM weekly_snapshots "
-                f"WHERE iso_year = {ph} AND iso_week = {ph}",
-                (latest_year, latest_week),
+                f"WHERE iso_year = {ph} AND iso_week = {ph}{topic_filter}"
             )
+            params: list = [latest_year, latest_week]
+            if topic_slug:
+                params.append(topic_slug)
+            cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
 
     except Exception as e:
@@ -88,12 +96,15 @@ def latest() -> tuple[Any, int]:
         except (json.JSONDecodeError, TypeError):
             sections[section] = {}
 
-    return jsonify({
+    result: dict[str, Any] = {
         "iso_year": latest_year,
         "iso_week": latest_week,
         "snapshot_date": snapshot_date,
         "sections": sections,
-    }), 200
+    }
+    if topic_slug:
+        result["topic_slug"] = topic_slug
+    return jsonify(result), 200
 
 
 @weekly_intel_bp.route("/run", methods=["POST"])
@@ -204,14 +215,6 @@ def _run_weekly_background(run_id: str) -> None:
 
         today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
 
-        summary_data, md_content, html_content = generate_weekly_intelligence(
-            db_path=db_path,
-            date_str=today_str,
-            config=config,
-            provider=provider,
-            connection_string=conn_str,
-        )
-
         # Save output files
         import os
         from pathlib import Path
@@ -230,15 +233,30 @@ def _run_weekly_background(run_id: str) -> None:
         weekly_dir = os.path.join(report_dir, weekly_folder)
         Path(weekly_dir).mkdir(parents=True, exist_ok=True)
 
-        if md_content:
-            md_path = os.path.join(weekly_dir, "report.md")
-            with open(md_path, "w", encoding="utf-8") as f:
-                f.write(md_content)
+        # Generate per-topic reports
+        topic_slugs = [t.slug for t in config.topics] if config.topics else []
+        for slug in topic_slugs:
+            try:
+                _, md_content, html_content = generate_weekly_intelligence(
+                    db_path=db_path,
+                    date_str=today_str,
+                    config=config,
+                    provider=provider,
+                    connection_string=conn_str,
+                    topic_slug=slug,
+                )
 
-        if html_content:
-            html_path = os.path.join(weekly_dir, "report.html")
-            with open(html_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
+                if md_content:
+                    md_path = os.path.join(weekly_dir, f"report_{slug}.md")
+                    with open(md_path, "w", encoding="utf-8") as f:
+                        f.write(md_content)
+
+                if html_content:
+                    html_path = os.path.join(weekly_dir, f"report_{slug}.html")
+                    with open(html_path, "w", encoding="utf-8") as f:
+                        f.write(html_content)
+            except Exception:
+                logger.warning("Weekly intelligence failed for topic %s", slug, exc_info=True)
 
         _generation_status = {
             "running": False,

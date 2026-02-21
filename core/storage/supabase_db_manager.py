@@ -856,8 +856,9 @@ CREATE TABLE IF NOT EXISTS weekly_snapshots (
     iso_week    INTEGER NOT NULL,
     snapshot_date TEXT NOT NULL,
     section     TEXT NOT NULL,
+    topic_slug  TEXT NOT NULL DEFAULT 'all',
     data_json   JSONB NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (iso_year, iso_week, section)
+    PRIMARY KEY (iso_year, iso_week, section, topic_slug)
 );
 """

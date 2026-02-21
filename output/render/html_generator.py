@@ -2,9 +2,9 @@
 
 Generates HTML report files using Jinja2 templates following devspec 10-2.
 Produces:
-  - ``YYMMDD_daily_report/{YYYYMMDD}_paper_{slug}.html`` -- per-topic report
-  - ``YYMMDD_daily_report/report.html`` -- consolidated daily report
-  - ``YYMMDD_daily_report/report_readonly.html`` -- readonly variant
+  - ``YYMMDD_daily_report/{YYMMDD}_paper_{slug}.html`` -- per-topic report
+  - ``YYMMDD_daily_report/report_{slug}.html`` -- per-topic daily report
+  - ``YYMMDD_daily_report/report_{slug}_readonly.html`` -- readonly variant
   - ``index.html`` -- topic list with date navigation
 
 Security: Jinja2 autoescape=True, no ``|safe`` filter usage.
@@ -252,12 +252,12 @@ def _create_env(template_dir: str) -> Environment:
 def _build_filename(meta: dict) -> str:
     """Build the output filename from meta.
 
-    Format: ``{YYYYMMDD}_paper_{slug}.html``
+    Format: ``{YYMMDD}_paper_{slug}.html``
     """
     date_str = meta.get("date", "")
     slug = meta.get("topic_slug", "unknown")
-    # date is in "YYYY-MM-DD" format; convert to "YYYYMMDD"
-    date_compact = date_str.replace("-", "")
+    # date is in "YYYY-MM-DD" format; convert to "YYMMDD"
+    date_compact = date_str.replace("-", "")[2:]
     return "%s_paper_%s.html" % (date_compact, slug)
 
 

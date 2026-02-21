@@ -26,6 +26,7 @@ def generate_weekly_intelligence(
     provider: str = "sqlite",
     connection_string: str | None = None,
     rate_limiter: Any | None = None,
+    topic_slug: str | None = None,
 ) -> tuple[dict, str, str]:
     """Generate weekly intelligence report.
 
@@ -36,6 +37,7 @@ def generate_weekly_intelligence(
         provider: Database provider ("sqlite" or "supabase").
         connection_string: PostgreSQL connection string.
         rate_limiter: Optional RateLimiter instance for LLM calls.
+        topic_slug: If provided, generate report for this topic only.
 
     Returns:
         Tuple of (summary_data, md_content, html_content).
@@ -53,7 +55,7 @@ def generate_weekly_intelligence(
             empty = {"sections": {}, "date_str": date_str}
             return empty, "", ""
 
-        ctx = WeeklyDataContext(conn, ph, intel_config, reference_date)
+        ctx = WeeklyDataContext(conn, ph, intel_config, reference_date, topic_slug=topic_slug)
 
         # Build sections (Phase 1: A and C only)
         sections: dict[str, Any] = {}
@@ -153,7 +155,7 @@ def generate_weekly_intelligence(
 
         # Save snapshots
         try:
-            _save_snapshots(conn, ph, sections, iso_cal[0], iso_cal[1], provider)
+            _save_snapshots(conn, ph, sections, iso_cal[0], iso_cal[1], provider, topic_slug=topic_slug or "all")
         except Exception:
             logger.warning("Failed to save weekly snapshots", exc_info=True)
 
@@ -335,10 +337,129 @@ def _render_html_fallback(data: dict) -> str:
     return "\n".join(lines)
 
 
+def _migrate_weekly_snapshots(conn: Any, provider: str) -> None:
+    """Migrate weekly_snapshots table to include topic_slug in PK.
+
+    SQLite: Recreate table with new PK (iso_year, iso_week, section, topic_slug).
+    Supabase: Add column + drop/recreate constraint.
+    """
+    cursor = conn.cursor()
+    try:
+        # Check if topic_slug column already exists
+        if provider == "supabase":
+            cursor.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'weekly_snapshots' AND column_name = 'topic_slug'"
+            )
+            has_col = len(cursor.fetchall()) > 0
+        else:
+            cursor.execute("PRAGMA table_info(weekly_snapshots)")
+            rows = cursor.fetchall()
+            has_col = any(
+                (r["name"] if isinstance(r, dict) else r[1]) == "topic_slug"
+                for r in rows
+            )
+
+        if has_col:
+            # Column exists - check if PK includes topic_slug
+            if provider == "supabase":
+                cursor.execute(
+                    "SELECT COUNT(*) AS cnt FROM information_schema.key_column_usage "
+                    "WHERE table_name = 'weekly_snapshots' "
+                    "AND constraint_name = 'weekly_snapshots_pkey'"
+                )
+                row = cursor.fetchone()
+                pk_count = row["cnt"] if isinstance(row, dict) else row[0]
+                if pk_count < 4:
+                    cursor.execute(
+                        "ALTER TABLE weekly_snapshots "
+                        "DROP CONSTRAINT weekly_snapshots_pkey"
+                    )
+                    cursor.execute(
+                        "ALTER TABLE weekly_snapshots "
+                        "ADD PRIMARY KEY (iso_year, iso_week, section, topic_slug)"
+                    )
+                    conn.commit()
+                    logger.info("Supabase: rebuilt weekly_snapshots PK to 4 columns")
+            else:
+                cursor.execute("PRAGMA table_info(weekly_snapshots)")
+                cols = cursor.fetchall()
+                pk_cols = [
+                    (r["name"] if isinstance(r, dict) else r[1])
+                    for r in cols
+                    if (r["pk"] if isinstance(r, dict) else r[5]) > 0
+                ]
+                if len(pk_cols) < 4:
+                    _recreate_sqlite_table(conn, has_topic_slug=True)
+            return
+
+        # Column doesn't exist - full migration needed
+        if provider == "supabase":
+            cursor.execute(
+                "ALTER TABLE weekly_snapshots "
+                "ADD COLUMN topic_slug TEXT NOT NULL DEFAULT 'all'"
+            )
+            cursor.execute(
+                "ALTER TABLE weekly_snapshots "
+                "DROP CONSTRAINT weekly_snapshots_pkey"
+            )
+            cursor.execute(
+                "ALTER TABLE weekly_snapshots "
+                "ADD PRIMARY KEY (iso_year, iso_week, section, topic_slug)"
+            )
+            conn.commit()
+        else:
+            # SQLite: must recreate table to change PK
+            _recreate_sqlite_table(conn, has_topic_slug=False)
+
+        logger.info("Migrated weekly_snapshots: added topic_slug to PK")
+    except Exception:
+        logger.debug("weekly_snapshots migration skipped", exc_info=True)
+
+
+def _recreate_sqlite_table(conn: Any, has_topic_slug: bool = False) -> None:
+    """Recreate weekly_snapshots with new 4-column PK (SQLite only)."""
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS weekly_snapshots_new (
+            iso_year    INTEGER NOT NULL,
+            iso_week    INTEGER NOT NULL,
+            snapshot_date TEXT NOT NULL,
+            section     TEXT NOT NULL,
+            topic_slug  TEXT NOT NULL DEFAULT 'all',
+            data_json   TEXT NOT NULL,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (iso_year, iso_week, section, topic_slug)
+        )
+    """)
+    if has_topic_slug:
+        cursor.execute("""
+            INSERT OR IGNORE INTO weekly_snapshots_new
+                (iso_year, iso_week, snapshot_date, section, topic_slug, data_json, created_at)
+            SELECT iso_year, iso_week, snapshot_date, section,
+                   COALESCE(topic_slug, 'all'), data_json, created_at
+            FROM weekly_snapshots
+        """)
+    else:
+        cursor.execute("""
+            INSERT OR IGNORE INTO weekly_snapshots_new
+                (iso_year, iso_week, snapshot_date, section, topic_slug, data_json, created_at)
+            SELECT iso_year, iso_week, snapshot_date, section,
+                   'all', data_json, created_at
+            FROM weekly_snapshots
+        """)
+    cursor.execute("DROP TABLE weekly_snapshots")
+    cursor.execute("ALTER TABLE weekly_snapshots_new RENAME TO weekly_snapshots")
+    conn.commit()
+    logger.info("Recreated weekly_snapshots table with 4-column PK")
+
+
 def _save_snapshots(
-    conn: Any, ph: str, sections: dict, iso_year: int, iso_week: int, provider: str
+    conn: Any, ph: str, sections: dict, iso_year: int, iso_week: int,
+    provider: str, topic_slug: str = "all",
 ) -> None:
     """Save section data as snapshots for future WoW comparison."""
+    _migrate_weekly_snapshots(conn, provider)
     cursor = conn.cursor()
     snapshot_date = datetime.now(timezone.utc).isoformat()
 
@@ -347,18 +468,18 @@ def _save_snapshots(
 
         if provider == "supabase":
             query = f"""
-            INSERT INTO weekly_snapshots (iso_year, iso_week, snapshot_date, section, data_json)
-            VALUES ({ph}, {ph}, {ph}, {ph}, {ph})
-            ON CONFLICT (iso_year, iso_week, section)
+            INSERT INTO weekly_snapshots (iso_year, iso_week, snapshot_date, section, topic_slug, data_json)
+            VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph})
+            ON CONFLICT (iso_year, iso_week, section, topic_slug)
             DO UPDATE SET data_json = EXCLUDED.data_json, snapshot_date = EXCLUDED.snapshot_date
             """
         else:
             query = f"""
             INSERT OR REPLACE INTO weekly_snapshots
-                (iso_year, iso_week, snapshot_date, section, data_json)
-            VALUES ({ph}, {ph}, {ph}, {ph}, {ph})
+                (iso_year, iso_week, snapshot_date, section, topic_slug, data_json)
+            VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph})
             """
 
-        cursor.execute(query, (iso_year, iso_week, snapshot_date, section_name, data_json))
+        cursor.execute(query, (iso_year, iso_week, snapshot_date, section_name, topic_slug, data_json))
 
     conn.commit()

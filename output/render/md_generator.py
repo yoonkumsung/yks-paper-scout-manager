@@ -41,7 +41,7 @@ def generate_markdown(
 
     Returns:
         Absolute path to the written ``.md`` file.
-        File naming: ``{YYYYMMDD}_paper_{slug}.md``.
+        File naming: ``{YYMMDD}_paper_{slug}.md``.
     """
     meta: dict = report_data.get("meta", {})
     papers: List[dict] = report_data.get("papers", [])
@@ -358,12 +358,12 @@ def _render_footer() -> str:
 def _build_filename(meta: dict) -> str:
     """Build the output filename from meta.
 
-    Format: ``{YYYYMMDD}_paper_{slug}.md``
+    Format: ``{YYMMDD}_paper_{slug}.md``
     """
     date_str = meta.get("date", "")
     slug = meta.get("topic_slug", "unknown")
-    # date is in "YYYY-MM-DD" format; convert to "YYYYMMDD"
-    date_compact = date_str.replace("-", "")
+    # date is in "YYYY-MM-DD" format; convert to "YYMMDD"
+    date_compact = date_str.replace("-", "")[2:]
     return "%s_paper_%s.md" % (date_compact, slug)
 
 

@@ -1,7 +1,7 @@
 """JSON exporter for Paper Scout reports.
 
 Generates report JSON files following the devspec 10-4 schema.
-Produces files named ``{YYYYMMDD}_paper_{slug}.json`` containing
+Produces files named ``{YYMMDD}_paper_{slug}.json`` containing
 meta, clusters, papers, and remind_papers sections.
 
 Section reference: TASK-024 from SPEC-PAPER-001.
@@ -33,7 +33,7 @@ class _DataclassEncoder(json.JSONEncoder):
 def export_json(
     topic_slug: str,
     topic_name: str,
-    date_str: str,  # YYYYMMDD
+    date_str: str,  # YYMMDD
     display_title: str,
     window_start_utc: str,  # ISO 8601
     window_end_utc: str,  # ISO 8601
@@ -59,7 +59,7 @@ def export_json(
     Args:
         topic_slug: URL-safe topic identifier (e.g. ``"ai-sports-device"``).
         topic_name: Human-readable topic name.
-        date_str: Report date in ``YYYYMMDD`` format.
+        date_str: Report date in ``YYMMDD`` format.
         display_title: Localized display title for the report.
         window_start_utc: Collection window start in ISO 8601 format.
         window_end_utc: Collection window end in ISO 8601 format.
@@ -82,7 +82,7 @@ def export_json(
     Returns:
         Absolute path to the written JSON file.
     """
-    # Format date from YYYYMMDD to YYYY-MM-DD
+    # Format date from YYMMDD to YYYY-MM-DD
     formatted_date = _format_date(date_str)
 
     # Build the report payload
@@ -117,7 +117,7 @@ def export_json(
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
-    # Build filename: {YYYYMMDD}_paper_{slug}.json
+    # Build filename: {YYMMDD}_paper_{slug}.json
     filename = f"{date_str}_paper_{topic_slug}.json"
     filepath = os.path.join(output_dir, filename)
 
@@ -137,19 +137,23 @@ def export_json(
 
 
 def _format_date(date_str: str) -> str:
-    """Convert ``YYYYMMDD`` to ``YYYY-MM-DD``.
+    """Convert ``YYMMDD`` to ``YYYY-MM-DD``.
+
+    Supports both 6-character (YYMMDD) and legacy 8-character (YYYYMMDD) input.
 
     Args:
-        date_str: Date string in ``YYYYMMDD`` format.
+        date_str: Date string in ``YYMMDD`` or ``YYYYMMDD`` format.
 
     Returns:
         Date string in ``YYYY-MM-DD`` format.
 
     Raises:
-        ValueError: If *date_str* is not exactly 8 characters.
+        ValueError: If *date_str* is not 6 or 8 characters.
     """
-    if len(date_str) != 8:
-        raise ValueError(
-            f"date_str must be 8 characters (YYYYMMDD), got {len(date_str)!r}"
-        )
-    return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+    if len(date_str) == 6:
+        return f"20{date_str[:2]}-{date_str[2:4]}-{date_str[4:6]}"
+    if len(date_str) == 8:
+        return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+    raise ValueError(
+        f"date_str must be 6 (YYMMDD) or 8 (YYYYMMDD) characters, got {len(date_str)!r}"
+    )
