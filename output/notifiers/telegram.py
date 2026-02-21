@@ -1,10 +1,8 @@
 """Telegram Bot API notifier.
 
 Sends notifications via Telegram Bot API:
-- sendMessage: plain text, NO parse_mode (prevents formatting injection).
-- sendDocument: HTML file, MD file SEPARATELY (2 calls).
-- caption: file description per document.
-- No paper titles/external text in message body.
+- sendMessage: HTML parse_mode with escaped user content.
+- sendDocument: HTML file, MD file SEPARATELY (2 calls), no caption.
 
 Section refs: DevSpec 11-4.
 """
@@ -41,8 +39,8 @@ class TelegramNotifier(NotifierBase):
     ) -> bool:
         """Send via Telegram Bot API.
 
-        1. sendMessage with plain text (no parse_mode).
-        2. For each file: sendDocument with caption.
+        1. sendMessage with HTML parse_mode.
+        2. For each file: sendDocument without caption.
         """
         # Step 1: Send text message
         resp = requests.post(
@@ -50,20 +48,19 @@ class TelegramNotifier(NotifierBase):
             json={
                 "chat_id": self._chat_id,
                 "text": message,
-                # NO parse_mode - plain text only
+                "parse_mode": "HTML",
             },
             timeout=30,
         )
         if not resp.ok:
             return False
 
-        # Step 2: Send each file as a separate document
+        # Step 2: Send each file as a separate document (no caption)
         for key, path in file_paths.items():
-            caption = f"{payload.topic_name} - {key.upper()} report"
             with open(path, "rb") as f:
                 resp = requests.post(
                     f"{self._api_base}/sendDocument",
-                    data={"chat_id": self._chat_id, "caption": caption},
+                    data={"chat_id": self._chat_id},
                     files={"document": (os.path.basename(path), f)},
                     timeout=30,
                 )
@@ -78,12 +75,12 @@ class TelegramNotifier(NotifierBase):
         payload: NotifyPayload,
     ) -> bool:
         """Send text-only with link to gh-pages."""
-        text = f"{message}\n\nReport: {payload.gh_pages_url}"
         resp = requests.post(
             f"{self._api_base}/sendMessage",
             json={
                 "chat_id": self._chat_id,
-                "text": text,
+                "text": message,
+                "parse_mode": "HTML",
             },
             timeout=30,
         )

@@ -10,6 +10,7 @@ Section refs: DevSpec 11-1, 11-2, 11-3, 11-7, 11-8.
 
 from __future__ import annotations
 
+import html
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -209,52 +210,54 @@ class NotifierBase(ABC):
     @staticmethod
     def _build_start_message(payload: NotifyPayload) -> str:
         """Build start notification message with search context."""
-        lines = [f"[Paper Scout] {payload.topic_name} 논문 수집을 시작합니다."]
+        topic = html.escape(payload.topic_name)
+        lines = [
+            f"[Paper Scout] {topic} 논문 수집을 시작합니다.",
+            "",
+            f"📅 {html.escape(payload.display_date)}",
+        ]
         if payload.search_window:
-            lines.append(f"검색 기간: {payload.search_window}")
+            lines.append(f"📋 검색 기간: {html.escape(payload.search_window)}")
         if payload.categories:
             if len(payload.categories) <= 4:
                 cats_str = ", ".join(payload.categories)
             else:
                 cats_str = ", ".join(payload.categories[:3]) + f" 외 {len(payload.categories) - 3}개"
-            lines.append(f"카테고리: {cats_str}")
+            lines.append(f"📋 카테고리: {html.escape(cats_str)}")
         return "\n".join(lines)
 
     def _build_normal_message(self, payload: NotifyPayload) -> str:
-        """Build normal message with top-3 keywords (DevSpec 11-2).
+        """Build normal completion message.
 
-        When ``gh_pages_url`` is set, appends the link to the message
-        so that channels receiving both a link and a file attachment
-        get the URL inline.
+        When ``gh_pages_url`` is set, appends it as an HTML hyperlink.
         """
-        top3 = payload.keywords[:3]
-        remaining = len(payload.keywords) - 3
+        topic = html.escape(payload.topic_name)
+        keyword_count = len(payload.keywords)
 
-        quoted = ", ".join(f'"{kw}"' for kw in top3)
-
-        if remaining > 0:
-            keywords_part = f"{quoted} 외 {remaining}개"
-        else:
-            keywords_part = quoted
-
-        msg = (
-            f"{payload.display_date}, "
-            f"오늘의 키워드인 {keywords_part}에 대한 "
-            f"arXiv 논문 정리입니다."
-        )
+        lines = [
+            f"[Paper Scout] {topic} 논문 수집 완료",
+            "",
+            f"📅 {html.escape(payload.display_date)}",
+            f"📊 {payload.total_output}편 수집 / {keyword_count}개 키워드",
+        ]
 
         if payload.gh_pages_url:
-            msg += f"\n\n{payload.gh_pages_url}"
+            url = html.escape(payload.gh_pages_url)
+            lines.append("")
+            lines.append(f'🔗 <a href="{url}">리포트 보기</a>')
 
-        return msg
+        return "\n".join(lines)
 
     @staticmethod
     def _build_zero_result_message(payload: NotifyPayload) -> str:
         """Build zero-result message (DevSpec 11-7)."""
-        return (
-            f"{payload.display_date}, "
-            f"오늘은 {payload.topic_name} 관련 신규 논문이 없습니다."
-        )
+        topic = html.escape(payload.topic_name)
+        return "\n".join([
+            f"[Paper Scout] {topic} 논문 수집 완료",
+            "",
+            f"📅 {html.escape(payload.display_date)}",
+            "📊 신규 논문이 없습니다.",
+        ])
 
     def _check_file_sizes(
         self, file_paths: Dict[str, str]
