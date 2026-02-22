@@ -683,6 +683,14 @@
                             <button class="btn btn-sm btn-outline-secondary" id="cancelSearchBtn" style="display: none;">취소</button>
                             <button class="btn btn-sm btn-outline-success" id="rerunSearchBtn" style="display: none;">다시 실행</button>
                             <button class="btn btn-sm btn-outline-warning" id="resetPipelineBtn" title="파이프라인 상태를 강제 초기화합니다">상태 초기화</button>
+                            <button class="btn btn-sm btn-outline-info" id="weeklyRunBtn" title="위클리 리포트를 수동으로 생성합니다">위클리 실행</button>
+                        </div>
+
+                        <!-- Weekly run status -->
+                        <div id="weeklyProgress" class="mt-2" style="display: none;">
+                            <div class="position-relative mb-2" style="background: #1e1e2e; border-radius: 8px; padding: 10px 14px;">
+                                <span id="weeklyProgressMsg" style="color: #93c5fd; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem;">위클리 실행 중...</span>
+                            </div>
                         </div>
 
                         <!-- Progress bar -->
@@ -2727,6 +2735,74 @@
 
         document.getElementById('startSearchBtn').addEventListener('click', startSearch);
         document.getElementById('rerunSearchBtn').addEventListener('click', startSearch);
+
+        // --- Weekly run button ---
+        document.getElementById('weeklyRunBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('weeklyRunBtn');
+            const progressDiv = document.getElementById('weeklyProgress');
+            const progressMsg = document.getElementById('weeklyProgressMsg');
+
+            btn.disabled = true;
+            progressDiv.style.display = 'block';
+            progressMsg.textContent = '데이터 확인 중...';
+
+            try {
+                // Pre-check: verify enough data exists
+                const checkRes = await fetch('/api/pipeline/weekly-check');
+                const checkData = await checkRes.json();
+
+                if (!checkData.ready) {
+                    if (!confirm(checkData.message + '\n\n그래도 위클리 리포트를 생성하시겠습니까?')) {
+                        progressDiv.style.display = 'none';
+                        btn.disabled = false;
+                        return;
+                    }
+                }
+
+                progressMsg.textContent = '위클리 파이프라인 실행 중...';
+
+                const runRes = await fetch('/api/pipeline/weekly-run', { method: 'POST' });
+                const runData = await runRes.json();
+
+                if (!runRes.ok) {
+                    alert(runData.error || '위클리 실행 요청 실패');
+                    progressDiv.style.display = 'none';
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Poll weekly status
+                const weeklyPoll = setInterval(async () => {
+                    try {
+                        const statusRes = await fetch('/api/pipeline/weekly-status');
+                        const statusData = await statusRes.json();
+
+                        if (!statusData.running) {
+                            clearInterval(weeklyPoll);
+                            btn.disabled = false;
+                            if (statusData.error) {
+                                progressMsg.style.color = '#fca5a5';
+                                progressMsg.textContent = '위클리 실행 실패: ' + statusData.error;
+                            } else {
+                                progressMsg.style.color = '#86efac';
+                                progressMsg.textContent = '위클리 리포트 생성 완료!';
+                                setTimeout(() => { progressDiv.style.display = 'none'; }, 5000);
+                            }
+                        }
+                    } catch (e) {
+                        clearInterval(weeklyPoll);
+                        progressMsg.style.color = '#fca5a5';
+                        progressMsg.textContent = '상태 확인 실패';
+                        btn.disabled = false;
+                    }
+                }, 3000);
+
+            } catch (e) {
+                progressMsg.style.color = '#fca5a5';
+                progressMsg.textContent = '위클리 실행 오류: ' + e.message;
+                btn.disabled = false;
+            }
+        });
 
         function startPolling() {
             if (pollInterval) {

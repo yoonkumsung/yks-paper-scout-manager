@@ -307,6 +307,157 @@ def reset():
 
 
 # ------------------------------------------------------------------
+# Weekly pipeline endpoints
+# ------------------------------------------------------------------
+
+# Lock for weekly pipeline execution
+_weekly_lock = threading.Lock()
+_weekly_status: dict = {"running": False, "run_id": None, "error": None}
+
+
+@pipeline_bp.route("/weekly-check", methods=["GET"])
+def weekly_check():
+    """Check if enough data exists for weekly report generation.
+
+    Queries the database for papers collected in the last 7 days.
+
+    Returns:
+        200: {"ready": bool, "paper_count": int, "message": str}
+    """
+    try:
+        from core.storage.db_connection import get_connection
+
+        db_path = current_app.config.get("DB_PATH", "data/paper_scout.db")
+        provider = current_app.config.get("DB_PROVIDER", "sqlite")
+        conn_str = current_app.config.get("SUPABASE_DB_URL")
+
+        from datetime import timedelta
+        seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+
+        with get_connection(db_path, provider, conn_str) as (conn, ph):
+            if conn is None:
+                return jsonify({
+                    "ready": False,
+                    "paper_count": 0,
+                    "message": "데이터베이스에 연결할 수 없습니다.",
+                }), 503
+
+            cursor = conn.cursor()
+            cursor.execute(
+                f"SELECT COUNT(*) FROM papers WHERE created_at >= {ph}",
+                (seven_days_ago,),
+            )
+            row = cursor.fetchone()
+            count = row[0] if row else 0
+
+        ready = count > 0
+        if ready:
+            message = f"최근 7일간 {count}건의 논문이 수집되었습니다."
+        else:
+            message = "최근 7일간 수집된 논문이 없습니다. 데일리 파이프라인을 먼저 실행해주세요."
+
+        return jsonify({
+            "ready": ready,
+            "paper_count": count,
+            "message": message,
+        }), 200
+
+    except Exception as e:
+        logger.error("Weekly check failed: %s", e)
+        return jsonify({
+            "ready": False,
+            "paper_count": 0,
+            "message": f"데이터 확인 중 오류: {e}",
+        }), 500
+
+
+@pipeline_bp.route("/weekly-run", methods=["POST"])
+def weekly_run():
+    """Execute weekly pipeline tasks (summary, charts, deploy, notify).
+
+    Runs the full weekly pipeline in a background thread.
+    Returns 409 if already running or if daily pipeline is active.
+
+    Returns:
+        202: {"status": "started", "run_id": str}
+        409: {"error": str}
+    """
+    global _weekly_status
+
+    with _weekly_lock:
+        if _weekly_status["running"]:
+            return jsonify({
+                "error": "위클리 파이프라인이 이미 실행 중입니다.",
+                "run_id": _weekly_status.get("run_id"),
+            }), 409
+
+        # Check if daily pipeline is running
+        try:
+            runner = _get_pipeline_runner()
+            if runner.get_status().get("running"):
+                return jsonify({
+                    "error": "데일리 파이프라인이 실행 중입니다. 완료 후 다시 시도해주세요.",
+                }), 409
+        except Exception:
+            pass
+
+        import uuid
+        run_id = str(uuid.uuid4())[:8]
+        _weekly_status = {"running": True, "run_id": run_id, "error": None}
+
+    thread = threading.Thread(
+        target=_run_weekly_background,
+        args=(run_id,),
+        daemon=True,
+    )
+    thread.start()
+
+    return jsonify({"status": "started", "run_id": run_id}), 202
+
+
+@pipeline_bp.route("/weekly-status", methods=["GET"])
+def weekly_status():
+    """Get current weekly pipeline execution status."""
+    return jsonify(_weekly_status), 200
+
+
+def _run_weekly_background(run_id: str) -> None:
+    """Background thread for weekly pipeline execution."""
+    global _weekly_status
+
+    try:
+        from core.config import load_config
+        from main import _run_weekly_tasks
+
+        config = load_config()
+        db_path = config.database.get("path", "data/paper_scout.db")
+
+        result = _run_weekly_tasks(
+            config=config,
+            db_path=db_path,
+            db_manager=None,
+            rate_limiter=None,
+        )
+
+        _weekly_status = {
+            "running": False,
+            "run_id": run_id,
+            "error": None,
+            "completed": True,
+            "exit_code": result,
+        }
+        logger.info("Weekly pipeline completed (run_id=%s, exit_code=%d)", run_id, result)
+
+    except Exception as e:
+        logger.error("Weekly pipeline failed: %s", e, exc_info=True)
+        _weekly_status = {
+            "running": False,
+            "run_id": run_id,
+            "error": str(e),
+        }
+
+
+# ------------------------------------------------------------------
 # Keyword cache helpers
 # ------------------------------------------------------------------
 

@@ -99,21 +99,44 @@ def _run_weekly_tasks(
     """
     from core.pipeline.weekly_guard import mark_weekly_done
 
-    try:
-        from core.pipeline.weekly_db_maintenance import run_weekly_maintenance
-        db_config = config.database
-        maint_summary = run_weekly_maintenance(db_path=db_path, db_config=db_config)
-        logger.info("Weekly maintenance: %s", maint_summary)
-    except Exception:
-        logger.warning("Weekly DB maintenance failed (non-fatal)", exc_info=True)
-
-    today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+    # --- Minimum data validation: check papers in last 7 days ---
     db_config = config.database
     _provider = db_config.get("provider", "sqlite")
     _conn_str = None
     if _provider == "supabase":
         _env_key = db_config.get("supabase", {}).get("connection_string_env", "SUPABASE_DB_URL")
         _conn_str = os.environ.get(_env_key)
+
+    try:
+        from core.storage.db_connection import get_connection
+        seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+        with get_connection(db_path, _provider, _conn_str) as (conn, ph):
+            if conn is not None:
+                cursor = conn.cursor()
+                cursor.execute(
+                    f"SELECT COUNT(*) FROM papers WHERE created_at >= {ph}",
+                    (seven_days_ago,),
+                )
+                row = cursor.fetchone()
+                recent_count = row[0] if row else 0
+                if recent_count == 0:
+                    logger.warning(
+                        "Weekly tasks skipped: 0 papers in last 7 days. "
+                        "Will retry next cycle (mark_weekly_done NOT called)."
+                    )
+                    return 0
+                logger.info("Weekly data check: %d papers in last 7 days", recent_count)
+    except Exception:
+        logger.warning("Weekly data pre-check failed, proceeding anyway", exc_info=True)
+
+    try:
+        from core.pipeline.weekly_db_maintenance import run_weekly_maintenance
+        maint_summary = run_weekly_maintenance(db_path=db_path, db_config=db_config)
+        logger.info("Weekly maintenance: %s", maint_summary)
+    except Exception:
+        logger.warning("Weekly DB maintenance failed (non-fatal)", exc_info=True)
+
+    today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
 
     summary_data: dict = {}
     chart_files: list = []

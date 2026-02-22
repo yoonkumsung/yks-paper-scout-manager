@@ -1,31 +1,12 @@
-name: Paper Scout Daily Pipeline
+name: Weekly Report Pipeline
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # UTC 02:00 = KST 11:00
+    - cron: '0 8 * * 0'  # UTC 08:00 Sunday = KST 17:00 Sunday
   workflow_dispatch:
-    inputs:
-      date_from:
-        description: 'YYYY-MM-DD (KST)'
-        required: false
-        type: string
-      date_to:
-        description: 'YYYY-MM-DD (KST)'
-        required: false
-        type: string
-      mode:
-        description: 'full / dry-run'
-        required: false
-        default: 'full'
-        type: string
-      dedup:
-        description: 'skip_recent / none'
-        required: false
-        default: 'skip_recent'
-        type: string
 
 concurrency:
-  group: paper-scout-${{ github.ref }}
+  group: weekly-report-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -33,9 +14,9 @@ permissions:
   issues: write
 
 jobs:
-  paper-scout:
+  weekly-report:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -69,24 +50,7 @@ jobs:
           restore-keys: |
             paper-scout-data-
 
-      - name: Check schedule enabled
-        id: schedule-check
-        if: github.event_name == 'schedule'
-        run: |
-          if [ -f config.yaml ]; then
-            enabled=$(python3 -c "import yaml; c=yaml.safe_load(open('config.yaml')); print(c.get('app',{}).get('schedule_enabled', True))" 2>/dev/null || echo "True")
-            if [ "$enabled" = "False" ]; then
-              echo "skip=true" >> $GITHUB_OUTPUT
-              echo "::notice::Schedule disabled in config.yaml (app.schedule_enabled: false). Skipping."
-            else
-              echo "skip=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Setup Python 3.11
-        if: steps.schedule-check.outputs.skip != 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -97,30 +61,20 @@ jobs:
             requirements-viz.txt
 
       - name: Install core dependencies
-        if: steps.schedule-check.outputs.skip != 'true'
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Install embed dependencies
-        if: steps.schedule-check.outputs.skip != 'true'
         run: pip install -r requirements-embed.txt
         continue-on-error: true
 
       - name: Install viz dependencies
-        if: steps.schedule-check.outputs.skip != 'true'
         run: pip install -r requirements-viz.txt
         continue-on-error: true
 
-      - name: Run Paper Scout
-        if: steps.schedule-check.outputs.skip != 'true'
-        run: |
-          python main.py \
-            --mode ${{ inputs.mode || 'full' }} \
-            ${{ inputs.date_from && format('--date-from {0}', inputs.date_from) || '' }} \
-            ${{ inputs.date_to && format('--date-to {0}', inputs.date_to) || '' }} \
-            --dedup ${{ inputs.dedup || 'skip_recent' }} \
-            --skip-weekly
+      - name: Run Weekly Report
+        run: python main.py --weekly-only
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -130,7 +84,7 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
       - name: Save data cache
-        if: always() && steps.schedule-check.outputs.skip != 'true'
+        if: always()
         uses: actions/cache/save@v4
         with:
           path: |
@@ -140,11 +94,10 @@ jobs:
             data/weekly_done.flag
           key: paper-scout-data-${{ github.sha }}
 
-
       - name: Upload debug artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: debug-logs-${{ github.run_number }}
+          name: weekly-debug-logs-${{ github.run_number }}
           path: tmp/debug/
           retention-days: 7
