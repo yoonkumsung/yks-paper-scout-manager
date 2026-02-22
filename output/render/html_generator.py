@@ -2,8 +2,7 @@
 
 Generates HTML report files using Jinja2 templates following devspec 10-2.
 Produces:
-  - ``YYMMDD_daily_report/{YYMMDD}_paper_{slug}.html`` -- per-topic report
-  - ``YYMMDD_daily_report/report_{slug}.html`` -- per-topic daily report
+  - ``YYMMDD_daily_report/report_{slug}.html`` -- per-topic daily report (with Supabase JS)
   - ``YYMMDD_daily_report/report_{slug}_readonly.html`` -- readonly variant
   - ``index.html`` -- topic list with date navigation
 

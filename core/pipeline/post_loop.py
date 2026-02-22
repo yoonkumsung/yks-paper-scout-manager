@@ -894,13 +894,27 @@ class PostLoopProcessor:
     ) -> Optional[Dict[str, str]]:
         """Find the most recent daily report file for a topic.
 
-        Searches for daily reports (``YYMMDD_paper_{slug}.html``).
+        Searches for consolidated reports (``report_{slug}.html``) first,
+        then falls back to raw topic-loop output (``_paper_{slug}.html``).
         Weekly reports are handled separately by ``_find_weekly_report_entries``.
 
         Returns a dict with topic_slug, topic_name, date, filepath, report_type
         or None if not found.
         """
         for date_str, date_dir in self._iter_report_dirs(report_dir):
+            # Prefer consolidated report file
+            consolidated = f"report_{slug}.html"
+            consolidated_path = os.path.join(date_dir, consolidated)
+            if os.path.isfile(consolidated_path):
+                rel_path = os.path.relpath(consolidated_path, report_dir)
+                return {
+                    "topic_slug": slug,
+                    "topic_name": topic_name,
+                    "date": date_str,
+                    "filepath": rel_path,
+                    "report_type": "daily",
+                }
+            # Fallback to raw topic-loop output
             for fname in os.listdir(date_dir):
                 if fname.endswith(f"_paper_{slug}.html"):
                     rel_path = os.path.relpath(

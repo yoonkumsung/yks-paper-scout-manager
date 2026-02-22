@@ -1,7 +1,7 @@
 """JSON exporter for Paper Scout reports.
 
 Generates report JSON files following the devspec 10-4 schema.
-Produces files named ``{YYMMDD}_paper_{slug}.json`` containing
+Produces per-topic JSON files (``{YYMMDD}_paper_{slug}.json``) containing
 meta, clusters, papers, and remind_papers sections.
 
 Section reference: TASK-024 from SPEC-PAPER-001.
