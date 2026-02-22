@@ -243,8 +243,9 @@ class NotifierBase(ABC):
 
         if payload.gh_pages_url:
             url = html.escape(payload.gh_pages_url)
+            slug = html.escape(payload.topic_slug)
             lines.append("")
-            lines.append(f'🔗 <a href="{url}">리포트 보기</a>')
+            lines.append(f'🔗 <a href="{url}">{slug} 데일리 리포트 보기</a>')
 
         return "\n".join(lines)
 
