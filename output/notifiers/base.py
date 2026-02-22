@@ -214,7 +214,6 @@ class NotifierBase(ABC):
         lines = [
             f"[Paper Scout] {topic} 논문 수집을 시작합니다.",
             "",
-            f"📅 {html.escape(payload.display_date)}",
         ]
         if payload.search_window:
             lines.append(f"📋 검색 기간: {html.escape(payload.search_window)}")
@@ -237,7 +236,6 @@ class NotifierBase(ABC):
         lines = [
             f"[Paper Scout] {topic} 논문 수집 완료",
             "",
-            f"📅 {html.escape(payload.display_date)}",
             f"📊 {payload.total_output}편 수집 / {keyword_count}개 키워드",
         ]
 
@@ -256,7 +254,6 @@ class NotifierBase(ABC):
         return "\n".join([
             f"[Paper Scout] {topic} 논문 수집 완료",
             "",
-            f"📅 {html.escape(payload.display_date)}",
             "📊 신규 논문이 없습니다.",
         ])
 

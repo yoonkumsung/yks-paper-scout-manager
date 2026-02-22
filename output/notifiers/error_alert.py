@@ -47,7 +47,6 @@ def build_error_alert(
     lines = [
         f"[Paper Scout] {topic} 논문 수집 실패",
         "",
-        f"📅 {html.escape(display_date)}",
         f"❌ 단계: {html.escape(failed_stage)}",
         f"❌ 원인: {html.escape(error_cause)}",
     ]

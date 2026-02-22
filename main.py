@@ -317,7 +317,7 @@ def _run_weekly_tasks(
             period = f"{week_start.strftime('%y%m%d')}~{week_end.strftime('%y%m%d')}"
             custom_msg = (
                 f"[Paper Scout] 위클리 리포트 완료\n"
-                f"\n📅 {period}"
+                f"\n{period}"
             )
             if topic_urls:
                 custom_msg += "\n"
