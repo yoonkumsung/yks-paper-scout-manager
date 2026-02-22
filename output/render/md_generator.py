@@ -41,7 +41,7 @@ def generate_markdown(
 
     Returns:
         Absolute path to the written ``.md`` file.
-        File naming: ``report_{slug}.md`` (in daily report folder).
+        File naming: ``{YYMMDD}_paper_{slug}.md`` (raw topic-loop output).
     """
     meta: dict = report_data.get("meta", {})
     papers: List[dict] = report_data.get("papers", [])
