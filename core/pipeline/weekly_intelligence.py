@@ -27,6 +27,7 @@ def generate_weekly_intelligence(
     connection_string: str | None = None,
     rate_limiter: Any | None = None,
     topic_slug: str | None = None,
+    chart_paths: dict | None = None,
 ) -> tuple[dict, str, str]:
     """Generate weekly intelligence report.
 
@@ -82,16 +83,6 @@ def generate_weekly_intelligence(
             logger.warning("Section B (tech_radar) build failed", exc_info=True)
             sections["tech_radar"] = {}
 
-        # Phase 3: Product Intel (Section D)
-        try:
-            from core.pipeline.weekly_product_intel import build_product_intel
-            sections["product_intel"] = build_product_intel(ctx)
-        except ImportError:
-            sections["product_intel"] = {}
-        except Exception:
-            logger.warning("Section D (product_intel) build failed", exc_info=True)
-            sections["product_intel"] = {}
-
         # Phase 3: Research Network (Section E)
         try:
             from core.pipeline.weekly_research_net import build_research_network
@@ -121,22 +112,22 @@ def generate_weekly_intelligence(
                 except (ImportError, Exception):
                     pass
 
-                try:
-                    from core.pipeline.weekly_product_intel import add_llm_strategy
-                    top10_missing = [
-                        p for p in sections.get("top_papers", {}).get("papers", [])
-                        if not p.get("insight_ko")
-                    ]
-                    add_llm_strategy(
-                        sections.get("product_intel", {}), analyst, top10_missing
-                    )
-                except (ImportError, Exception):
-                    pass
-
             except ImportError:
                 logger.debug("LLM analyst not available yet")
             except Exception:
                 logger.warning("LLM integration failed (non-fatal)", exc_info=True)
+
+        # Build chart_images from chart_paths (base64-encoded data URIs)
+        chart_images: dict[str, str] = {}
+        if chart_paths:
+            import base64
+            for key, path in chart_paths.items():
+                try:
+                    with open(path, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode("utf-8")
+                    chart_images[key] = f'<img src="data:image/png;base64,{b64}" style="max-width:100%;height:auto;margin:10px 0;" alt="{key}">'
+                except (OSError, IOError):
+                    logger.debug("Failed to read chart file: %s", path)
 
         # Assemble summary data
         iso_cal = reference_date.isocalendar()
@@ -147,6 +138,9 @@ def generate_weekly_intelligence(
             "iso_week": iso_cal[1],
             # Legacy compatibility key
             "top_papers": sections.get("top_papers", {}).get("papers", []),
+            # Integrated from weekly_summary
+            "score_trends": ctx.score_trends,
+            "chart_images": chart_images,
         }
 
         # Render templates
@@ -182,12 +176,19 @@ def _render_html(summary_data: dict, config: Any) -> str:
     template_path = template_dir / "weekly_paper_report.html.j2"
 
     if template_path.exists():
+        from markupsafe import Markup
         env = Environment(
             loader=FileSystemLoader(str(template_dir)),
             autoescape=True,
         )
         template = env.get_template("weekly_paper_report.html.j2")
-        return template.render(**summary_data)
+        # Mark chart_images values as safe HTML (pre-sanitized data URIs)
+        safe_data = dict(summary_data)
+        if safe_data.get("chart_images"):
+            safe_data["chart_images"] = {
+                k: Markup(v) for k, v in safe_data["chart_images"].items()
+            }
+        return template.render(**safe_data)
 
     # Fallback: simple HTML generation
     return _render_html_fallback(summary_data)

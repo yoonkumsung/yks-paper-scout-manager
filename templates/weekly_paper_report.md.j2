@@ -4,13 +4,14 @@
 
 {% set exec = sections.get("executive", {}) %}
 {% set metrics = exec.get("metrics", {}) %}
-{% if metrics %}
-## A. Executive Summary
+{% set radar = sections.get("tech_radar", {}) %}
+## 1. Weekly Briefing
 
 {% if exec.get("llm_briefing") %}
 {{ exec.llm_briefing }}
 
 {% endif %}
+{% if metrics %}
 | Metric | Value | WoW |
 |--------|-------|-----|
 | Evaluated | {{ metrics.total_evaluated }} | - |
@@ -48,13 +49,12 @@
 {% endif %}
 {% endif %}
 
-{% set tech = sections.get("tech_radar", {}) %}
-{% if tech %}
-## B. Tech Radar
+{% if radar %}
+### Tech Radar
 
-{% set kw_groups = tech.get("keyword_groups", {}) %}
+{% set kw_groups = radar.get("keyword_groups", {}) %}
 {% for group_name, group_data in kw_groups.items() %}
-### {{ group_name }}
+#### {{ group_name }}
 
 {% if group_data.get("llm_analysis") %}
 > {{ group_data.llm_analysis }}
@@ -67,9 +67,9 @@
 {% endfor %}
 
 {% endfor %}
-{% set co_occ = tech.get("co_occurrence", []) %}
+{% set co_occ = radar.get("co_occurrence", []) %}
 {% if co_occ %}
-### Co-occurrence
+#### Co-occurrence
 
 | Pair | Count |
 |------|-------|
@@ -78,9 +78,9 @@
 {% endfor %}
 {% endif %}
 
-{% set tfidf_kws = tech.get("tfidf", {}).get("keywords", []) %}
+{% set tfidf_kws = radar.get("tfidf", {}).get("keywords", []) %}
 {% if tfidf_kws %}
-### TF-IDF Keywords
+#### TF-IDF Keywords
 
 {% for kw in tfidf_kws %}`{{ kw.keyword }}` ({{ kw.classification }}) {% endfor %}
 
@@ -90,7 +90,7 @@
 {% set top = sections.get("top_papers", {}) %}
 {% set papers = top.get("papers", []) %}
 {% if papers %}
-## C. Top Papers
+## 2. Top Papers
 
 {% for p in papers %}
 ### {{ loop.index }}. {{ p.title }}{% if p.re_appeared %} (re-appeared){% endif %}
@@ -115,30 +115,8 @@
 {% endfor %}
 {% endif %}
 
-{% set product = sections.get("product_intel", {}) %}
-{% if product %}
-## D. Product Intelligence
-
-{% if product.get("llm_strategy") %}
-> {{ product.llm_strategy }}
-
-{% endif %}
-{% for pl in product.get("product_lines", []) %}
-### {{ pl.name }} ({{ pl.papers_count }} papers, avg {{ pl.avg_score|round(1) }}){% if pl.count_wow is number and pl.count_wow != 0 %} [{{ "+" if pl.count_wow > 0 }}{{ pl.count_wow }}]{% endif %}
-
-{% if pl.trend_4w %}- 4W: {{ pl.trend_4w|join(" → ") }}{% endif %}
-{% if pl.top_paper %}- **Top**: [{{ pl.top_paper.title }}]({{ pl.top_paper.url }}) ({{ pl.top_paper.score }}){% endif %}
-{% for p in pl.get("papers", []) %}
-  - {{ p.title }} ({{ p.score }})
-{% endfor %}
-
-{% endfor %}
-{% endif %}
-
 {% set research = sections.get("research_net", {}) %}
 {% if research %}
-## E. Research Network
-
 {% set authors = research.get("notable_authors", []) %}
 {% if authors %}
 ### Notable Authors
@@ -158,4 +136,21 @@
 - **{{ c.conference }}{% if c.year %} {{ c.year }}{% endif %}**: [{{ c.title }}]({{ c.url }}) ({{ c.final_score }})
 {% endfor %}
 {% endif %}
+{% endif %}
+
+## 3. Trends
+
+{% if score_trends %}
+{% for slug, trend_data in score_trends.items() %}
+### {{ slug }}
+
+| Date | Avg Score |
+|------|-----------|
+{% for date, avg_score in trend_data %}
+| {{ date }} | {{ avg_score }} |
+{% endfor %}
+
+{% endfor %}
+{% else %}
+_No score trend data available_
 {% endif %}

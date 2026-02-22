@@ -195,7 +195,7 @@ weekly:
   visualization:
     enabled: false
   intelligence:
-    enabled: false
+    # Note: intelligence is always enabled. The "enabled" field is deprecated.
     must_track_keywords:
       groups:
         model_architecture:

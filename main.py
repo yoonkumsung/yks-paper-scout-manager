@@ -150,36 +150,7 @@ def _run_weekly_tasks(
     ww = f"{iso_week:02d}"
     weekly_folder_name = f"{yy}{mm}W{ww}_weekly_report"
 
-    # --- Weekly summary data (per-topic) ---
-    intel_cfg = config.weekly.get("intelligence", {})
-    weekly_topic_slugs = [t.slug for t in config.topics] if config.topics else []
-    weekly_per_topic: dict = {}
-
-    if intel_cfg.get("enabled", False):
-        from core.pipeline.weekly_intelligence import generate_weekly_intelligence
-        for slug in weekly_topic_slugs:
-            try:
-                s_data, s_md, s_html = generate_weekly_intelligence(
-                    db_path=db_path, date_str=today_str, config=config,
-                    provider=_provider, connection_string=_conn_str,
-                    rate_limiter=rate_limiter, topic_slug=slug,
-                )
-                weekly_per_topic[slug] = (s_data, s_md, s_html)
-            except Exception:
-                logger.warning("Weekly intelligence failed for %s (non-fatal)", slug, exc_info=True)
-        if weekly_per_topic:
-            summary_data = next(iter(weekly_per_topic.values()))[0]
-    else:
-        try:
-            from core.pipeline.weekly_summary import generate_weekly_summary
-            summary_data = generate_weekly_summary(
-                db_path=db_path, date_str=today_str,
-                provider=_provider, connection_string=_conn_str,
-            )
-        except Exception:
-            logger.warning("Weekly summary generation failed (non-fatal)", exc_info=True)
-
-    # --- Weekly charts ---
+    # --- Weekly charts (generate before intelligence so we can embed them) ---
     try:
         viz_enabled = config.weekly.get("visualization", {}).get("enabled", False)
         if viz_enabled:
@@ -199,6 +170,31 @@ def _run_weekly_tasks(
     except Exception:
         logger.warning("Weekly chart generation failed (non-fatal)", exc_info=True)
 
+    # --- Build chart_paths dict for intelligence (filename -> path) ---
+    chart_paths_dict: dict = {}
+    if chart_files:
+        for cf in chart_files:
+            chart_paths_dict[os.path.basename(cf)] = cf
+
+    # --- Weekly intelligence data (per-topic, always enabled) ---
+    weekly_topic_slugs = [t.slug for t in config.topics] if config.topics else []
+    weekly_per_topic: dict = {}
+
+    from core.pipeline.weekly_intelligence import generate_weekly_intelligence
+    for slug in weekly_topic_slugs:
+        try:
+            s_data, s_md, s_html = generate_weekly_intelligence(
+                db_path=db_path, date_str=today_str, config=config,
+                provider=_provider, connection_string=_conn_str,
+                rate_limiter=rate_limiter, topic_slug=slug,
+                chart_paths=chart_paths_dict,
+            )
+            weekly_per_topic[slug] = (s_data, s_md, s_html)
+        except Exception:
+            logger.warning("Weekly intelligence failed for %s (non-fatal)", slug, exc_info=True)
+    if weekly_per_topic:
+        summary_data = next(iter(weekly_per_topic.values()))[0]
+
     # --- Render HTML and MD ---
     weekly_dir = os.path.join(report_dir, weekly_folder_name)
     try:
@@ -206,37 +202,16 @@ def _run_weekly_tasks(
         Path(report_dir).mkdir(parents=True, exist_ok=True)
         Path(weekly_dir).mkdir(parents=True, exist_ok=True)
 
-        if intel_cfg.get("enabled", False):
-            for slug, (_, s_md, s_html) in weekly_per_topic.items():
-                if s_md:
-                    md_path = os.path.join(weekly_dir, f"report_{slug}.md")
-                    with open(md_path, "w", encoding="utf-8") as f:
-                        f.write(s_md)
-                if s_html:
-                    html_path = os.path.join(weekly_dir, f"report_{slug}.html")
-                    with open(html_path, "w", encoding="utf-8") as f:
-                        f.write(s_html)
-                logger.info("Weekly intel report (%s): md=%s, html=%s", slug, bool(s_md), bool(s_html))
-        else:
-            from core.pipeline.weekly_summary import (
-                render_weekly_summary_html,
-                render_weekly_summary_md,
-            )
-            topic_slugs = list(summary_data.get("keyword_freq", {}).keys())
-            if not topic_slugs:
-                topic_slugs = list(summary_data.get("score_trends", {}).keys())
-            for slug in topic_slugs:
-                slug_md = render_weekly_summary_md(summary_data, today_str, topic_slug=slug)
-                slug_html = render_weekly_summary_html(
-                    summary_data, today_str, chart_paths=chart_files, topic_slug=slug,
-                )
+        for slug, (_, s_md, s_html) in weekly_per_topic.items():
+            if s_md:
                 md_path = os.path.join(weekly_dir, f"report_{slug}.md")
                 with open(md_path, "w", encoding="utf-8") as f:
-                    f.write(slug_md)
+                    f.write(s_md)
+            if s_html:
                 html_path = os.path.join(weekly_dir, f"report_{slug}.html")
                 with open(html_path, "w", encoding="utf-8") as f:
-                    f.write(slug_html)
-                logger.info("Weekly report (%s): %s, %s", slug, md_path, html_path)
+                    f.write(s_html)
+            logger.info("Weekly report (%s): md=%s, html=%s", slug, bool(s_md), bool(s_html))
     except Exception:
         logger.warning("Weekly report rendering failed (non-fatal)", exc_info=True)
 

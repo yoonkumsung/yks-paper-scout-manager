@@ -56,6 +56,9 @@ class WeeklyDataContext:
         self.co_occurrence_matrix: dict[tuple[str, str], int] = {}
         self._run_keyword_matching()
 
+        # Score trends (daily avg scores per topic)
+        self.score_trends: dict[str, list[tuple[str, float]]] = self._load_score_trends(conn, ph)
+
     def _compute_week_boundaries(
         self, ref_date: datetime, num_weeks: int
     ) -> list[tuple[str, str]]:
@@ -224,6 +227,53 @@ class WeeklyDataContext:
                 logger.warning("Failed to parse snapshot for section %s", section)
 
         return snapshot
+
+    def _load_score_trends(self, conn: Any, ph: str) -> dict[str, list[tuple[str, float]]]:
+        """Load daily average final_score per topic across all week boundaries."""
+        if not self.week_boundaries:
+            return {}
+
+        oldest_start = self.week_boundaries[0][0]
+        newest_end = self.week_boundaries[-1][1]
+
+        cursor = conn.cursor()
+        topic_filter = f"AND r.topic_slug = {ph}" if self.topic_slug else ""
+        query = f"""
+        SELECT
+            r.topic_slug,
+            r.window_start_utc as date,
+            AVG(e.final_score) as avg_score
+        FROM runs r
+        JOIN paper_evaluations e ON r.run_id = e.run_id
+        WHERE r.window_start_utc >= {ph} AND r.window_start_utc < {ph}
+            AND e.final_score IS NOT NULL
+            AND r.status = 'completed'
+            {topic_filter}
+        GROUP BY r.topic_slug, r.window_start_utc
+        ORDER BY r.topic_slug, date
+        """
+        params: list = [oldest_start, newest_end]
+        if self.topic_slug:
+            params.append(self.topic_slug)
+        try:
+            cursor.execute(query, tuple(params))
+            rows = cursor.fetchall()
+        except Exception:
+            logger.warning("Failed to load score trends", exc_info=True)
+            return {}
+
+        result: dict[str, list[tuple[str, float]]] = {}
+        for row in rows:
+            if isinstance(row, dict):
+                topic_slug, date, avg_score = row["topic_slug"], row["date"], row["avg_score"]
+            else:
+                topic_slug, date, avg_score = row[0], row[1], row[2]
+            date_str = str(date)[:10] if date else ""
+            if topic_slug not in result:
+                result[topic_slug] = []
+            result[topic_slug].append((date_str, round(float(avg_score), 2)))
+
+        return result
 
     def _run_keyword_matching(self) -> None:
         """Match must_track keywords and product lines against papers."""

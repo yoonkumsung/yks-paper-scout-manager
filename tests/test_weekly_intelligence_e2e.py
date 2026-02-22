@@ -376,12 +376,9 @@ class TestWeeklyIntelligenceE2E:
         paper_keys = [p["paper_key"] for p in top["papers"]]
         assert len(paper_keys) == len(set(paper_keys))
 
-        # Section D
-        prod = summary_data["sections"].get("product_intel", {})
-        if prod and prod.get("product_lines"):
-            assert all(pl["papers_count"] > 0 for pl in prod["product_lines"])
+        # product_intel section removed (consolidated into intelligence)
 
-        # Section E
+        # Research Network
         net = summary_data["sections"].get("research_net", {})
         if net and net.get("notable_authors"):
             assert all(a["count"] >= 2 for a in net["notable_authors"])
@@ -476,11 +473,20 @@ class TestWeeklyIntelligenceE2E:
         paper_keys = [p["paper_key"] for p in top_papers]
         assert len(paper_keys) == len(set(paper_keys))
 
-    def test_legacy_fallback(self):
-        """intelligence.enabled=false should allow legacy path."""
+    def test_intelligence_always_enabled(self):
+        """Intelligence is always enabled regardless of config flag."""
         config = self._build_test_config(intelligence_enabled=False)
-        intel_cfg = config.weekly.get("intelligence", {})
-        assert not intel_cfg.get("enabled", False)
+        from core.pipeline.weekly_intelligence import generate_weekly_intelligence
+
+        summary_data, md_content, html_content = generate_weekly_intelligence(
+            db_path=self.db_path,
+            date_str=self.test_date_str,
+            config=config,
+            provider="sqlite",
+        )
+        # Should still produce valid output even when enabled=False in config
+        assert "sections" in summary_data
+        assert len(html_content) > 0
 
     def test_output_files_created(self):
         """HTML and MD output content should be non-empty."""

@@ -12,29 +12,25 @@
 </div>
 
 <div class="tabs">
-  {# Fix #2: Tab order A-B-C-D-E #}
-  <input type="radio" name="intel-tab" id="intel-tab-exec" checked>
-  <input type="radio" name="intel-tab" id="intel-tab-radar">
-  <input type="radio" name="intel-tab" id="intel-tab-top">
-  <input type="radio" name="intel-tab" id="intel-tab-product">
-  <input type="radio" name="intel-tab" id="intel-tab-network">
+  <input type="radio" name="intel-tab" id="intel-tab-briefing" checked>
+  <input type="radio" name="intel-tab" id="intel-tab-papers">
+  <input type="radio" name="intel-tab" id="intel-tab-trends">
 
   <div class="tab-labels">
-    <label for="intel-tab-exec">A. Executive</label>
-    <label for="intel-tab-radar">B. Tech Radar</label>
-    <label for="intel-tab-top">C. Top Papers</label>
-    <label for="intel-tab-product">D. Product</label>
-    <label for="intel-tab-network">E. Network</label>
+    <label for="intel-tab-briefing">1. Briefing</label>
+    <label for="intel-tab-papers">2. Top Papers</label>
+    <label for="intel-tab-trends">3. Trends</label>
   </div>
 
   {# ================================================================ #}
-  {# Section A: Executive Summary                                      #}
+  {# Tab 1: Weekly Briefing (Executive + Tech Radar merged)            #}
   {# ================================================================ #}
   {% set exec = sections.get("executive", {}) %}
   {% set metrics = exec.get("metrics", {}) %}
-  <div class="tab-content intel-panel-exec">
+  {% set radar = sections.get("tech_radar", {}) %}
+  <div class="tab-content intel-panel-briefing">
     <div class="intel-section-desc">
-      이번 주 논문 수집/평가 핵심 지표와 4주간 추세를 요약합니다.
+      Executive Summary + Tech Radar
     </div>
 
     {# LLM Briefing #}
@@ -68,16 +64,16 @@
     </div>
     {% endif %}
 
-    {# Fix #1: 4-Week Trend with visual bars #}
+    {# 4-Week Trend with visual bars #}
     {% set trends = exec.get("trends_4week", {}) %}
     {% if trends.get("total_papers") %}
     {% set max_papers = trends.total_papers|max if trends.total_papers|max > 0 else 1 %}
     {% set max_cv = trends.cs_cv|max if trends.cs_cv and trends.cs_cv|max > 0 else 1 %}
     <div class="intel-card">
       <div class="intel-card-header">
-        <span>4주간 추세</span>
+        <span>4-Week Trend</span>
         <span class="intel-trend-badge {% if trends.trend_direction == 'uptrend' %}trend-up{% elif trends.trend_direction == 'downtrend' %}trend-down{% else %}trend-stable{% endif %}">
-          {% if trends.trend_direction == 'uptrend' %}&#9650; 상승{% elif trends.trend_direction == 'downtrend' %}&#9660; 하락{% else %}&#9654; 안정{% endif %}
+          {% if trends.trend_direction == 'uptrend' %}&#9650; UP{% elif trends.trend_direction == 'downtrend' %}&#9660; DOWN{% else %}&#9654; STABLE{% endif %}
         </span>
       </div>
       <div class="intel-trend-chart">
@@ -108,12 +104,12 @@
     </div>
     {% endif %}
 
-    {# Fix #1: Categories with progress bars #}
+    {# Categories with progress bars #}
     {% set categories = exec.get("categories", []) %}
     {% if categories %}
     {% set max_cat = categories[0].count if categories and categories[0].count > 0 else 1 %}
     <div class="intel-card">
-      <div class="intel-card-header">상위 카테고리</div>
+      <div class="intel-card-header">Top Categories</div>
       <div class="intel-cat-list">
         {% for cat in categories %}
         <div class="intel-cat-row">
@@ -147,25 +143,17 @@
       </span>
     </div>
     {% endif %}
-  </div>
 
-  {# ================================================================ #}
-  {# Section B: Tech Radar                                             #}
-  {# ================================================================ #}
-  {% set radar = sections.get("tech_radar", {}) %}
-  <div class="tab-content intel-panel-radar">
-    <div class="intel-section-desc">
-      설정된 키워드의 이번 주 등장 빈도, 4주 추세, 자동 탐지된 신규/부상 키워드를 분석합니다.
-    </div>
+    {# ---- Tech Radar content (merged into Briefing tab) ---- #}
 
-    {# TF-IDF: Emerging Keywords (most important, show first) #}
+    {# TF-IDF: Emerging Keywords #}
     {% set tfidf = radar.get("tfidf", {}) %}
     {% set tfidf_kws = tfidf.get("keywords", []) %}
     {% if tfidf_kws %}
     <div class="intel-card">
       <div class="intel-card-header">
-        <span>자동 탐지 키워드</span>
-        <span class="intel-card-sub">TF-IDF 분석으로 이번 주 논문에서 자동 추출한 주요 키워드</span>
+        <span>Auto-detected Keywords</span>
+        <span class="intel-card-sub">TF-IDF analysis of this week's papers</span>
       </div>
       <div class="intel-tfidf-grid">
         {% for kw in tfidf_kws %}
@@ -176,11 +164,11 @@
         {% endfor %}
       </div>
       <div class="intel-tfidf-legend">
-        <span><span class="intel-tfidf-tag-sm intel-tfidf-new">NEW</span> 이번 주 새로 등장</span>
-        <span><span class="intel-tfidf-tag-sm intel-tfidf-rising">RISING</span> 급격히 증가</span>
-        <span><span class="intel-tfidf-tag-sm intel-tfidf-stable">STABLE</span> 유지</span>
-        <span><span class="intel-tfidf-tag-sm intel-tfidf-falling">FALLING</span> 감소 중</span>
-        <span><span class="intel-tfidf-tag-sm intel-tfidf-disappeared">GONE</span> 사라짐</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-new">NEW</span> New this week</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-rising">RISING</span> Rapidly increasing</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-stable">STABLE</span> Maintained</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-falling">FALLING</span> Decreasing</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-disappeared">GONE</span> Disappeared</span>
       </div>
     </div>
     {% endif %}
@@ -192,7 +180,7 @@
     <div class="intel-card">
       <div class="intel-card-header">
         <span>{{ group_name }}</span>
-        <span class="intel-card-sub">추적 키워드의 이번 주 등장 및 4주 추세</span>
+        <span class="intel-card-sub">Tracked keyword frequency and 4-week trend</span>
       </div>
       {% if group_data.get("llm_analysis") %}
       <div class="intel-briefing" style="margin-bottom: 0.8rem;">
@@ -241,8 +229,8 @@
     {% set max_co = co_occ[0].count if co_occ else 1 %}
     <div class="intel-card">
       <div class="intel-card-header">
-        <span>키워드 동시 출현</span>
-        <span class="intel-card-sub">같은 논문에서 함께 등장한 키워드 조합</span>
+        <span>Keyword Co-occurrence</span>
+        <span class="intel-card-sub">Keywords appearing together in the same paper</span>
       </div>
       <div class="intel-co-list">
         {% for item in co_occ %}
@@ -261,20 +249,17 @@
       </div>
     </div>
     {% endif %}
-
-    {% if not kw_groups and not co_occ and not tfidf_kws %}
-    <div class="empty-message">Tech Radar 데이터가 없습니다. config.yaml에서 키워드를 설정해주세요.</div>
-    {% endif %}
   </div>
 
   {# ================================================================ #}
-  {# Section C: Top Papers                                             #}
+  {# Tab 2: Top Papers + Graduated Reminds + Research Network          #}
   {# ================================================================ #}
   {% set top = sections.get("top_papers", {}) %}
   {% set papers = top.get("papers", []) %}
-  <div class="tab-content intel-panel-top">
+  {% set research = sections.get("research_net", {}) %}
+  <div class="tab-content intel-panel-papers">
     <div class="intel-section-desc">
-      이번 주 평가 점수 기준 상위 논문과 2회 추천된 졸업(Graduated) 논문입니다.
+      Top papers by score, graduated reminds, and notable researchers.
     </div>
 
     {% if papers %}
@@ -316,19 +301,18 @@
       {% if p.reason_ko %}
       <div class="compact-reason">{{ p.reason_ko }}</div>
       {% endif %}
-      {# Fix #3: "abs" -> "View Paper" #}
       <div class="paper-links">
         <a href="{{ p.url|replace('/abs/', '/pdf/') }}">PDF</a>
       </div>
     </div>
     {% endfor %}
     {% else %}
-    <div class="empty-message">이번 주 등록된 논문이 없습니다.</div>
+    <div class="empty-message">No papers registered this week.</div>
     {% endif %}
 
     {% set graduated = top.get("graduated_reminds", []) %}
     {% if graduated %}
-    <div class="tier-divider">Graduated (2회 추천 완료)</div>
+    <div class="tier-divider">Graduated (2x recommended)</div>
     {% for g in graduated %}
     <div class="compact-card compact-card--remind">
       <div class="rank-title">
@@ -341,111 +325,12 @@
     </div>
     {% endfor %}
     {% endif %}
-  </div>
 
-  {# ================================================================ #}
-  {# Section D: Product Intelligence                                   #}
-  {# ================================================================ #}
-  {% set product = sections.get("product_intel", {}) %}
-  <div class="tab-content intel-panel-product">
-    <div class="intel-section-desc">
-      설정된 제품 라인별로 관련 논문을 분류하고, 주간 동향과 핵심 논문을 보여줍니다.
-    </div>
-
-    {# LLM Strategy #}
-    {% if product.get("llm_strategy") %}
-    <div class="intel-briefing">
-      <div class="intel-briefing-icon">AI</div>
-      <div class="intel-briefing-text">{{ product.llm_strategy }}</div>
-    </div>
-    {% endif %}
-
-    {# Product Line Cards #}
-    {% set plines = product.get("product_lines", []) %}
-    {% if plines %}
-    {% set max_pl = plines|map(attribute='papers_count')|max if plines and plines|map(attribute='papers_count')|max > 0 else 1 %}
-    <div class="intel-product-grid">
-      {% for pl in plines %}
-      <div class="intel-product-card">
-        <div class="intel-product-header">
-          <span class="intel-product-rank">#{{ loop.index }}</span>
-          <span class="intel-product-name">{{ pl.name }}</span>
-          {% if pl.count_wow is number and pl.count_wow > 0 %}
-          <span class="intel-product-badge wow-up">+{{ pl.count_wow }}</span>
-          {% elif pl.count_wow is number and pl.count_wow < 0 %}
-          <span class="intel-product-badge wow-down">{{ pl.count_wow }}</span>
-          {% endif %}
-        </div>
-
-        <div class="intel-product-stats">
-          <div class="intel-product-stat">
-            <div class="intel-product-stat-val">{{ pl.papers_count }}</div>
-            <div class="intel-product-stat-label">Papers</div>
-          </div>
-          <div class="intel-product-stat">
-            <div class="intel-product-stat-val">{{ pl.avg_score|round(1) }}</div>
-            <div class="intel-product-stat-label">Avg Score</div>
-          </div>
-        </div>
-
-        {# 4-week mini trend bar #}
-        {% if pl.trend_4w %}
-        {% set max_t = pl.trend_4w|max if pl.trend_4w|max > 0 else 1 %}
-        <div class="intel-product-trend">
-          <div class="intel-product-trend-label">4주 추세</div>
-          <div class="intel-product-trend-bars">
-            {% for val in pl.trend_4w %}
-            <div class="intel-product-trend-col">
-              <div class="intel-product-trend-bar" style="height: {{ (val / max_t * 32)|round|int }}px;{% if loop.last %} background: var(--accent);{% endif %}"></div>
-              <div class="intel-product-trend-val">{{ val }}</div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        {# Top paper #}
-        {% if pl.top_paper %}
-        <div class="intel-product-top">
-          <div class="intel-product-top-label">Top Paper</div>
-          <a href="{{ pl.top_paper.url }}" class="intel-product-top-link">{{ pl.top_paper.title }}</a>
-          <span class="intel-product-top-score">{{ pl.top_paper.score }}</span>
-        </div>
-        {% endif %}
-
-        {# Paper list #}
-        {% if pl.papers %}
-        <div class="intel-product-papers">
-          {% for p in pl.papers %}
-          <div class="intel-product-paper-row">
-            <span class="intel-product-paper-title">{{ p.title }}</span>
-            <span class="intel-product-paper-score">{{ p.score }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-message">제품 라인이 설정되지 않았거나 매칭 논문이 없습니다.</div>
-    {% endif %}
-  </div>
-
-  {# ================================================================ #}
-  {# Section E: Research Network                                       #}
-  {# ================================================================ #}
-  {% set research = sections.get("research_net", {}) %}
-  <div class="tab-content intel-panel-network">
-    <div class="intel-section-desc">
-      최근 4주간 고점수(60+) 논문을 2편 이상 발표한 주목할 연구자와, 주요 학회에 제출된 논문을 추적합니다.
-    </div>
-
-    {# Notable Authors as profile cards #}
+    {# Notable Authors (from Research Network) #}
     {% set authors = research.get("notable_authors", []) %}
     {% if authors %}
+    <div class="tier-divider">Notable Authors</div>
     <div class="intel-card">
-      <div class="intel-card-header">주목할 연구자</div>
       <div class="intel-author-grid">
         {% for a in authors %}
         <div class="intel-author-card">
@@ -453,9 +338,9 @@
           <div class="intel-author-info">
             <div class="intel-author-name">{{ a.name }}</div>
             <div class="intel-author-stats">
-              <span title="4주간 논문 수">{{ a.count }} papers</span>
+              <span title="Papers in 4 weeks">{{ a.count }} papers</span>
               <span class="intel-author-sep">|</span>
-              <span title="평균 점수">avg {{ a.avg_score|round(1) }}</span>
+              <span title="Average score">avg {{ a.avg_score|round(1) }}</span>
             </div>
             {% if a.get("this_week") %}
             <div class="intel-author-papers">
@@ -471,13 +356,13 @@
     </div>
     {% endif %}
 
-    {# Conference Detections as badge cards #}
+    {# Conference Detections (from Research Network) #}
     {% set confs = research.get("conference_papers", []) %}
     {% if confs %}
     <div class="intel-card">
       <div class="intel-card-header">
-        <span>학회 논문 감지</span>
-        <span class="intel-card-sub">comment/title 필드에서 학회명이 감지된 논문</span>
+        <span>Conference Papers</span>
+        <span class="intel-card-sub">Detected from comment/title fields</span>
       </div>
       <div class="intel-conf-list">
         {% for c in confs %}
@@ -492,9 +377,50 @@
       </div>
     </div>
     {% endif %}
+  </div>
 
-    {% if not authors and not confs %}
-    <div class="empty-message">Research Network 데이터가 없습니다.</div>
+  {# ================================================================ #}
+  {# Tab 3: Trends (Score Trends + Charts)                             #}
+  {# ================================================================ #}
+  <div class="tab-content intel-panel-trends">
+    <div class="intel-section-desc">
+      Daily average score trends and visualization charts.
+    </div>
+
+    {# Score Trends Table #}
+    {% if score_trends %}
+    {% for slug, trend_data in score_trends.items() %}
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>{{ slug }}</span>
+        <span class="intel-card-sub">Daily average scores</span>
+      </div>
+      <table class="intel-score-table">
+        <thead>
+          <tr><th>Date</th><th>Avg Score</th></tr>
+        </thead>
+        <tbody>
+          {% for date, avg_score in trend_data %}
+          <tr><td>{{ date }}</td><td>{{ avg_score }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-message">No score trend data available.</div>
+    {% endif %}
+
+    {# Chart Images #}
+    {% if chart_images %}
+    <div class="intel-card">
+      <div class="intel-card-header">Score Distribution Charts</div>
+      {% for key, img_html in chart_images.items() %}
+      <div style="margin-bottom: 1rem;">
+        {{ img_html }}
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 </div>
@@ -504,19 +430,15 @@
 {# ================================================================ #}
 <style>
   /* Tab switching */
-  #intel-tab-exec:checked ~ .tab-labels label[for="intel-tab-exec"],
-  #intel-tab-radar:checked ~ .tab-labels label[for="intel-tab-radar"],
-  #intel-tab-top:checked ~ .tab-labels label[for="intel-tab-top"],
-  #intel-tab-product:checked ~ .tab-labels label[for="intel-tab-product"],
-  #intel-tab-network:checked ~ .tab-labels label[for="intel-tab-network"] {
+  #intel-tab-briefing:checked ~ .tab-labels label[for="intel-tab-briefing"],
+  #intel-tab-papers:checked ~ .tab-labels label[for="intel-tab-papers"],
+  #intel-tab-trends:checked ~ .tab-labels label[for="intel-tab-trends"] {
     color: var(--accent);
     border-bottom-color: var(--accent);
   }
-  #intel-tab-exec:checked ~ .intel-panel-exec { display: block; }
-  #intel-tab-radar:checked ~ .intel-panel-radar { display: block; }
-  #intel-tab-top:checked ~ .intel-panel-top { display: block; }
-  #intel-tab-product:checked ~ .intel-panel-product { display: block; }
-  #intel-tab-network:checked ~ .intel-panel-network { display: block; }
+  #intel-tab-briefing:checked ~ .intel-panel-briefing { display: block; }
+  #intel-tab-papers:checked ~ .intel-panel-papers { display: block; }
+  #intel-tab-trends:checked ~ .intel-panel-trends { display: block; }
 
   /* Section description */
   .intel-section-desc {
@@ -614,7 +536,7 @@
 
   /* Remind bar */
   .intel-remind-bar {
-    display: flex; gap: 1.5rem; margin-top: 0.8rem; padding: 0.5rem 0.8rem;
+    display: flex; gap: 1.5rem; margin-top: 0.8rem; margin-bottom: 1rem; padding: 0.5rem 0.8rem;
     background: var(--card-bg); border-radius: 6px; font-size: 0.85rem;
   }
   .intel-remind-item { display: flex; align-items: center; gap: 0.4rem; }
@@ -685,40 +607,14 @@
   .intel-co-bar { height: 100%; background: #8b5cf6; border-radius: 3px; opacity: 0.6; }
   .intel-co-count { width: 30px; text-align: right; font-size: 0.85rem; font-weight: 600; }
 
-  /* Product Intelligence */
-  .intel-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.8rem; }
-  .intel-product-card {
-    background: var(--card-bg); border: 1px solid var(--card-border);
-    border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;
+  /* Score Trends Table */
+  .intel-score-table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; }
+  .intel-score-table th, .intel-score-table td {
+    border: 1px solid var(--card-border); padding: 0.4rem 0.6rem;
+    text-align: left; font-size: 0.85rem;
   }
-  .intel-product-header { display: flex; align-items: center; gap: 0.5rem; }
-  .intel-product-rank {
-    font-size: 0.75rem; font-weight: 700; color: var(--accent);
-    background: var(--bg); width: 28px; height: 28px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .intel-product-name { font-weight: 700; font-size: 1rem; flex: 1; }
-  .intel-product-badge { font-size: 0.75rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 4px; }
-  .intel-product-badge.wow-up { background: #22c55e20; }
-  .intel-product-badge.wow-down { background: #ef444420; }
-  .intel-product-stats { display: flex; gap: 1.5rem; }
-  .intel-product-stat-val { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
-  .intel-product-stat-label { font-size: 0.7rem; color: var(--muted); }
-  .intel-product-trend { }
-  .intel-product-trend-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.3rem; }
-  .intel-product-trend-bars { display: flex; align-items: flex-end; gap: 6px; height: 40px; }
-  .intel-product-trend-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .intel-product-trend-bar { width: 24px; background: var(--card-border); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.3s; }
-  .intel-product-trend-val { font-size: 0.65rem; color: var(--muted); }
-  .intel-product-top { }
-  .intel-product-top-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.15rem; }
-  .intel-product-top-link { font-size: 0.85rem; color: var(--fg); text-decoration: none; }
-  .intel-product-top-link:hover { color: var(--accent); }
-  .intel-product-top-score { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-left: 0.3rem; }
-  .intel-product-papers { border-top: 1px solid var(--card-border); padding-top: 0.4rem; }
-  .intel-product-paper-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.15rem 0; }
-  .intel-product-paper-title { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-  .intel-product-paper-score { font-weight: 600; color: var(--fg); margin-left: 0.5rem; }
+  .intel-score-table th { background: var(--accent); color: white; font-weight: 600; }
+  .intel-score-table tr:nth-child(even) { background: var(--bg); }
 
   /* Author Cards */
   .intel-author-grid { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -760,7 +656,6 @@
   @media (max-width: 700px) {
     .intel-kw-row { grid-template-columns: 1fr; gap: 0.2rem; }
     .intel-co-pair { min-width: auto; flex-wrap: wrap; }
-    .intel-product-grid { grid-template-columns: 1fr; }
   }
 </style>
 
