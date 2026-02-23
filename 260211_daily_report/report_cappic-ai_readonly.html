@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPP!C_AI 논문 리포트 (2026-02-11)</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a2e;
+      --card-bg: #f8f9fa;
+      --card-border: #e0e0e0;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --muted: #6b7280;
+      --divider: #e5e7eb;
+      --score-bg: #e5e7eb;
+      --score-fill: #2563eb;
+      --tier2-bg: #f3f4f6;
+      --tag-bg: #fef3c7;
+      --tag-fg: #92400e;
+      --flag-edge: #dbeafe;
+      --flag-realtime: #dcfce7;
+      --flag-code: #f3e8ff;
+      --remind-bg: #fffbeb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --fg: #e2e8f0;
+        --card-bg: #1e293b;
+        --card-border: #334155;
+        --accent: #60a5fa;
+        --accent-light: #1e3a5f;
+        --muted: #94a3b8;
+        --divider: #334155;
+        --score-bg: #334155;
+        --score-fill: #60a5fa;
+        --tier2-bg: #1e293b;
+        --tag-bg: #78350f;
+        --tag-fg: #fef3c7;
+        --flag-edge: #1e3a5f;
+        --flag-realtime: #14532d;
+        --flag-code: #3b0764;
+        --remind-bg: #451a03;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .header { margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .stats span { white-space: nowrap; }
+    .stats span::after { content: ""; }
+    .stats-arrow { color: var(--muted); font-size: 0.75rem; opacity: 0.6; }
+    .below-score { color: #f59e0b; }
+    .window-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.3rem;
+      line-height: 1.6;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .window-label {
+      font-weight: 600;
+      color: var(--fg);
+      margin-right: 0.2rem;
+    }
+    .window-range {
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--divider);
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+    }
+    .window-sep {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    details { margin-bottom: 1rem; }
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before {
+      content: '\25B6';
+      font-size: 0.6em;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    details[open] > summary::before { transform: rotate(90deg); }
+    details[open] summary { border-radius: 4px 4px 0 0; }
+    details .details-content {
+      padding: 0.75rem;
+      border: 1px solid var(--card-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+    }
+
+    .tabs {
+      margin-bottom: 1rem;
+    }
+    .tabs input[type="radio"] { display: none; }
+    .tab-labels {
+      display: flex;
+      border-bottom: 2px solid var(--divider);
+      margin-bottom: 1rem;
+    }
+    .tab-labels label {
+      padding: 0.6rem 1rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-labels label:hover { color: var(--fg); }
+    .tab-content { display: none; }
+    #tab-today:checked ~ .tab-labels label[for="tab-today"],
+    #tab-remind:checked ~ .tab-labels label[for="tab-remind"],
+    #tab-below:checked ~ .tab-labels label[for="tab-below"],
+    #tab-excluded:checked ~ .tab-labels label[for="tab-excluded"] {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    #tab-today:checked ~ .tab-panel-today { display: block; }
+    #tab-remind:checked ~ .tab-panel-remind { display: block; }
+    #tab-below:checked ~ .tab-panel-below { display: block; }
+    #tab-excluded:checked ~ .tab-panel-excluded { display: block; }
+
+    .paper-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .paper-card--collapsed { display: none; }
+    .show-more-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .show-more-btn:hover { background: var(--accent-light); }
+    .paper-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .paper-card .rank {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .paper-card .paper-title {
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+    }
+    .paper-card .paper-title a {
+      color: var(--fg);
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .paper-card .paper-title a:hover { color: var(--accent); }
+
+    .score-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .score-bar {
+      flex: 1;
+      max-width: 200px;
+      height: 8px;
+      background: var(--score-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      max-width: 100%;
+      background: var(--score-fill);
+      border-radius: 4px;
+    }
+    .score-detail { color: var(--muted); font-size: 0.75rem; }
+
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .cat-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .flags {
+      display: flex;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .flag-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .flag-edge { background: var(--flag-edge); }
+    .flag-realtime { background: var(--flag-realtime); }
+    .flag-code { background: var(--flag-code); }
+
+    .lowered-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--tag-bg);
+      color: var(--tag-fg);
+      font-weight: 600;
+    }
+
+    .paper-links {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .paper-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .paper-links a:hover {
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .abstract-section {
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .abstract-section .abstract-full {
+      margin-top: 0.3rem;
+      margin-bottom: 0;
+    }
+    .abstract-section .abstract-full summary {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.2rem 0.4rem;
+      background: transparent;
+      border: 1px solid var(--card-border);
+      display: inline-flex;
+    }
+
+    .cluster-links {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .tier-divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      position: relative;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .tier-divider::before, .tier-divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 35%;
+      border-top: 1px solid var(--divider);
+    }
+    .tier-divider::before { left: 0; }
+    .tier-divider::after { right: 0; }
+
+    /* Unified compact card - used by Tier 2, remind, below-threshold, discarded */
+    .compact-card {
+      background: var(--tier2-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .compact-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+    }
+    .compact-card .rank {
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .compact-card .paper-title {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .compact-card .paper-title a {
+      color: var(--fg);
+    }
+    .compact-card .paper-title a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .compact-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .compact-link {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.3rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+    }
+    .compact-body {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .compact-reason {
+      margin-top: 0.2rem;
+      margin-left: 0.4rem;
+      padding-left: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--accent);
+      line-height: 1.3;
+      border-left: 3px solid var(--accent);
+    }
+    .compact-card .categories {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+    }
+    .recommend-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    /* Modifier: remind */
+    .compact-card--remind { background: var(--remind-bg); }
+    /* Modifier: below threshold */
+    .compact-card--below { opacity: 0.75; }
+    .compact-card--below .score-detail { color: #f59e0b; font-weight: 600; }
+    /* Modifier: discarded */
+    .compact-card--discarded { opacity: 0.7; }
+
+    /* Read state - Gmail-style dimming */
+    .paper-read { opacity: 0.5; }
+    .paper-read .paper-title a { font-weight: 400; }
+
+    .empty-message {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--divider);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    footer p { margin-bottom: 0.3rem; }
+
+    .index-list { list-style: none; }
+    .index-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .index-list li:last-child { border-bottom: none; }
+
+    /* Paper checkbox - matches rank text height */
+    .paper-checkbox {
+      width: 1em;
+      height: 1em;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin: 0;
+    }
+    .compact-card .paper-links {
+      display: inline-flex;
+      gap: 0.4rem;
+      margin: 0;
+      font-size: 0.8rem;
+    }
+
+    /* Download toolbar */
+    .download-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      padding: 0.6rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    }
+    .download-toolbar.visible { display: flex; }
+    body.toolbar-active { padding-bottom: 3.5rem; }
+    .toolbar-selects {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar-btn.primary:hover { opacity: 0.9; }
+    .toolbar-btn.primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  
+<div class="header">
+  <h1>CAPP!C_AI 논문 리포트 (2026-02-11)</h1>
+  <div class="stats">
+    <span title="arXiv에서 수집된 총 논문 수">수집 36편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="키워드 필터 통과">필터 31편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="LLM 평가 후 제외">제외 9편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="점수 50점 미만">미달 0편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="최종 선정된 논문">선정 6편</span>
+  </div>
+  <div class="window-info">
+    <span class="window-label">검색 윈도우</span>
+    <span class="window-range">UTC 2026-02-11 00:00 / KST 2026-02-11 09:00</span>
+    <span class="window-sep">~</span>
+    <span class="window-range">UTC 2026-02-11 23:59 / KST 2026-02-12 08:59</span>
+  </div>
+</div>
+
+
+<details>
+  <summary>검색 키워드</summary>
+  <div class="details-content">
+    autonomous cinematography, sports tracking, camera control, highlight detection, action recognition, keyframe extraction, video stabilization, image enhancement, color correction, pose estimation, biomechanics, tactical analysis, short video, content summarization, video editing, edge computing, embedded vision, real-time processing, content sharing, social platform, advertising system, biomechanics, tactical analysis, embedded vision
+  </div>
+</details>
+
+
+<div class="tabs">
+  <input type="radio" name="tabs" id="tab-today" checked>
+  <input type="radio" name="tabs" id="tab-remind">
+  <input type="radio" name="tabs" id="tab-below">
+  <input type="radio" name="tabs" id="tab-excluded">
+  <div class="tab-labels">
+    <label for="tab-today">오늘의 논문 (6)</label>
+    <label for="tab-remind">다시 보기 (2)</label>
+    <label for="tab-below">점수 미달 (0)</label>
+    <label for="tab-excluded">제외 (9)</label>
+  </div>
+
+  <div class="tab-content tab-panel-today">
+    
+      
+      
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.10946v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.10946v1" onchange="updateToolbar()">
+          <span class="rank">1위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10946v1">Developing Neural Network-Based Gaze Control Systems for Social Robots</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>74.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 74.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:58 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">During multi-party interactions, gaze direction is a key indicator of interest and intent, making it essential for social robots to direct their attention appropriately. Understanding the social context is crucial for robots to engage effectively, predict human intentions, and navigate interactions smoothly.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">During multi-party interactions, gaze direction is a key indicator of interest and intent, making it essential for social robots to direct their attention appropriately. Understanding the social context is crucial for robots to engage effectively, predict human intentions, and navigate interactions smoothly. This study aims to develop an empirical motion-time pattern for human gaze behavior in various social situations (e.g., entering, leaving, waving, talking, and pointing) using deep neural networks based on participants&#39; data. We created two video clips-one for a computer screen and another for a virtual reality headset-depicting different social scenarios. Data were collected from 30 participants: 15 using an eye-tracker and 15 using an Oculus Quest 1 headset. Deep learning models, specifically Long Short-Term Memory (LSTM) and Transformers, were used to analyze and predict gaze patterns. Our models achieved 60% accuracy in predicting gaze direction in a 2D animation and 65% accuracy in a 3D animation. Then, the best model was implemented onto the Nao robot; and 36 new participants evaluated its performance. The feedback indicated overall satisfaction, with those experienced in robotics rating the models more favorably.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 스포츠 경기에서 선수들의 시선 방향은 전략적 의도를 나타내므로, 본 연구의 LSTM/트랜스포머 기반 시선 분석 기술이 팀 전략 해석에 간접적 참고 가능</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> RK3588 디바이스에 실시간 시선 추적 모델 적용. 경기 영상에서 공 위치나 상대 팀 주시 패턴을 분석해 자동 하이라이트 생성 및 전략 리포트 지원</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.10946v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.10418v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.10418v1" onchange="updateToolbar()">
+          <span class="rank">2위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10418v1">SecCodePRM: A Process Reward Model for Code Security</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>52.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 52.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:35 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CR</span>
+          
+          <span class="cat-tag">cs.SE</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Large Language Models are rapidly becoming core components of modern software development workflows, yet ensuring code security remains challenging. Existing vulnerability detection pipelines either rely on static analyzers or use LLM/GNN-based detectors trained with coarse program-level supervision.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Large Language Models are rapidly becoming core components of modern software development workflows, yet ensuring code security remains challenging. Existing vulnerability detection pipelines either rely on static analyzers or use LLM/GNN-based detectors trained with coarse program-level supervision. Both families often require complete context, provide sparse end-of-completion feedback, and can degrade as code length grows, making them ill-suited for real-time, prefix-level assessment during interactive coding and streaming generation. We propose SecCodePRM, a security-oriented process reward model that assigns a context-aware, step-level security score along a code trajectory. To train the model, we derive step-level supervision labels from static analyzers and expert annotations, allowing the model to attend more precisely to fine-grained regions associated with inter-procedural vulnerabilities. SecCodePRM has three applications: full-code vulnerability detection (VD), partial-code VD, and secure code generation (CG). For VD, SecCodePRM uses risk-sensitive aggregation that emphasizes high-risk steps; for CG, SecCodePRM supports inference-time scaling by ranking candidate continuations and favoring higher cumulative reward. This design yields dense, real-time feedback that scales to long-horizon generation. Empirically, SecCodePRM outperforms prior approaches in all three settings, while preserving code functional correctness, suggesting improved security without a safety-utility tradeoff.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> Weakly related: Real-time code security scoring, indirect link to AI processing but not sports/visual domain.</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.10418v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.10407v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.10407v1" onchange="updateToolbar()">
+          <span class="rank">3위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10407v1">Towards Affordable, Non-Invasive Real-Time Hypoglycemia Detection Using Wearable Sensor Signals</a>
+          </span>
+          
+          <span class="lowered-tag" title="필터 기준을 낮춰 포함된 논문">기준완화</span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>48.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 48.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:25 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.HC</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Accurately detecting hypoglycemia without invasive glucose sensors remains a critical challenge in diabetes management, particularly in regions where continuous glucose monitoring (CGM) is prohibitively expensive or clinically inaccessible. This extended study introduces a comprehensive, multimodal physiological framework for non-invasive hypoglycemia detection using wearable sensor signals.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Accurately detecting hypoglycemia without invasive glucose sensors remains a critical challenge in diabetes management, particularly in regions where continuous glucose monitoring (CGM) is prohibitively expensive or clinically inaccessible. This extended study introduces a comprehensive, multimodal physiological framework for non-invasive hypoglycemia detection using wearable sensor signals. Unlike prior work limited to single-signal analysis, this chapter evaluates three physiological modalities, galvanic skin response (GSR), heart rate (HR), and their combined fusion, using the OhioT1DM 2018 dataset. We develop an end-to-end pipeline that integrates advanced preprocessing, temporal windowing, handcrafted and sequence-based feature extraction, early and late fusion strategies, and a broad spectrum of machine learning and deep temporal models, including CNNs, LSTMs, GRUs, and TCNs. Our results demonstrate that physiological signals exhibit distinct autonomic patterns preceding hypoglycemia and that combining GSR with HR consistently enhances detection sensitivity and stability compared to single-signal models. Multimodal deep learning architectures achieve the most reliable performance, particularly in recall, the most clinically urgent metric. Ablation studies further highlight the complementary contributions of each modality, strengthening the case for affordable, sensor-based glycemic monitoring. The findings show that real-time hypoglycemia detection is achievable using only inexpensive, non-invasive wearable sensors, offering a pathway toward accessible glucose monitoring in underserved communities and low-resource healthcare environments.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 의료용 혈당 모니터링 연구로 스포츠 영상 분석과 직접적 관련성이 낮음</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.10407v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.10397v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.10397v1" onchange="updateToolbar()">
+          <span class="rank">4위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10397v1">Resilient Voltage Estimation for Battery Packs Using Self-Learning Koopman Operator</a>
+          </span>
+          
+          <span class="lowered-tag" title="필터 기준을 낮춰 포함된 논문">기준완화</span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>44.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 44.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:25 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.SY</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Cloud-based battery management systems (BMSs) rely on real-time voltage measurement data to ensure coordinated bi-directional charging of electric vehicles (EVs) with vehicle-to-grid technology. Unfortunately, an adversary can corrupt the measurement data during transmission from the local-BMS to the cloud-BMS, leading to disrupted EV charging.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Cloud-based battery management systems (BMSs) rely on real-time voltage measurement data to ensure coordinated bi-directional charging of electric vehicles (EVs) with vehicle-to-grid technology. Unfortunately, an adversary can corrupt the measurement data during transmission from the local-BMS to the cloud-BMS, leading to disrupted EV charging. Therefore, to ensure reliable voltage data under such sensor attacks, this paper proposes a two-stage error-corrected self-learning Koopman operator-based secure voltage estimation scheme for large-format battery packs. The first stage of correction compensates for the Koopman approximation error. The second stage aims to recover the error amassing from the lack of higher-order battery dynamics information in the self-learning feedback, using two alternative methods: an adaptable empirical strategy that uses cell-level knowledge of open circuit voltage to state-of-charge mapping for pack-level estimation, and a Gaussian process regression-based data-driven method that leverages minimal data-training. During our comprehensive case studies using the high-fidelity battery simulation package &#39;PyBaMM-liionpack&#39;, our proposed secure estimator reliably generated real-time voltage estimation with high accuracy under varying pack topologies, charging settings, battery age-levels, and attack policies. Thus, the scalable and adaptable algorithm can be easily employed to diverse battery configurations and operating conditions, without requiring significant modifications, excessive data or sensor redundancy, to ensure optimum charging of EVs under compromised sensing.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> Weakly related: Real-time estimation for batteries, tangential to edge processing but not sports-focused.</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.10397v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.11026v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.11026v1" onchange="updateToolbar()">
+          <span class="rank">5위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.11026v1">Normalized Surveillance in the Datafied Car: How Autonomous Vehicle Users Rationalize Privacy Trade-offs</a>
+          </span>
+          
+          <span class="lowered-tag" title="필터 기준을 낮춰 포함된 논문">기준완화</span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>40.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 40.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:25 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.HC</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Autonomous vehicles (AVs) are characterized by pervasive datafication and surveillance through sensors like in-cabin cameras, LIDAR, and GPS. Drawing on 16 semi-structured interviews with AV drivers analyzed using constructivist grounded theory, this study examines how users make sense of vehicular surveillance within everyday datafication.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Autonomous vehicles (AVs) are characterized by pervasive datafication and surveillance through sensors like in-cabin cameras, LIDAR, and GPS. Drawing on 16 semi-structured interviews with AV drivers analyzed using constructivist grounded theory, this study examines how users make sense of vehicular surveillance within everyday datafication. Findings reveal drivers demonstrate few AV-specific privacy concerns, instead normalizing monitoring through comparisons with established digital platforms. We theorize this indifference by situating AV surveillance within the `surveillance ecology&#39; of platform environments, arguing the datafied car functions as a mobile extension of the `leaky home&#39; -- private spaces rendered permeable through connected technologies continuously transmitting behavioral data.   The study contributes to scholarship on surveillance beliefs, datafication, and platform governance by demonstrating how users who have accepted comprehensive smartphone and smart home monitoring encounter AV datafication as just another node in normalized data extraction. We highlight how geographic restrictions on data access -- currently limiting driver log access to California -- create asymmetries that impede informed privacy deliberation, exemplifying `tertiary digital divides.&#39; Finally, we examine how machine learning&#39;s reliance on data-intensive approaches creates structural pressure for surveillance that transcends individual manufacturer choices. We propose governance interventions to democratize social learning, including universal data access rights, binding transparency requirements, and data minimization standards to prevent race-to-the-bottom dynamics in automotive datafication.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 자동차 내 감시 시스템 관련 연구로 스포츠 촬영과 약한 연관</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.11026v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.11230v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.11230v1" onchange="updateToolbar()">
+          <span class="rank">6위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.11230v1">DiSCoKit: An Open-Source Toolkit for Deploying Live LLM Experiences in Survey Research</a>
+          </span>
+          
+          <span class="lowered-tag" title="필터 기준을 낮춰 포함된 논문">기준완화</span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>40.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 40.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:25 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.HC</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Advancing social-scientific research of human-AI interaction dynamics and outcomes often requires researchers to deliver experiences with live large-language models (LLMs) to participants through online survey platforms. However, technical and practical challenges (from logging chat data to manipulating AI behaviors for experimental designs) often inhibit survey-based deployment of AI stimuli.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Advancing social-scientific research of human-AI interaction dynamics and outcomes often requires researchers to deliver experiences with live large-language models (LLMs) to participants through online survey platforms. However, technical and practical challenges (from logging chat data to manipulating AI behaviors for experimental designs) often inhibit survey-based deployment of AI stimuli. We developed DiSCoKit--an open-source toolkit for deploying live LLM experiences (e.g., ones based on models delivered through Microsoft Azure portal) through JavaScript-enabled survey platforms (e.g., Qualtrics). This paper introduces that toolkit, explaining its scientific impetus, describes its architecture and operation, as well as its deployment possibilities and limitations.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이 논문은 설문조사 플랫폼에서 실시간 LLM 경험을 배포하는 소프트웨어 툴킷을 제안합니다. 우리 프로젝트의 핵심인 스포츠 영상 촬영, 실시간 동작 분석, 엣지 디바이스 최적화와 직접적인 기술 연관성이 없습니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 스포츠 영상 분석에 적용 가능한 구체적인 방법이 제시되지 않았습니다. AI 행동 조작이나 채팅 데이터 로깅 기능이 운동 경기 전략 분석이나 개인 하이라이트 생성에 활용되기 어렵습니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.11230v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+
+      
+      <button class="show-more-btn" id="showMoreBtn" onclick="showAllTier1()">
+        나머지 1편 더 보기
+      </button>
+      
+
+      
+
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-remind">
+    
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.17706v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.17706v1">Parallel Complex Diffusion for Scalable Time Series Generation</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">85.6</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Modeling long-range dependencies in time series generation poses a fundamental trade-off between representational capacity and computational efficiency. Traditional temporal diffusion models suffer from local entanglement and the $\mathcal{O}(L^2)$ cost of attention mechanisms. We address these limitations by introducing PaCoDi (Parallel Complex Diffusion), a spectral-native architecture that decouples generative modeling in the frequency domain. PaCoDi fundamentally alters the problem topology: the Fourier Transform acts as a diagonalizing operator, converting locally coupled temporal signals into globally decorrelated spectral components. Theoretically, we prove the Quadrature Forward Diffusion and Conditional Reverse Factorization theorem, demonstrating that the complex diffusion process can be split into independent real and imaginary branches. We bridge the gap between this decoupled theory and data reality using a \textbf{Mean Field Theory (MFT) approximation} reinforced by an interactive correction mechanism. Furthermore, we generalize this discrete DDPM to continuous-time Frequency SDEs, rigorously deriving the Spectral Wiener Process describe the differential spectral Brownian motion limit. Crucially, PaCoDi exploits the Hermitian Symmetry of real-valued signals to compress the sequence length by half, achieving a 50% reduction in attention FLOPs without information loss. We further derive a rigorous Heteroscedastic Loss to handle the non-isotropic noise distribution on the compressed manifold. Extensive experiments show that PaCoDi outperforms existing baselines in both generation quality and inference speed, offering a theoretically grounded and computationally efficient solution for time series modeling.</div>
+        
+        
+        <div class="compact-reason">이 논문은 시계열 생성의 계산 효율성을 개선해 에지 디바이스에서 비디오 처리 속도 향상에 기여합니다. 주파수 영역 압축으로 FLOPs 50% 감소와 낮은 지연 시간을 달성해 RK3588에서 실시간 하이라이트 생성이 가능합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.10102v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10102v1">VideoWorld 2: Learning Transferable Knowledge from Real-world Videos</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">82.4</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Learning transferable knowledge from unlabeled video data and applying it in new environments is a fundamental capability of intelligent agents. This work presents VideoWorld 2, which extends VideoWorld and offers the first investigation into learning transferable knowledge directly from raw real-world videos. At its core, VideoWorld 2 introduces a dynamic-enhanced Latent Dynamics Model (dLDM) that decouples action dynamics from visual appearance: a pretrained video diffusion model handles visual appearance modeling, enabling the dLDM to learn latent codes that focus on compact and meaningful task-related dynamics. These latent codes are then modeled autoregressively to learn task policies and support long-horizon reasoning. We evaluate VideoWorld 2 on challenging real-world handcraft making tasks, where prior video generation and latent-dynamics models struggle to operate reliably. Remarkably, VideoWorld 2 achieves up to 70% improvement in task success rate and produces coherent long execution videos. In robotics, we show that VideoWorld 2 can acquire effective manipulation knowledge from the Open-X dataset, which substantially improves task performance on CALVIN. This study reveals the potential of learning transferable world knowledge directly from raw videos, with all code, data, and models to be open-sourced for further research.</div>
+        
+        
+        <div class="compact-reason">동작과 시각적 요소를 분리하는 기술로 스포츠 동작 분석 정확도 향상에 직접 활용 가능합니다. 잠재 코드 기반 동역학 모델이 선수의 자세 패턴 인식에 적용되어 경기 전략 분석 품질을 높입니다.</div>
+        
+      </div>
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-below">
+    
+      <div class="empty-message">
+        점수 미달 논문이 없습니다.
+      </div>
+    
+  </div>
+
+  <div class="tab-content tab-panel-excluded">
+    
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.10512v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10512v1">Don&#39;t Eliminate Cut: Exponential Separations in LLM-Based Theorem Proving</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.LO</span>
+          
+          <span class="cat-tag">stat.ML</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">정리 증명 관련 논리학 논문, 스포츠 촬영/분석과 무관</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.11419v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.11419v1">Reconstructing Network Outbreaks under Group Surveillance</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.SI</span>
+          
+          <span class="cat-tag">cs.MA</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">질병 전파 모델링 논문, 스포츠 촬영/분석과 무관</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.10626v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10626v1">Invisible Trails? An Identity Alignment Scheme based on Online Tracking</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CR</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">온라인 추적 및 프라이버시 논문, 스포츠 촬영/분석과 무관</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.11412v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.11412v1">When Visibility Outpaces Verification: Delayed Verification and Narrative Lock-in in Agentic AI Discourse</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CY</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.HC</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">AI 담론 분석 논문, 스포츠 촬영/분석과 무관</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.10716v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10716v1">RE-LLM: Refining Empathetic Speech-LLM Responses by Integrating Emotion Nuance</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.AS</span>
+          
+          <span class="cat-tag">cs.CL</span>
+          
+          <span class="cat-tag">cs.SD</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">감정 인식 음성-LLM 논문, 스포츠 분석과 간접적 연관 있으나 직접적 기술 적용 불가</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.10404v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10404v1">Modular Multi-Task Learning for Chemical Reaction Prediction</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.CL</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">Unrelated: Focuses on chemical reaction prediction, no connection to sports video analysis.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.10802v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10802v1">Integrating Generative AI-enhanced Cognitive Systems in Higher Education: From Stakeholder Perceptions to a Conceptual Framework considering the EU AI Act</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">Unrelated: Discusses GenAI in education, no relevance to sports video or edge devices.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.10964v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.10964v1">Can LLMs Cook Jamaican Couscous? A Study of Cultural Novelty in Recipe Generation</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">Unrelated: Examines cultural novelty in recipe generation, no connection to sports or video analysis.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2602.13333v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.13333v1">Coordinated Information Dissemination on Telegram and Reddit During Political Turbulence: A Case Study of Venezuela in Global News Channels</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.SI</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">이 논문은 정치적 뉴스 조정 분석에 관한 것으로 스포츠 촬영/편집 기술과 무관합니다.</div>
+        
+      </div>
+      
+    
+  </div>
+</div>
+
+<div class="download-toolbar" id="downloadToolbar">
+  <div class="toolbar-selects">
+    <button class="toolbar-btn" onclick="toggleSelect('all')">All</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier1')">Tier 1</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier2')">Tier 2</button>
+    <button class="toolbar-btn" onclick="toggleSelect('none')">Deselect</button>
+  </div>
+  <button class="toolbar-btn primary" id="downloadBtn" onclick="downloadSelected()">Download 0 PDFs</button>
+</div>
+
+<footer>
+  <p>이 리포트는 arXiv API를 사용하여 생성되었습니다.</p>
+  <p>arXiv 논문의 저작권은 각 저자에게 있습니다.</p>
+  <p>Thank you to arXiv for use of its open access interoperability.</p>
+  <p>run_id: 18 | embedding: en_synthetic
+    | weights: {&#39;embed&#39;: 0.35, &#39;llm&#39;: 0.55, &#39;recency&#39;: 0.1}</p>
+</footer>
+
+<script>
+var READ_KEY = 'paperscout_read';
+var SUPABASE_CFG = {
+  enabled: false,
+  url: '',
+  key: ''
+};
+
+/* localStorage helpers */
+function getLocalRead() {
+  try { return JSON.parse(localStorage.getItem(READ_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveLocalRead(arr) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+/* Supabase helpers */
+function supabaseHeaders() {
+  return {
+    'apikey': SUPABASE_CFG.key,
+    'Authorization': 'Bearer ' + SUPABASE_CFG.key,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
+  };
+}
+
+function fetchReadFromSupabase() {
+  if (!SUPABASE_CFG.enabled) return Promise.resolve([]);
+  return fetch(SUPABASE_CFG.url + '/rest/v1/read_papers?select=paper_url', {
+    headers: supabaseHeaders()
+  })
+  .then(function(r) { return r.ok ? r.json() : []; })
+  .then(function(rows) { return rows.map(function(r) { return r.paper_url; }); })
+  .catch(function() { return []; });
+}
+
+function markReadOnSupabase(url) {
+  if (!SUPABASE_CFG.enabled || !url) return;
+  fetch(SUPABASE_CFG.url + '/rest/v1/read_papers', {
+    method: 'POST',
+    headers: Object.assign({}, supabaseHeaders(), {'Prefer': 'return=minimal,resolution=ignore-duplicates'}),
+    body: JSON.stringify({ paper_url: url })
+  }).catch(function() {});
+}
+
+/* Unified read state */
+var _readCache = null;
+
+function getReadPapers() {
+  if (_readCache) return _readCache;
+  _readCache = getLocalRead();
+  return _readCache;
+}
+
+function markAsRead(url) {
+  if (!url) return;
+  var read = getReadPapers();
+  if (read.indexOf(url) === -1) {
+    read.push(url);
+    _readCache = read;
+    saveLocalRead(read);
+  }
+  markReadOnSupabase(url);
+}
+
+function isRead(url) {
+  return getReadPapers().indexOf(url) !== -1;
+}
+
+function applyReadState() {
+  var cards = document.querySelectorAll('[data-paper-url]');
+  var remindHidden = 0;
+  cards.forEach(function(card) {
+    var url = card.dataset.paperUrl;
+    if (!isRead(url)) return;
+    // Remind tab: hide read papers entirely
+    if (card.classList.contains('compact-card--remind')) {
+      card.style.display = 'none';
+      remindHidden++;
+    } else {
+      card.classList.add('paper-read');
+    }
+  });
+  // Update remind tab count
+  var remindLabel = document.querySelector('label[for="tab-remind"]');
+  if (remindLabel) {
+    var total = document.querySelectorAll('.compact-card--remind').length;
+    var visible = total - remindHidden;
+    remindLabel.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 (' + visible + ')';
+  }
+  // Show empty message if all remind papers are hidden
+  var remindPanel = document.querySelector('.tab-panel-remind');
+  if (remindPanel) {
+    var visibleCards = remindPanel.querySelectorAll('.compact-card--remind:not([style*="display: none"])');
+    var emptyMsg = remindPanel.querySelector('.empty-message');
+    if (visibleCards.length === 0 && !emptyMsg) {
+      var msg = document.createElement('div');
+      msg.className = 'empty-message';
+      msg.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 \uB17C\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.';
+      remindPanel.appendChild(msg);
+    }
+  }
+}
+
+function trackClicks() {
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var card = link.closest('[data-paper-url]');
+    if (!card) return;
+    markAsRead(card.dataset.paperUrl);
+    card.classList.add('paper-read');
+    // If remind card, hide after brief delay
+    if (card.classList.contains('compact-card--remind')) {
+      setTimeout(function() {
+        card.style.display = 'none';
+        applyReadState();
+      }, 200);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Apply localStorage state immediately for fast UX
+  applyReadState();
+  trackClicks();
+  // Then merge Supabase data for cross-device sync
+  fetchReadFromSupabase().then(function(remote) {
+    if (!remote || remote.length === 0) return;
+    var local = getLocalRead();
+    var merged = local.slice();
+    var changed = false;
+    remote.forEach(function(url) {
+      if (merged.indexOf(url) === -1) {
+        merged.push(url);
+        changed = true;
+      }
+    });
+    if (changed) {
+      _readCache = merged;
+      saveLocalRead(merged);
+      applyReadState();
+    }
+  });
+});
+
+function showAllTier1() {
+  document.querySelectorAll('.paper-card--collapsed').forEach(function(el) {
+    el.classList.remove('paper-card--collapsed');
+  });
+  var btn = document.getElementById('showMoreBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+function toggleSelect(filter) {
+  var boxes = document.querySelectorAll('.tab-panel-today .paper-checkbox');
+  boxes.forEach(function(cb) {
+    if (filter === 'none') { cb.checked = false; }
+    else if (filter === 'all') { cb.checked = true; }
+    else if (filter === 'tier1') { cb.checked = cb.dataset.tier === '1'; }
+    else if (filter === 'tier2') { cb.checked = cb.dataset.tier === '2'; }
+  });
+  updateToolbar();
+}
+
+function updateToolbar() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var toolbar = document.getElementById('downloadToolbar');
+  var btn = document.getElementById('downloadBtn');
+  var count = 0;
+  checked.forEach(function(cb) { if (cb.dataset.pdf) count++; });
+  if (checked.length > 0) {
+    toolbar.classList.add('visible');
+    document.body.classList.add('toolbar-active');
+    btn.textContent = 'Download ' + count + ' PDFs';
+    btn.disabled = (count === 0);
+  } else {
+    toolbar.classList.remove('visible');
+    document.body.classList.remove('toolbar-active');
+  }
+}
+
+function downloadSelected() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var urls = [];
+  checked.forEach(function(cb) { if (cb.dataset.pdf) urls.push(cb.dataset.pdf); });
+  if (urls.length === 0) return;
+  urls.forEach(function(url, i) {
+    setTimeout(function() { window.open(url, '_blank'); }, i * 300);
+  });
+}
+</script>
+
+</body>
+</html>
