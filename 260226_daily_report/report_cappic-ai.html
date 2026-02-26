@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPP!C_AI 논문 리포트 (2026-02-26)</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a2e;
+      --card-bg: #f8f9fa;
+      --card-border: #e0e0e0;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --muted: #6b7280;
+      --divider: #e5e7eb;
+      --score-bg: #e5e7eb;
+      --score-fill: #2563eb;
+      --tier2-bg: #f3f4f6;
+      --tag-bg: #fef3c7;
+      --tag-fg: #92400e;
+      --flag-edge: #dbeafe;
+      --flag-realtime: #dcfce7;
+      --flag-code: #f3e8ff;
+      --remind-bg: #fffbeb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --fg: #e2e8f0;
+        --card-bg: #1e293b;
+        --card-border: #334155;
+        --accent: #60a5fa;
+        --accent-light: #1e3a5f;
+        --muted: #94a3b8;
+        --divider: #334155;
+        --score-bg: #334155;
+        --score-fill: #60a5fa;
+        --tier2-bg: #1e293b;
+        --tag-bg: #78350f;
+        --tag-fg: #fef3c7;
+        --flag-edge: #1e3a5f;
+        --flag-realtime: #14532d;
+        --flag-code: #3b0764;
+        --remind-bg: #451a03;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .header { margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .stats span { white-space: nowrap; }
+    .stats span::after { content: ""; }
+    .stats-arrow { color: var(--muted); font-size: 0.75rem; opacity: 0.6; }
+    .below-score { color: #f59e0b; }
+    .window-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.3rem;
+      line-height: 1.6;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .window-label {
+      font-weight: 600;
+      color: var(--fg);
+      margin-right: 0.2rem;
+    }
+    .window-range {
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--divider);
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+    }
+    .window-sep {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    details { margin-bottom: 1rem; }
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before {
+      content: '\25B6';
+      font-size: 0.6em;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    details[open] > summary::before { transform: rotate(90deg); }
+    details[open] summary { border-radius: 4px 4px 0 0; }
+    details .details-content {
+      padding: 0.75rem;
+      border: 1px solid var(--card-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+    }
+
+    .tabs {
+      margin-bottom: 1rem;
+    }
+    .tabs input[type="radio"] { display: none; }
+    .tab-labels {
+      display: flex;
+      border-bottom: 2px solid var(--divider);
+      margin-bottom: 1rem;
+    }
+    .tab-labels label {
+      padding: 0.6rem 1rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-labels label:hover { color: var(--fg); }
+    .tab-content { display: none; }
+    #tab-today:checked ~ .tab-labels label[for="tab-today"],
+    #tab-remind:checked ~ .tab-labels label[for="tab-remind"],
+    #tab-below:checked ~ .tab-labels label[for="tab-below"],
+    #tab-excluded:checked ~ .tab-labels label[for="tab-excluded"] {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    #tab-today:checked ~ .tab-panel-today { display: block; }
+    #tab-remind:checked ~ .tab-panel-remind { display: block; }
+    #tab-below:checked ~ .tab-panel-below { display: block; }
+    #tab-excluded:checked ~ .tab-panel-excluded { display: block; }
+
+    .paper-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .paper-card--collapsed { display: none; }
+    .show-more-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .show-more-btn:hover { background: var(--accent-light); }
+    .paper-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .paper-card .rank {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .paper-card .paper-title {
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+    }
+    .paper-card .paper-title a {
+      color: var(--fg);
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .paper-card .paper-title a:hover { color: var(--accent); }
+
+    .score-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .score-bar {
+      flex: 1;
+      max-width: 200px;
+      height: 8px;
+      background: var(--score-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      max-width: 100%;
+      background: var(--score-fill);
+      border-radius: 4px;
+    }
+    .score-detail { color: var(--muted); font-size: 0.75rem; }
+
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .cat-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .flags {
+      display: flex;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .flag-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .flag-edge { background: var(--flag-edge); }
+    .flag-realtime { background: var(--flag-realtime); }
+    .flag-code { background: var(--flag-code); }
+
+    .lowered-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--tag-bg);
+      color: var(--tag-fg);
+      font-weight: 600;
+    }
+
+    .paper-links {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .paper-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .paper-links a:hover {
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .abstract-section {
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .abstract-section .abstract-full {
+      margin-top: 0.3rem;
+      margin-bottom: 0;
+    }
+    .abstract-section .abstract-full summary {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.2rem 0.4rem;
+      background: transparent;
+      border: 1px solid var(--card-border);
+      display: inline-flex;
+    }
+
+    .cluster-links {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .tier-divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      position: relative;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .tier-divider::before, .tier-divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 35%;
+      border-top: 1px solid var(--divider);
+    }
+    .tier-divider::before { left: 0; }
+    .tier-divider::after { right: 0; }
+
+    /* Unified compact card - used by Tier 2, remind, below-threshold, discarded */
+    .compact-card {
+      background: var(--tier2-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .compact-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+    }
+    .compact-card .rank {
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .compact-card .paper-title {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .compact-card .paper-title a {
+      color: var(--fg);
+    }
+    .compact-card .paper-title a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .compact-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .compact-link {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.3rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+    }
+    .compact-body {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .compact-reason {
+      margin-top: 0.2rem;
+      margin-left: 0.4rem;
+      padding-left: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--accent);
+      line-height: 1.3;
+      border-left: 3px solid var(--accent);
+    }
+    .compact-card .categories {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+    }
+    .recommend-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    /* Modifier: remind */
+    .compact-card--remind { background: var(--remind-bg); }
+    /* Modifier: below threshold */
+    .compact-card--below { opacity: 0.75; }
+    .compact-card--below .score-detail { color: #f59e0b; font-weight: 600; }
+    /* Modifier: discarded */
+    .compact-card--discarded { opacity: 0.7; }
+
+    /* Read state - Gmail-style dimming */
+    .paper-read { opacity: 0.5; }
+    .paper-read .paper-title a { font-weight: 400; }
+
+    .empty-message {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--divider);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    footer p { margin-bottom: 0.3rem; }
+
+    .index-list { list-style: none; }
+    .index-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .index-list li:last-child { border-bottom: none; }
+
+    /* Paper checkbox - matches rank text height */
+    .paper-checkbox {
+      width: 1em;
+      height: 1em;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin: 0;
+    }
+    .compact-card .paper-links {
+      display: inline-flex;
+      gap: 0.4rem;
+      margin: 0;
+      font-size: 0.8rem;
+    }
+
+    /* Download toolbar */
+    .download-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      padding: 0.6rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    }
+    .download-toolbar.visible { display: flex; }
+    body.toolbar-active { padding-bottom: 3.5rem; }
+    .toolbar-selects {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar-btn.primary:hover { opacity: 0.9; }
+    .toolbar-btn.primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  
+<div class="header">
+  <h1>CAPP!C_AI 논문 리포트 (2026-02-26)</h1>
+  <div class="stats">
+    <span title="arXiv에서 수집된 총 논문 수">수집 44편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="키워드 필터 통과">필터 39편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="LLM 평가 후 제외">제외 0편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="점수 50점 미만">미달 1편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="최종 선정된 논문">선정 9편</span>
+  </div>
+  <div class="window-info">
+    <span class="window-label">검색 윈도우</span>
+    <span class="window-range">UTC 2026-02-25 00:00 / KST 2026-02-25 09:00</span>
+    <span class="window-sep">~</span>
+    <span class="window-range">UTC 2026-02-26 00:30 / KST 2026-02-26 09:30</span>
+  </div>
+</div>
+
+
+<details>
+  <summary>검색 키워드</summary>
+  <div class="details-content">
+    autonomous cinematography, sports tracking, camera control, highlight detection, action recognition, keyframe extraction, video stabilization, image enhancement, color correction, pose estimation, biomechanics, tactical analysis, short video, content summarization, video editing, edge computing, embedded vision, real-time processing, content sharing, social platform, advertising system, biomechanics, tactical analysis, embedded vision
+  </div>
+</details>
+
+
+<div class="tabs">
+  <input type="radio" name="tabs" id="tab-today" checked>
+  <input type="radio" name="tabs" id="tab-remind">
+  <input type="radio" name="tabs" id="tab-below">
+  <input type="radio" name="tabs" id="tab-excluded">
+  <div class="tab-labels">
+    <label for="tab-today">오늘의 논문 (9)</label>
+    <label for="tab-remind">다시 보기 (26)</label>
+    <label for="tab-below">점수 미달 (0)</label>
+    <label for="tab-excluded">제외 (0)</label>
+  </div>
+
+  <div class="tab-content tab-panel-today">
+    
+      
+      
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.21810v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21810v1" onchange="updateToolbar()">
+          <span class="rank">1위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21810v1">GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>88.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 88.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:82 + bonus:+3
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Motion segmentation in dynamic scenes is highly challenging, as conventional methods heavily rely on estimating camera poses and point correspondences from inherently noisy motion cues. Existing statistical inference or iterative optimization techniques that struggle to mitigate the cumulative errors in multi-stage pipelines often lead to limited performance or high computational cost.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Motion segmentation in dynamic scenes is highly challenging, as conventional methods heavily rely on estimating camera poses and point correspondences from inherently noisy motion cues. Existing statistical inference or iterative optimization techniques that struggle to mitigate the cumulative errors in multi-stage pipelines often lead to limited performance or high computational cost. In contrast, we propose a fully learning-based approach that directly infers moving objects from latent feature representations via attention mechanisms, thus enabling end-to-end feed-forward motion segmentation. Our key insight is to bypass explicit correspondence estimation and instead let the model learn to implicitly disentangle object and camera motion. Supported by recent advances in 4D scene geometry reconstruction (e.g., $π^3$), the proposed method leverages reliable camera poses and rich spatial-temporal priors, which ensure stable training and robust inference for the model. Extensive experiments demonstrate that by eliminating complex pre-processing and iterative refinement, our approach achieves state-of-the-art motion segmentation performance with high efficiency. The code is available at:https://github.com/zjutcvg/GeoMotion.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 동적 장면에서의 움직임 분할 기술로 스포츠 촬영 시 선수와 공 등 움직이는 객체를 정확히 식별 가능</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 어텐션 메커니즘을 활용한 엔드투엔드 움직임 분할로 실시간 하이라이트 자동 생성 가능</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21810v1">PDF</a>
+          
+          
+          <a href="https://github.com/zjutcvg/GeoMotion">Code</a>
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.21778v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21778v1" onchange="updateToolbar()">
+          <span class="rank">2위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21778v1">From Statics to Dynamics: Physics-Aware Image Editing with Latent Transition Priors</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>80.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 80.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:75 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Instruction-based image editing has achieved remarkable success in semantic alignment, yet state-of-the-art models frequently fail to render physically plausible results when editing involves complex causal dynamics, such as refraction or material deformation. We attribute this limitation to the dominant paradigm that treats editing as a discrete mapping between image pairs, which provides only boundary conditions and leaves transition dynamics underspecified.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Instruction-based image editing has achieved remarkable success in semantic alignment, yet state-of-the-art models frequently fail to render physically plausible results when editing involves complex causal dynamics, such as refraction or material deformation. We attribute this limitation to the dominant paradigm that treats editing as a discrete mapping between image pairs, which provides only boundary conditions and leaves transition dynamics underspecified. To address this, we reformulate physics-aware editing as predictive physical state transitions and introduce PhysicTran38K, a large-scale video-based dataset comprising 38K transition trajectories across five physical domains, constructed via a two-stage filtering and constraint-aware annotation pipeline. Building on this supervision, we propose PhysicEdit, an end-to-end framework equipped with a textual-visual dual-thinking mechanism. It combines a frozen Qwen2.5-VL for physically grounded reasoning with learnable transition queries that provide timestep-adaptive visual guidance to a diffusion backbone. Experiments show that PhysicEdit improves over Qwen-Image-Edit by 5.9% in physical realism and 10.1% in knowledge-grounded editing, setting a new state-of-the-art for open-source methods, while remaining competitive with leading proprietary models.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 물리적 사실성을 고려한 이미지 편집 기술로 스포츠 영상의 시각적 품질 향상 가능</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 물리적 상태 전이 예측 프레임워크를 통해 스포츠 장면의 사실적인 재구현 및 보정 가능</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21778v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.21835v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21835v1" onchange="updateToolbar()">
+          <span class="rank">3위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21835v1">UniVBench: Towards Unified Evaluation for Video Foundation Models</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>68.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 68.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:60 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Video foundation models aim to integrate video understanding, generation, editing, and instruction following within a single framework, making them a central direction for next-generation multimodal systems. However, existing evaluation benchmarks remain fragmented and limited in scope, as they each target a single task, rely on task-specific metrics, and typically use short or simple video clips.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Video foundation models aim to integrate video understanding, generation, editing, and instruction following within a single framework, making them a central direction for next-generation multimodal systems. However, existing evaluation benchmarks remain fragmented and limited in scope, as they each target a single task, rely on task-specific metrics, and typically use short or simple video clips. As a result, they do not capture the unified capabilities that these models are designed to deliver. To address this gap, we introduce UniVBench, a benchmark purpose-built for evaluating video foundation models across four core abilities: video understanding, video generation, video editing, and a newly proposed task, video reconstruction, which assesses how faithfully a model can reproduce video content it has encountered. Our benchmark substantially expands the complexity of evaluation by incorporating 200 high-quality, diverse and multi-shot videos, each paired with detailed captions, multi-format editing instructions, and reference images. All videos are human-created and carefully validated, offering richer cinematic information than prior benchmarks. In addition, we develop a unified agentic evaluation system (UniV-Eval) that standardizes prompting, instruction parsing, and scoring across all tasks, enabling fair, scalable, and reproducible comparisons of unified video models. By grounding evaluation in instruction-based multi-shot video tasks, UniVBench provides the first framework for measuring the integrated capabilities that video foundation models aim to achieve. Extensive human annotations ensure our evaluation aligns with human judgment, enabling rigorous assessment and accelerating progress toward robust video intelligence.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> UniVBench는 비디오 이해, 편집, 생성 통합 평가 프레임워크로 우리의 스포츠 하이라이트 자동 편집 및 분석 시스템 개발에 적합한 평가 기준 제공</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> UniVBench의 다중 샷 비디오 평가 방식을 채택해 스포츠 장면 복잡성에 맞춘 AI 모델 훈련 및 성능 검증 시스템 구축 가능</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21835v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.22140v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.22140v1" onchange="updateToolbar()">
+          <span class="rank">4위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.22140v1">Lumosaic: Hyperspectral Video via Active Illumination and Coded-Exposure Pixels</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>68.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 68.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.IV</span>
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">We present Lumosaic, a compact active hyperspectral video system designed for real-time capture of dynamic scenes. Our approach combines a narrowband LED array with a coded-exposure-pixel (CEP) camera capable of high-speed, per-pixel exposure control, enabling joint encoding of scene information across space, time, and wavelength within each video frame.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">We present Lumosaic, a compact active hyperspectral video system designed for real-time capture of dynamic scenes. Our approach combines a narrowband LED array with a coded-exposure-pixel (CEP) camera capable of high-speed, per-pixel exposure control, enabling joint encoding of scene information across space, time, and wavelength within each video frame. Unlike passive snapshot systems that divide light across multiple spectral channels simultaneously and assume no motion during a frame&#39;s exposure, Lumosaic actively synchronizes illumination and pixel-wise exposure, improving photon utilization and preserving spectral fidelity under motion. A learning-based reconstruction pipeline then recovers 31-channel hyperspectral (400-700 nm) video at 30 fps and VGA resolution, producing temporally coherent and spectrally accurate reconstructions. Experiments on synthetic and real data demonstrate that Lumosaic significantly improves reconstruction fidelity and temporal stability over existing snapshot hyperspectral imaging systems, enabling robust hyperspectral video across diverse materials and motion conditions.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 초분광 영상 촬영 기술은 스포츠 촬영과 간접적으로 관련 있으나 전문 과학 응용에 특화되어 직접 적용은 제한적이다.</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.22140v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2602.21486v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21486v1" onchange="updateToolbar()">
+          <span class="rank">5위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21486v1">StoryComposerAI: Supporting Human-AI Story Co-Creation Through Decomposition and Linking</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>64.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 64.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.HC</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">GenAI&#39;s ability to produce text and images is increasingly incorporated into human-AI co-creation tasks such as storytelling and video editing. However, integrating GenAI into these tasks requires enabling users to retain control over editing individual story elements while ensuring that generated visuals remain coherent with the storyline and consistent across multiple AI-generated outputs.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">GenAI&#39;s ability to produce text and images is increasingly incorporated into human-AI co-creation tasks such as storytelling and video editing. However, integrating GenAI into these tasks requires enabling users to retain control over editing individual story elements while ensuring that generated visuals remain coherent with the storyline and consistent across multiple AI-generated outputs. This work examines a paradigm of creative decomposition and linking, which allows creators to clearly communicate creative intent by prompting GenAI to tailor specific story elements, such as storylines, personas, locations, and scenes, while maintaining coherence among them. We implement and evaluate StoryComposerAI, a system that exemplifies this paradigm for enhancing users&#39; sense of control and content consistency in human-AI co-creation of digital stories.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이야기 창작을 위한 AI 비디오 편집 시스템으로 스포츠 분석과는 간접적으로 관련이 있습니다.</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21486v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.21883v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21883v1" onchange="updateToolbar()">
+          <span class="rank">6위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21883v1">Non-Extreme Individual Minima for Improved Pareto Front Sampling Efficiency and Decision-Making</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>64.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 64.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">math.OC</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">In multi-objective optimization, the set of optimal trade-offs -- the Pareto front -- often contains regions that are extremely steep or flat. The Pareto optimal points in these regions are typically of limited interest for decision-making, as the marginal rate of substitution is extreme: a marginal improvement in one objective necessitates a significant deterioration in at least one other objective.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">In multi-objective optimization, the set of optimal trade-offs -- the Pareto front -- often contains regions that are extremely steep or flat. The Pareto optimal points in these regions are typically of limited interest for decision-making, as the marginal rate of substitution is extreme: a marginal improvement in one objective necessitates a significant deterioration in at least one other objective. These unfavorable trade-offs frequently occur near the individual minima, where single objectives attain their minimum values without considering the remaining criteria.   To address this, we propose the concept of \emph{non-extreme individual minima} that relies on the notion of $L$-practical proper efficiency. These points can serve as a less sensitive replacement for \emph{standard} individual minima in subsequent related methods. Specifically, they allow for a more practical restriction of the Pareto front sampling within a refined utopia-nadir hyperbox, provide a meaningful basis for image space normalization, and can enhance decision-making techniques, such as knee-point methods, by focusing on regions with acceptable trade-offs.   We provide a computationally efficient algorithm to determine these non-extreme individual minima by solving at most $2n_J$ standard weighted-sum scalarizations, where $n_J$ is the number of objectives. To ensure robustness across varying objective scales, the method incorporates an integrated image space normalization strategy. Numerical examples, specifically a convex academic case and a non-convex real-world application, demonstrate that the method successfully excludes practically irrelevant regions in the image space.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 다목적 최적화 이론 연구로 스포츠 촬영/영상 처리와 직접적 연관 없음</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21883v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.21928v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21928v1" onchange="updateToolbar()">
+          <span class="rank">7위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21928v1">Learning Unknown Interdependencies for Decentralized Root Cause Analysis in Nonlinear Dynamical Systems</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>64.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 64.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">stat.ML</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Root cause analysis (RCA) in networked industrial systems, such as supply chains and power networks, is notoriously difficult due to unknown and dynamically evolving interdependencies among geographically distributed clients. These clients represent heterogeneous physical processes and industrial assets equipped with sensors that generate large volumes of nonlinear, high-dimensional, and heterogeneous IoT data.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Root cause analysis (RCA) in networked industrial systems, such as supply chains and power networks, is notoriously difficult due to unknown and dynamically evolving interdependencies among geographically distributed clients. These clients represent heterogeneous physical processes and industrial assets equipped with sensors that generate large volumes of nonlinear, high-dimensional, and heterogeneous IoT data. Classical RCA methods require partial or full knowledge of the system&#39;s dependency graph, which is rarely available in these complex networks. While federated learning (FL) offers a natural framework for decentralized settings, most existing FL methods assume homogeneous feature spaces and retrainable client models. These assumptions are not compatible with our problem setting. Different clients have different data features and often run fixed, proprietary models that cannot be modified. This paper presents a federated cross-client interdependency learning methodology for feature-partitioned, nonlinear time-series data, without requiring access to raw sensor streams or modifying proprietary client models. Each proprietary local client model is augmented with a Machine Learning (ML) model that encodes cross-client interdependencies. These ML models are coordinated via a global server that enforces representation consistency while preserving privacy through calibrated differential privacy noise. RCA is performed using model residuals and anomaly flags. We establish theoretical convergence guarantees and validate our approach on extensive simulations and a real-world industrial cybersecurity dataset.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이 논문은 OCR 기반 이미지 분석 기술을 제안하며, 스포츠 영상에서 객체 인식과 장면 분석에 활용될 수 있음</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 경기장 내 텍스트 정보(점수, 선수명 등) 자동 추출을 통한 실시간 데이터 처리로 영상 품질 향상 가능</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21928v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.21826v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21826v1" onchange="updateToolbar()">
+          <span class="rank">8위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21826v1">The Silent Spill: Measuring Sensitive Data Leaks Across Public URL Repositories</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>64.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 64.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CR</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">A large number of URLs are made public by various platforms for security analysis, archiving, and paste sharing -- such as VirusTotal, URLScan.io, Hybrid Analysis, the Wayback Machine, and RedHunt. These services may unintentionally expose links containing sensitive information, as reported in some news articles and blog posts.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">A large number of URLs are made public by various platforms for security analysis, archiving, and paste sharing -- such as VirusTotal, URLScan.io, Hybrid Analysis, the Wayback Machine, and RedHunt. These services may unintentionally expose links containing sensitive information, as reported in some news articles and blog posts. However, no large-scale measurement has quantified the extent of such exposures. We present an automated system that detects and analyzes potential sensitive information leaked through publicly accessible URLs. The system combines lexical URL filtering, dynamic rendering, OCR-based extraction, and content classification to identify potential leaks. We apply it to 6,094,475 URLs collected from public scanning platforms, paste sites, and web archives, identifying 12,331 potential exposures across authentication, financial, personal, and document-related domains. These findings show that sensitive information remains exposed, underscoring the importance of automated detection to identify accidental leaks.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 영상 분석 시 노이즈 처리를 위한 강인한 통계 방법 간접 관련</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21826v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2602.21686v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2602.21686v1" onchange="updateToolbar()">
+          <span class="rank">9위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21686v1">&#34;Without AI, I Would Never Share This Online&#34;: Unpacking How LLMs Catalyze Women&#39;s Sharing of Gendered Experiences on Social Media</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>52.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 52.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:40 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.HC</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Sharing gendered experiences on social media has been widely recognized as supporting women&#39;s personal sense-making and contributing to digital feminism. However, there are known concerns, such as fear of judgment and backlash, that may discourage women from posting online.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Sharing gendered experiences on social media has been widely recognized as supporting women&#39;s personal sense-making and contributing to digital feminism. However, there are known concerns, such as fear of judgment and backlash, that may discourage women from posting online. In this study, we examine a recurring practice on Xiaohongshu, a popular Chinese social media platform, in which women share their gendered experiences alongside screenshots of conversations with LLMs. We conducted semi-structured interviews with 20 women to investigate whether and how interactions with LLMs might support women in articulating and sharing gendered experiences. Our findings reveal that, beyond those external concerns, women also hold self-imposed standards regarding what feels appropriate and worthwhile to share publicly. We further show how interactions with LLMs help women meet these standards and navigate such concerns. We conclude by discussing how LLMs might be carefully and critically leveraged to support women&#39;s everyday expression online.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> OCR 기반 이미지 분석 기술이 간접적으로 관련될 수 있으나, 보안 분야에 특화됨</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2602.21686v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+
+      
+      <button class="show-more-btn" id="showMoreBtn" onclick="showAllTier1()">
+        나머지 4편 더 보기
+      </button>
+      
+
+      
+
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-remind">
+    
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20161v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20161v1">Mobile-O: Unified Multimodal Understanding and Generation on Mobile Device</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">98.4</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Unified multimodal models can both understand and generate visual content within a single architecture. Existing models, however, remain data-hungry and too heavy for deployment on edge devices. We present Mobile-O, a compact vision-language-diffusion model that brings unified multimodal intelligence to a mobile device. Its core module, the Mobile Conditioning Projector (MCP), fuses vision-language features with a diffusion generator using depthwise-separable convolutions and layerwise alignment. This design enables efficient cross-modal conditioning with minimal computational cost. Trained on only a few million samples and post-trained in a novel quadruplet format (generation prompt, image, question, answer), Mobile-O jointly enhances both visual understanding and generation capabilities. Despite its efficiency, Mobile-O attains competitive or superior performance compared to other unified models, achieving 74% on GenEval and outperforming Show-O and JanusFlow by 5% and 11%, while running 6x and 11x faster, respectively. For visual understanding, Mobile-O surpasses them by 15.3% and 5.1% averaged across seven benchmarks. Running in only ~3s per 512x512 image on an iPhone, Mobile-O establishes the first practical framework for real-time unified multimodal understanding and generation on edge devices. We hope Mobile-O will ease future research in real-time unified multimodal intelligence running entirely on-device with no cloud dependency. Our code, models, datasets, and mobile application are publicly available at https://amshaker.github.io/Mobile-O/</div>
+        
+        
+        <div class="compact-reason">에지 디바이스에서 실시간 멀티모달 이해/생성 가능해 영상 보정 및 분석에 직접 적용. Mobile-O의 경량 설계(fps 6~11배 향상)가 rk3588 호환성 높음.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20630v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20630v1">From Pairs to Sequences: Track-Aware Policy Gradients for Keypoint Detection</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">96.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Keypoint-based matching is a fundamental component of modern 3D vision systems, such as Structure-from-Motion (SfM) and SLAM. Most existing learning-based methods are trained on image pairs, a paradigm that fails to explicitly optimize for the long-term trackability of keypoints across sequences under challenging viewpoint and illumination changes. In this paper, we reframe keypoint detection as a sequential decision-making problem. We introduce TraqPoint, a novel, end-to-end Reinforcement Learning (RL) framework designed to optimize the \textbf{Tra}ck-\textbf{q}uality (Traq) of keypoints directly on image sequences. Our core innovation is a track-aware reward mechanism that jointly encourages the consistency and distinctiveness of keypoints across multiple views, guided by a policy gradient method. Extensive evaluations on sparse matching benchmarks, including relative pose estimation and 3D reconstruction, demonstrate that TraqPoint significantly outperforms some state-of-the-art (SOTA) keypoint detection and description methods.</div>
+        
+        
+        <div class="compact-reason">실시간 동분할 기술은 스포츠 장면에서 움직임을 효과적으로 분석하여 하이라이트 편집에 적합합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20790v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20790v1">Real-time Motion Segmentation with Event-based Normal Flow</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">93.6</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.RO</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Event-based cameras are bio-inspired sensors with pixels that independently and asynchronously respond to brightness changes at microsecond resolution, offering the potential to handle visual tasks in challenging scenarios. However, due to the sparse information content in individual events, directly processing the raw event data to solve vision tasks is highly inefficient, which severely limits the applicability of state-of-the-art methods in real-time tasks, such as motion segmentation, a fundamental task for dynamic scene understanding. Incorporating normal flow as an intermediate representation to compress motion information from event clusters within a localized region provides a more effective solution. In this work, we propose a normal flow-based motion segmentation framework for event-based vision. Leveraging the dense normal flow directly learned from event neighborhoods as input, we formulate the motion segmentation task as an energy minimization problem solved via graph cuts, and optimize it iteratively with normal flow clustering and motion model fitting. By using a normal flow-based motion model initialization and fitting method, the proposed system is able to efficiently estimate the motion models of independently moving objects with only a limited number of candidate models, which significantly reduces the computational complexity and ensures real-time performance, achieving nearly a 800x speedup in comparison to the open-source state-of-the-art method. Extensive evaluations on multiple public datasets fully demonstrate the accuracy and efficiency of our framework.</div>
+        
+        
+        <div class="compact-reason">고속 움직임으로 인한 흐림 문제를 해결하여 스포츠 촬영의 품질을 향상시키는 데 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19763v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19763v1">Training Deep Stereo Matching Networks on Tree Branch Imagery: A Benchmark Study for Real-Time UAV Forestry Applications</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">93.6</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">eess.IV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Autonomous drone-based tree pruning needs accurate, real-time depth estimation from stereo cameras. Depth is computed from disparity maps using $Z = f B/d$, so even small disparity errors cause noticeable depth mistakes at working distances. Building on our earlier work that identified DEFOM-Stereo as the best reference disparity generator for vegetation scenes, we present the first study to train and test ten deep stereo matching networks on real tree branch images. We use the Canterbury Tree Branches dataset -- 5,313 stereo pairs from a ZED Mini camera at 1080P and 720P -- with DEFOM-generated disparity maps as training targets. The ten methods cover step-by-step refinement, 3D convolution, edge-aware attention, and lightweight designs. Using perceptual metrics (SSIM, LPIPS, ViTScore) and structural metrics (SIFT/ORB feature matching), we find that BANet-3D produces the best overall quality (SSIM = 0.883, LPIPS = 0.157), while RAFT-Stereo scores highest on scene-level understanding (ViTScore = 0.799). Testing on an NVIDIA Jetson Orin Super (16 GB, independently powered) mounted on our drone shows that AnyNet reaches 6.99 FPS at 1080P -- the only near-real-time option -- while BANet-2D gives the best quality-speed balance at 1.21 FPS. We also compare 720P and 1080P processing times to guide resolution choices for forestry drone systems.</div>
+        
+        
+        <div class="compact-reason">실시간 스테레오 깊이 추정이 운동 동작 3D 분석에 필수. AnyNet 6.99fps로 rk3588에서 동작 캡처 가능성 높음.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19513v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19513v1">Real-time Win Probability and Latent Player Ability via STATS X in Team Sports</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">92.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">stat.AP</span>
+          
+          <span class="cat-tag">stat.ML</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">This study proposes a statistically grounded framework for real-time win probability evaluation and player assessment in score-based team sports, based on minute-by-minute cumulative box-score data. We introduce a continuous dominance indicator (T-score) that maps final scores to real values consistent with win/lose outcomes, and formulate it as a time-evolving stochastic representation (T-process) driven by standardized cumulative statistics. This structure captures temporal game dynamics and enables sequential, analytically tractable updates of in-game win probability. Through this stochastic formulation, competitive advantage is decomposed into interpretable statistical components. Furthermore, we define a latent contribution index, STATS X, which quantifies a player&#39;s involvement in favorable dominance intervals identified by the T-process. This allows us to separate a team&#39;s baseline strength from game-specific performance fluctuations and provides a coherent, structural evaluation framework for both teams and players. While we do not implement AI methods in this paper, our framework is positioned as a foundational step toward hybrid integration with AI. By providing a structured time-series representation of dominance with an explicit probabilistic interpretation, the framework enables flexible learning mechanisms and incorporation of high-dimensional data, while preserving statistical coherence and interpretability. This work provides a basis for advancing AI-driven sports analytics.</div>
+        
+        
+        <div class="compact-reason">실시간 승률(T-process) 및 선수 능력(STATS X) 분석이 경기 전략/개인 평가에 직접 적용. AI 통합 기반 제공.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.21188v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21188v1">Human Video Generation from a Single Image with 3D Pose and View Control</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">90.4</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Recent diffusion methods have made significant progress in generating videos from single images due to their powerful visual generation capabilities. However, challenges persist in image-to-video synthesis, particularly in human video generation, where inferring view-consistent, motion-dependent clothing wrinkles from a single image remains a formidable problem. In this paper, we present Human Video Generation in 4D (HVG), a latent video diffusion model capable of generating high-quality, multi-view, spatiotemporally coherent human videos from a single image with 3D pose and view control. HVG achieves this through three key designs: (i) Articulated Pose Modulation, which captures the anatomical relationships of 3D joints via a novel dual-dimensional bone map and resolves self-occlusions across views by introducing 3D information; (ii) View and Temporal Alignment, which ensures multi-view consistency and alignment between a reference image and pose sequences for frame-to-frame stability; and (iii) Progressive Spatio-Temporal Sampling with temporal alignment to maintain smooth transitions in long multi-view animations. Extensive experiments on image-to-video tasks demonstrate that HVG outperforms existing methods in generating high-quality 4D human videos from diverse human images and pose inputs.</div>
+        
+        
+        <div class="compact-reason">3D 포즈 제어 기반 영상 생성 기술은 스포츠 하이라이트 영상 제작에 직접 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.21101v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.21101v1">Event-Aided Sharp Radiance Field Reconstruction for Fast-Flying Drones</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">89.6</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.RO</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Fast-flying aerial robots promise rapid inspection under limited battery constraints, with direct applications in infrastructure inspection, terrain exploration, and search and rescue. However, high speeds lead to severe motion blur in images and induce significant drift and noise in pose estimates, making dense 3D reconstruction with Neural Radiance Fields (NeRFs) particularly challenging due to their high sensitivity to such degradations. In this work, we present a unified framework that leverages asynchronous event streams alongside motion-blurred frames to reconstruct high-fidelity radiance fields from agile drone flights. By embedding event-image fusion into NeRF optimization and jointly refining event-based visual-inertial odometry priors using both event and frame modalities, our method recovers sharp radiance fields and accurate camera trajectories without ground-truth supervision. We validate our approach on both synthetic data and real-world sequences captured by a fast-flying drone. Despite highly dynamic drone flights, where RGB frames are severely degraded by motion blur and pose priors become unreliable, our method reconstructs high-fidelity radiance fields and preserves fine scene details, delivering a performance gain of over 50% on real-world data compared to state-of-the-art methods.</div>
+        
+        
+        <div class="compact-reason">드론 기반 3D 재구성 기술은 스포츠 촬영 시 움직임 흐림 문제 해결에 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19624v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19624v1">Accurate Planar Tracking With Robust Re-Detection</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">88.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">We present SAM-H and WOFTSAM, novel planar trackers that combine robust long-term segmentation tracking provided by SAM 2 with 8 degrees-of-freedom homography pose estimation. SAM-H estimates homographies from segmentation mask contours and is thus highly robust to target appearance changes. WOFTSAM significantly improves the current state-of-the-art planar tracker WOFT by exploiting lost target re-detection provided by SAM-H. The proposed methods are evaluated on POT-210 and PlanarTrack tracking benchmarks, setting the new state-of-the-art performance on both. On the latter, they outperform the second best by a large margin, +12.4 and +15.2pp on the p@15 metric. We also present improved ground-truth annotations of initial PlanarTrack poses, enabling more accurate benchmarking in the high-precision p@5 metric. The code and the re-annotations are available at https://github.com/serycjon/WOFTSAM</div>
+        
+        
+        <div class="compact-reason">평면 추적 기술이 운동 장비/선수 동작 자동 추적에 핵심. SAM-H의 견고한 재탐지로 빠른 움직임 대응 가능.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20089v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20089v1">StructXLIP: Enhancing Vision-language Models with Multimodal Structural Cues</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">88.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Edge-based representations are fundamental cues for visual understanding, a principle rooted in early vision research and still central today. We extend this principle to vision-language alignment, showing that isolating and aligning structural cues across modalities can greatly benefit fine-tuning on long, detail-rich captions, with a specific focus on improving cross-modal retrieval. We introduce StructXLIP, a fine-tuning alignment paradigm that extracts edge maps (e.g., Canny), treating them as proxies for the visual structure of an image, and filters the corresponding captions to emphasize structural cues, making them &#34;structure-centric&#34;. Fine-tuning augments the standard alignment loss with three structure-centric losses: (i) aligning edge maps with structural text, (ii) matching local edge regions to textual chunks, and (iii) connecting edge maps to color images to prevent representation drift. From a theoretical standpoint, while standard CLIP maximizes the mutual information between visual and textual embeddings, StructXLIP additionally maximizes the mutual information between multimodal structural representations. This auxiliary optimization is intrinsically harder, guiding the model toward more robust and semantically stable minima, enhancing vision-language alignment. Beyond outperforming current competitors on cross-modal retrieval in both general and specialized domains, our method serves as a general boosting recipe that can be integrated into future approaches in a plug-and-play manner. Code and pretrained models are publicly available at: https://github.com/intelligolabs/StructXLIP.</div>
+        
+        
+        <div class="compact-reason">비전-언어 정렬 기술이 스포츠 영상 분석 및 보정에 적용 가능. 구조적 단서 정렬로 운동 자세나 전략 설명 정확도 향상.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19990v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19990v1">A Context-Aware Knowledge Graph Platform for Stream Processing in Industrial IoT</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">88.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.DB</span>
+          
+          <span class="cat-tag">cs.DC</span>
+          
+          <span class="cat-tag">cs.IR</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Industrial IoT ecosystems bring together sensors, machines and smart devices operating collaboratively across industrial environments. These systems generate large volumes of heterogeneous, high-velocity data streams that require interoperable, secure and contextually aware management. Most of the current stream management architectures, however, still rely on syntactic integration mechanisms, which result in limited flexibility, maintainability and interpretability in complex Industry 5.0 scenarios. This work proposes a context-aware semantic platform for data stream management that unifies heterogeneous IoT/IoE data sources through a Knowledge Graph enabling formal representation of devices, streams, agents, transformation pipelines, roles and rights. The model supports flexible data gathering, composable stream processing pipelines, and dynamic role-based data access based on agents&#39; contexts, relying on Apache Kafka and Apache Flink for real-time processing, while SPARQL and SWRL-based reasoning provide context-dependent stream discovery. Experimental evaluations demonstrate the effectiveness of combining semantic models, context-aware reasoning and distributed stream processing to enable interoperable data workflows for Industry 5.0 environments.</div>
+        
+        
+        <div class="compact-reason">실시간 스트림 처리 플랫폼으로 다중 영상 소스 통합 관리 가능. 엣지 디바이스의 영상 분석 파이프라인 효율화에 필수.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20739v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20739v1">PyVision-RL: Forging Open Agentic Vision Models via RL</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">88.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Reinforcement learning for agentic multimodal models often suffers from interaction collapse, where models learn to reduce tool usage and multi-turn reasoning, limiting the benefits of agentic behavior. We introduce PyVision-RL, a reinforcement learning framework for open-weight multimodal models that stabilizes training and sustains interaction. Our approach combines an oversampling-filtering-ranking rollout strategy with an accumulative tool reward to prevent collapse and encourage multi-turn tool use. Using a unified training pipeline, we develop PyVision-Image and PyVision-Video for image and video understanding. For video reasoning, PyVision-Video employs on-demand context construction, selectively sampling task-relevant frames during reasoning to significantly reduce visual token usage. Experiments show strong performance and improved efficiency, demonstrating that sustained interaction and on-demand visual processing are critical for scalable multimodal agents.</div>
+        
+        
+        <div class="compact-reason">PyVision-Video framework for video understanding applicable for sports scene analysis</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19742v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19742v1">A Risk-Aware UAV-Edge Service Framework for Wildfire Monitoring and Emergency Response</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">88.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.DC</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Wildfire monitoring demands timely data collection and processing for early detection and rapid response. UAV-assisted edge computing is a promising approach, but jointly minimizing end-to-end service response time while satisfying energy, revisit time, and capacity constraints remains challenging. We propose an integrated framework that co-optimizes UAV route planning, fleet sizing, and edge service provisioning for wildfire monitoring. The framework combines fire-history-weighted clustering to prioritize high-risk areas, Quality of Service (QoS)-aware edge assignment balancing proximity and computational load, 2-opt route optimization with adaptive fleet sizing, and a dynamic emergency rerouting mechanism. The key insight is that these subproblems are interdependent: clustering decisions simultaneously shape patrol efficiency and edge workloads, while capacity constraints feed back into feasible configurations. Experiments show that the proposed framework reduces average response time by 70.6--84.2%, energy consumption by 73.8--88.4%, and fleet size by 26.7--42.1% compared to GA, PSO, and greedy baselines. The emergency mechanism responds within 233 seconds, well under the 300-second deadline, with negligible impact on normal operations.</div>
+        
+        
+        <div class="compact-reason">UAV 에지 자원 최적화 방법론이 스포츠 에지 디바이스에 전용. 응답 시간 70% 감소로 실시간 처리 가능.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19768v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19768v1">TraceVision: Trajectory-Aware Vision-Language Model for Human-Like Spatial Understanding</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">85.6</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Recent Large Vision-Language Models (LVLMs) demonstrate remarkable capabilities in image understanding and natural language generation. However, current approaches focus predominantly on global image understanding, struggling to simulate human visual attention trajectories and explain associations between descriptions and specific regions. We propose TraceVision, a unified vision-language model integrating trajectory-aware spatial understanding in an end-to-end framework. TraceVision employs a Trajectory-aware Visual Perception (TVP) module for bidirectional fusion of visual features and trajectory information. We design geometric simplification to extract semantic keypoints from raw trajectories and propose a three-stage training pipeline where trajectories guide description generation and region localization. We extend TraceVision to trajectory-guided segmentation and video scene understanding, enabling cross-frame tracking and temporal attention analysis. We construct the Reasoning-based Interactive Localized Narratives (RILN) dataset to enhance logical reasoning and interpretability. Extensive experiments on trajectory-guided captioning, text-guided trajectory prediction, understanding, and segmentation demonstrate that TraceVision achieves state-of-the-art performance, establishing a foundation for intuitive spatial interaction and interpretable visual understanding.</div>
+        
+        
+        <div class="compact-reason">궤적 인식 기술로 운동 선수 움직임 추적 정확도 향상. 하이라이트 자동 추출 핵심 기능으로 적용 가능.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19615v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19615v1">Seeing Clearly, Reasoning Confidently: Plug-and-Play Remedies for Vision Language Model Blindness</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">85.6</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Vision language models (VLMs) have achieved remarkable success in broad visual understanding, yet they remain challenged by object-centric reasoning on rare objects due to the scarcity of such instances in pretraining data. While prior efforts alleviate this issue by retrieving additional data or introducing stronger vision encoders, these methods are still computationally intensive during finetuning VLMs and don&#39;t fully exploit the original training data. In this paper, we introduce an efficient plug-and-play module that substantially improves VLMs&#39; reasoning over rare objects by refining visual tokens and enriching input text prompts, without VLMs finetuning. Specifically, we propose to learn multi-modal class embeddings for rare objects by leveraging prior knowledge from vision foundation models and synonym-augmented text descriptions, compensating for limited training examples. These embeddings refine the visual tokens in VLMs through a lightweight attention-based enhancement module that improves fine-grained object details. In addition, we use the learned embeddings as object-aware detectors to generate informative hints, which are injected into the text prompts to help guide the VLM&#39;s attention toward relevant image regions. Experiments on two benchmarks show consistent and substantial gains for pretrained VLMs in rare object recognition and reasoning. Further analysis reveals how our method strengthens the VLM&#39;s ability to focus on and reason about rare objects.</div>
+        
+        
+        <div class="compact-reason">경량 플러그인 모듈로 희귀 스포츠 동작 인식 성능 향상. 엣지 디바이스 VLM 최적화에 직접 적용 가능.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19605v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19605v1">CLCR: Cross-Level Semantic Collaborative Representation for Multimodal Learning</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">85.6</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.MM</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Multimodal learning aims to capture both shared and private information from multiple modalities. However, existing methods that project all modalities into a single latent space for fusion often overlook the asynchronous, multi-level semantic structure of multimodal data. This oversight induces semantic misalignment and error propagation, thereby degrading representation quality. To address this issue, we propose Cross-Level Co-Representation (CLCR), which explicitly organizes each modality&#39;s features into a three-level semantic hierarchy and specifies level-wise constraints for cross-modal interactions. First, a semantic hierarchy encoder aligns shallow, mid, and deep features across modalities, establishing a common basis for interaction. And then, at each level, an Intra-Level Co-Exchange Domain (IntraCED) factorizes features into shared and private subspaces and restricts cross-modal attention to the shared subspace via a learnable token budget. This design ensures that only shared semantics are exchanged and prevents leakage from private channels. To integrate information across levels, the Inter-Level Co-Aggregation Domain (InterCAD) synchronizes semantic scales using learned anchors, selectively fuses the shared representations, and gates private cues to form a compact task representation. We further introduce regularization terms to enforce separation of shared and private features and to minimize cross-level interference. Experiments on six benchmarks spanning emotion recognition, event localization, sentiment analysis, and action recognition show that CLCR achieves strong performance and generalizes well across tasks.</div>
+        
+        
+        <div class="compact-reason">멀티모달 학습으로 동작 인식 정확도 향상. 영상-모션 데이터 협업 표현이 스포츠 분석 핵심.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19706v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19706v1">HDR Reconstruction Boosting with Training-Free and Exposure-Consistent Diffusion</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.8</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Single LDR to HDR reconstruction remains challenging for over-exposed regions where traditional methods often fail due to complete information loss. We present a training-free approach that enhances existing indirect and direct HDR reconstruction methods through diffusion-based inpainting. Our method combines text-guided diffusion models with SDEdit refinement to generate plausible content in over-exposed areas while maintaining consistency across multi-exposure LDR images. Unlike previous approaches requiring extensive training, our method seamlessly integrates with existing HDR reconstruction techniques through an iterative compensation mechanism that ensures luminance coherence across multiple exposures. We demonstrate significant improvements in both perceptual quality and quantitative metrics on standard HDR datasets and in-the-wild captures. Results show that our method effectively recovers natural details in challenging scenarios while preserving the advantages of existing HDR reconstruction pipelines. Project page: https://github.com/EusdenLin/HDR-Reconstruction-Boosting</div>
+        
+        
+        <div class="compact-reason">이 논문은 단일 LDR 영상을 HDR로 재구성하는 방법을 제안합니다. 핵심은 학습 없이 확산 모델을 활용해 과다 노출 영역을 자연스럽게 복원하는 것입니다. 우리 프로젝트의 영상 보정 기능에 직접 적용 가능해 하이라이트 영상의 화질을 개선할 수 있습니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19530v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19530v1">ORION: ORthonormal Text Encoding for Universal VLM AdaptatION</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Vision language models (VLMs) have demonstrated remarkable generalization across diverse tasks, yet their performance remains constrained by the quality and geometry of the textual prototypes used to represent classes. Standard zero shot classifiers, derived from frozen text encoders and handcrafted prompts, may yield correlated or weakly separated embeddings that limit task specific discriminability. We introduce ORION, a text encoder fine tuning framework that improves pretrained VLMs using only class names. Our method optimizes, via low rank adaptation, a novel loss integrating two terms, one promoting pairwise orthogonality between the textual representations of the classes of a given task and the other penalizing deviations from the initial class prototypes. Furthermore, we provide a probabilistic interpretation of our orthogonality penalty, connecting it to the general maximum likelihood estimation (MLE) principle via Huygens theorem. We report extensive experiments on 11 benchmarks and three large VLM backbones, showing that the refined textual embeddings yield powerful replacements for the standard CLIP prototypes. Added as plug and play module on top of various state of the art methods, and across different prediction settings (zero shot, few shot and test time adaptation), ORION improves the performance consistently and significantly.</div>
+        
+        
+        <div class="compact-reason">이 논문은 VLM 텍스트 인코딩 최적화 방법을 제안합니다. 핵심은 클래스 간 텍스트 임베딩의 직교성을 강화해 분류 성능을 높이는 것입니다. 스포츠 자세 분석 정확도 향상에 기여해 프로젝트의 AI 분석 기능에 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19461v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19461v1">Laplacian Multi-scale Flow Matching for Generative Modeling</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">In this paper, we present Laplacian multiscale flow matching (LapFlow), a novel framework that enhances flow matching by leveraging multi-scale representations for image generative modeling. Our approach decomposes images into Laplacian pyramid residuals and processes different scales in parallel through a mixture-of-transformers (MoT) architecture with causal attention mechanisms. Unlike previous cascaded approaches that require explicit renoising between scales, our model generates multi-scale representations in parallel, eliminating the need for bridging processes. The proposed multi-scale architecture not only improves generation quality but also accelerates the sampling process and promotes scaling flow matching methods. Through extensive experimentation on CelebA-HQ and ImageNet, we demonstrate that our method achieves superior sample quality with fewer GFLOPs and faster inference compared to single-scale and multi-scale flow matching baselines. The proposed model scales effectively to high-resolution generation (up to 1024$\times$1024) while maintaining lower computational overhead.</div>
+        
+        
+        <div class="compact-reason">이 논문은 다중 스케일 플로우 매칭을 통한 이미지 생성 방법을 제안합니다. 핵심은 라플라시안 피라미드와 병렬 처리를 활용해 고해상도 생성을 가속하는 것입니다. 영상 보정 및 사진 생성 기능에 적용 가능해 프로젝트의 콘텐츠 제작 효율성을 높입니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20070v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20070v1">Training-Free Generative Modeling via Kernelized Stochastic Interpolants</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">We develop a kernel method for generative modeling within the stochastic interpolant framework, replacing neural network training with linear systems. The drift of the generative SDE is $\hat b_t(x) = \nablaφ(x)^\topη_t$, where $η_t\in\R^P$ solves a $P\times P$ system computable from data, with $P$ independent of the data dimension $d$. Since estimates are inexact, the diffusion coefficient $D_t$ affects sample quality; the optimal $D_t^*$ from Girsanov diverges at $t=0$, but this poses no difficulty and we develop an integrator that handles it seamlessly. The framework accommodates diverse feature maps -- scattering transforms, pretrained generative models etc. -- enabling training-free generation and model combination. We demonstrate the approach on financial time series, turbulence, and image generation.</div>
+        
+        
+        <div class="compact-reason">이 논문은 커널 기반 생성 모델링 방법을 제안합니다. 핵심은 신경망 없이 선형 시스템으로 학습 없는 생성을 가능케 하는 것입니다. 영상 보정 및 이미지 생성에 유연하게 적용되어 프로젝트의 실시간 보정 기능을 강화합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20083v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20083v1">CQ-CiM: Hardware-Aware Embedding Shaping for Robust CiM-Based Retrieval</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.ET</span>
+          
+          <span class="cat-tag">cs.AR</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Deploying Retrieval-Augmented Generation (RAG) on edge devices is in high demand, but is hindered by the latency of massive data movement and computation on traditional architectures. Compute-in-Memory (CiM) architectures address this bottleneck by performing vector search directly within their crossbar structure. However, CiM&#39;s adoption for RAG is limited by a fundamental ``representation gap,&#39;&#39; as high-precision, high-dimension embeddings are incompatible with CiM&#39;s low-precision, low-dimension array constraints. This gap is compounded by the diversity of CiM implementations (e.g., SRAM, ReRAM, FeFET), each with unique designs (e.g., 2-bit cells, 512x512 arrays). Consequently, RAG data must be naively reshaped to fit each target implementation. Current data shaping methods handle dimension and precision disjointly, which degrades data fidelity. This not only negates the advantages of CiM for RAG but also confuses hardware designers, making it unclear if a failure is due to the circuit design or the degraded input data. As a result, CiM adoption remains limited. In this paper, we introduce CQ-CiM, a unified, hardware-aware data shaping framework that jointly learns Compression and Quantization to produce CiM-compatible low-bit embeddings for diverse CiM designs. To the best of our knowledge, this is the first work to shape data for comprehensive CiM usage on RAG.</div>
+        
+        
+        <div class="compact-reason">이 논문은 CiM 기반 검색을 위한 임베딩 최적화 방법을 제안합니다. 핵심은 압축과 양자화를 결합해 엣지 디바이스 호환 저비트 임베딩을 생성하는 것입니다. RK3588 같은 엣지 하드웨어에서 RAG 효율성을 높여 프로젝트의 실시간 분석에 필수적입니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20958v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20958v1">EKF-Based Depth Camera and Deep Learning Fusion for UAV-Person Distance Estimation and Following in SAR Operations</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Search and rescue (SAR) operations require rapid responses to save lives or property. Unmanned Aerial Vehicles (UAVs) equipped with vision-based systems support these missions through prior terrain investigation or real-time assistance during the mission itself. Vision-based UAV frameworks aid human search tasks by detecting and recognizing specific individuals, then tracking and following them while maintaining a safe distance. A key safety requirement for UAV following is the accurate estimation of the distance between camera and target object under real-world conditions, achieved by fusing multiple image modalities. UAVs with deep learning-based vision systems offer a new approach to the planning and execution of SAR operations. As part of the system for automatic people detection and face recognition using deep learning, in this paper we present the fusion of depth camera measurements and monocular camera-to-body distance estimation for robust tracking and following. Deep learning-based filtering of depth camera data and estimation of camera-to-body distance from a monocular camera are achieved with YOLO-pose, enabling real-time fusion of depth information using the Extended Kalman Filter (EKF) algorithm. The proposed subsystem, designed for use in drones, estimates and measures the distance between the depth camera and the human body keypoints, to maintain the safe distance between the drone and the human target. Our system provides an accurate estimated distance, which has been validated against motion capture ground truth data. The system has been tested in real time indoors, where it reduces the average errors, root mean square error (RMSE) and standard deviations of distance estimation up to 15,3\% in three tested scenarios.</div>
+        
+        
+        <div class="compact-reason">This paper proposes a method for distance estimation and following of UAVs using depth camera and deep learning fusion. The core is YOLO-pose and EKF algorithm integration for real-time distance measurement.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19756v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19756v1">Multimodal Dataset Distillation Made Simple by Prototype-Guided Data Synthesis</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">82.4</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Recent advances in multimodal learning have achieved remarkable success across diverse vision-language tasks. However, such progress heavily relies on large-scale image-text datasets, making training costly and inefficient. Prior efforts in dataset filtering and pruning attempt to mitigate this issue, but still require relatively large subsets to maintain performance and fail under very small subsets. Dataset distillation offers a promising alternative, yet existing multimodal dataset distillation methods require full-dataset training and joint optimization of image pixels and text features, making them architecture-dependent and limiting cross-architecture generalization. To overcome this, we propose a learning-free dataset distillation framework that eliminates the need for large-scale training and optimization while enhancing generalization across architectures. Our method uses CLIP to extract aligned image-text embeddings, obtains prototypes, and employs an unCLIP decoder to synthesize images, enabling efficient and scalable multimodal dataset distillation. Extensive experiments demonstrate that our approach consistently outperforms optimization-based dataset distillation and subset selection methods, achieving state-of-the-art cross-architecture generalization.</div>
+        
+        
+        <div class="compact-reason">이 논문은 multimodal dataset distillation 방법을 제안합니다. 핵심은 CLIP을 이용해 학습 없이 이미지-텍스트 데이터를 증류하는 것입니다. 에지 디바이스의 학습 효율성을 높여 스포츠 영상 분석 모델의 훈련 비용과 시간을 크게 줄일 수 있습니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20792v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20792v1">SIMSPINE: A Biomechanics-Aware Simulation Framework for 3D Spine Motion Annotation and Benchmarking</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">82.4</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Modeling spinal motion is fundamental to understanding human biomechanics, yet remains underexplored in computer vision due to the spine&#39;s complex multi-joint kinematics and the lack of large-scale 3D annotations. We present a biomechanics-aware keypoint simulation framework that augments existing human pose datasets with anatomically consistent 3D spinal keypoints derived from musculoskeletal modeling. Using this framework, we create the first open dataset, named SIMSPINE, which provides sparse vertebra-level 3D spinal annotations for natural full-body motions in indoor multi-camera capture without external restraints. With 2.14 million frames, this enables data-driven learning of vertebral kinematics from subtle posture variations and bridges the gap between musculoskeletal simulation and computer vision. In addition, we release pretrained baselines covering fine-tuned 2D detectors, monocular 3D pose lifting models, and multi-view reconstruction pipelines, establishing a unified benchmark for biomechanically valid spine motion estimation. Specifically, our 2D spine baselines improve the state-of-the-art from 0.63 to 0.80 AUC in controlled environments, and from 0.91 to 0.93 AP for in-the-wild spine tracking. Together, the simulation framework and SIMSPINE dataset advance research in vision-based biomechanics, motion analysis, and digital human modeling by enabling reproducible, anatomically grounded 3D spine estimation under natural conditions.</div>
+        
+        
+        <div class="compact-reason">생체역학 시뮬레이션 프레임워크는 스포츠 동작 분석에 직접 적용 가능하여 선수 자세 및 동작 분석에 필수적</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.20500v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.20500v1">Strategy-Supervised Autonomous Laparoscopic Camera Control via Event-Driven Graph Mining</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Autonomous laparoscopic camera control must maintain a stable and safe surgical view under rapid tool-tissue interactions while remaining interpretable to surgeons. We present a strategy-grounded framework that couples high-level vision-language inference with low-level closed-loop control. Offline, raw surgical videos are parsed into camera-relevant temporal events (e.g., interaction, working-distance deviation, and view-quality degradation) and structured as attributed event graphs. Mining these graphs yields a compact set of reusable camera-handling strategy primitives, which provide structured supervision for learning. Online, a fine-tuned Vision-Language Model (VLM) processes the live laparoscopic view to predict the dominant strategy and discrete image-based motion commands, executed by an IBVS-RCM controller under strict safety constraints; optional speech input enables intuitive human-in-the-loop conditioning. On a surgeon-annotated dataset, event parsing achieves reliable temporal localization (F1-score 0.86), and the mined strategies show strong semantic alignment with expert interpretation (cluster purity 0.81). Extensive ex vivo experiments on silicone phantoms and porcine tissues demonstrate that the proposed system outperforms junior surgeons in standardized camera-handling evaluations, reducing field-of-view centering error by 35.26% and image shaking by 62.33%, while preserving smooth motion and stable working-distance regulation.</div>
+        
+        
+        <div class="compact-reason">전략 기반 자동 카메라 제어 방식은 경기 중요 순간을 자동으로 포착하여 하이라이트 영상 제작에 효과적</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19412v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19412v1">Redefining the Down-Sampling Scheme of U-Net for Precision Biomedical Image Segmentation</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">U-Net architectures have been instrumental in advancing biomedical image segmentation (BIS) but often struggle with capturing long-range information. One reason is the conventional down-sampling techniques that prioritize computational efficiency at the expense of information retention. This paper introduces a simple but effective strategy, we call it Stair Pooling, which moderates the pace of down-sampling and reduces information loss by leveraging a sequence of concatenated small and narrow pooling operations in varied orientations. Specifically, our method modifies the reduction in dimensionality within each 2D pooling step from $\frac{1}{4}$ to $\frac{1}{2}$. This approach can also be adapted for 3D pooling to preserve even more information. Such preservation aids the U-Net in more effectively reconstructing spatial details during the up-sampling phase, thereby enhancing its ability to capture long-range information and improving segmentation accuracy. Extensive experiments on three BIS benchmarks demonstrate that the proposed Stair Pooling can increase both 2D and 3D U-Net performance by an average of 3.8\% in Dice scores. Moreover, we leverage the transfer entropy to select the optimal down-sampling paths and quantitatively show how the proposed Stair Pooling reduces the information loss.</div>
+        
+        
+        <div class="compact-reason">이 논문은 U-Net의 Stair Pooling 기법을 제안합니다. 핵심은 정보 손실을 줄여 장거리 의존성을 포착하는 것입니다. 스포츠 동작 세분화 분석 정확도를 높여 선수의 자세 오류를 정밀하게 식별하는 데 필수적입니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2602.19891v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2602.19891v1">Using Unsupervised Domain Adaptation Semantic Segmentation for Pulmonary Embolism Detection in Computed Tomography Pulmonary Angiogram (CTPA) Images</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.IV</span>
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">While deep learning has demonstrated considerable promise in computer-aided diagnosis for pulmonary embolism (PE), practical deployment in Computed Tomography Pulmonary Angiography (CTPA) is often hindered by &#34;domain shift&#34; and the prohibitive cost of expert annotations. To address these challenges, an unsupervised domain adaptation (UDA) framework is proposed, utilizing a Transformer backbone and a Mean-Teacher architecture for cross-center semantic segmentation. The primary focus is placed on enhancing pseudo-label reliability by learning deep structural information within the feature space. Specifically, three modules are integrated and designed for this task: (1) a Prototype Alignment (PA) mechanism to reduce category-level distribution discrepancies; (2) Global and Local Contrastive Learning (GLCL) to capture both pixel-level topological relationships and global semantic representations; and (3) an Attention-based Auxiliary Local Prediction (AALP) module designed to reinforce sensitivity to small PE lesions by automatically extracting high-information slices from Transformer attention maps. Experimental validation conducted on cross-center datasets (FUMPE and CAD-PE) demonstrates significant performance gains. In the FUMPE -&gt; CAD-PE task, the IoU increased from 0.1152 to 0.4153, while the CAD-PE -&gt; FUMPE task saw an improvement from 0.1705 to 0.4302. Furthermore, the proposed method achieved a 69.9% Dice score in the CT -&gt; MRI cross-modality task on the MMWHS dataset without utilizing any target-domain labels for model selection, confirming its robustness and generalizability for diverse clinical environments.</div>
+        
+        
+        <div class="compact-reason">이 논문은 unsupervised domain adaptation(UDA)을 이용한 segmentation 방법을 제안합니다. 핵심은 도메인 차이를 극복하는 Prototype Alignment입니다. 다양한 환경(실내/야외)에서 스포츠 동작 분석의 일관된 정확도를 보장합니다.</div>
+        
+      </div>
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-below">
+    
+      <div class="empty-message">
+        점수 미달 논문이 없습니다.
+      </div>
+    
+  </div>
+
+  <div class="tab-content tab-panel-excluded">
+    
+      <div class="empty-message">
+        제외된 논문이 없습니다.
+      </div>
+    
+  </div>
+</div>
+
+<div class="download-toolbar" id="downloadToolbar">
+  <div class="toolbar-selects">
+    <button class="toolbar-btn" onclick="toggleSelect('all')">All</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier1')">Tier 1</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier2')">Tier 2</button>
+    <button class="toolbar-btn" onclick="toggleSelect('none')">Deselect</button>
+  </div>
+  <button class="toolbar-btn primary" id="downloadBtn" onclick="downloadSelected()">Download 0 PDFs</button>
+</div>
+
+<footer>
+  <p>이 리포트는 arXiv API를 사용하여 생성되었습니다.</p>
+  <p>arXiv 논문의 저작권은 각 저자에게 있습니다.</p>
+  <p>Thank you to arXiv for use of its open access interoperability.</p>
+  <p>run_id: 22 | embedding: en_synthetic
+    | weights: {&#39;embed&#39;: 0.35, &#39;llm&#39;: 0.55, &#39;recency&#39;: 0.1}</p>
+</footer>
+
+<script>
+var READ_KEY = 'paperscout_read';
+var SUPABASE_CFG = {
+  enabled: true,
+  url: 'https://qcvlnebvjzkgbbxainsk.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjdmxuZWJ2anprZ2JieGFpbnNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0ODcyNTgsImV4cCI6MjA4NzA2MzI1OH0.Z53_RbpMnN3U6eyMlIxq-4h16hhvhawDzjKDb_iSNvI'
+};
+
+/* localStorage helpers */
+function getLocalRead() {
+  try { return JSON.parse(localStorage.getItem(READ_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveLocalRead(arr) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+/* Supabase helpers */
+function supabaseHeaders() {
+  return {
+    'apikey': SUPABASE_CFG.key,
+    'Authorization': 'Bearer ' + SUPABASE_CFG.key,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
+  };
+}
+
+function fetchReadFromSupabase() {
+  if (!SUPABASE_CFG.enabled) return Promise.resolve([]);
+  return fetch(SUPABASE_CFG.url + '/rest/v1/read_papers?select=paper_url', {
+    headers: supabaseHeaders()
+  })
+  .then(function(r) { return r.ok ? r.json() : []; })
+  .then(function(rows) { return rows.map(function(r) { return r.paper_url; }); })
+  .catch(function() { return []; });
+}
+
+function markReadOnSupabase(url) {
+  if (!SUPABASE_CFG.enabled || !url) return;
+  fetch(SUPABASE_CFG.url + '/rest/v1/read_papers', {
+    method: 'POST',
+    headers: Object.assign({}, supabaseHeaders(), {'Prefer': 'return=minimal,resolution=ignore-duplicates'}),
+    body: JSON.stringify({ paper_url: url })
+  }).catch(function() {});
+}
+
+/* Unified read state */
+var _readCache = null;
+
+function getReadPapers() {
+  if (_readCache) return _readCache;
+  _readCache = getLocalRead();
+  return _readCache;
+}
+
+function markAsRead(url) {
+  if (!url) return;
+  var read = getReadPapers();
+  if (read.indexOf(url) === -1) {
+    read.push(url);
+    _readCache = read;
+    saveLocalRead(read);
+  }
+  markReadOnSupabase(url);
+}
+
+function isRead(url) {
+  return getReadPapers().indexOf(url) !== -1;
+}
+
+function applyReadState() {
+  var cards = document.querySelectorAll('[data-paper-url]');
+  var remindHidden = 0;
+  cards.forEach(function(card) {
+    var url = card.dataset.paperUrl;
+    if (!isRead(url)) return;
+    // Remind tab: hide read papers entirely
+    if (card.classList.contains('compact-card--remind')) {
+      card.style.display = 'none';
+      remindHidden++;
+    } else {
+      card.classList.add('paper-read');
+    }
+  });
+  // Update remind tab count
+  var remindLabel = document.querySelector('label[for="tab-remind"]');
+  if (remindLabel) {
+    var total = document.querySelectorAll('.compact-card--remind').length;
+    var visible = total - remindHidden;
+    remindLabel.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 (' + visible + ')';
+  }
+  // Show empty message if all remind papers are hidden
+  var remindPanel = document.querySelector('.tab-panel-remind');
+  if (remindPanel) {
+    var visibleCards = remindPanel.querySelectorAll('.compact-card--remind:not([style*="display: none"])');
+    var emptyMsg = remindPanel.querySelector('.empty-message');
+    if (visibleCards.length === 0 && !emptyMsg) {
+      var msg = document.createElement('div');
+      msg.className = 'empty-message';
+      msg.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 \uB17C\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.';
+      remindPanel.appendChild(msg);
+    }
+  }
+}
+
+function trackClicks() {
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var card = link.closest('[data-paper-url]');
+    if (!card) return;
+    markAsRead(card.dataset.paperUrl);
+    card.classList.add('paper-read');
+    // If remind card, hide after brief delay
+    if (card.classList.contains('compact-card--remind')) {
+      setTimeout(function() {
+        card.style.display = 'none';
+        applyReadState();
+      }, 200);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Apply localStorage state immediately for fast UX
+  applyReadState();
+  trackClicks();
+  // Then merge Supabase data for cross-device sync
+  fetchReadFromSupabase().then(function(remote) {
+    if (!remote || remote.length === 0) return;
+    var local = getLocalRead();
+    var merged = local.slice();
+    var changed = false;
+    remote.forEach(function(url) {
+      if (merged.indexOf(url) === -1) {
+        merged.push(url);
+        changed = true;
+      }
+    });
+    if (changed) {
+      _readCache = merged;
+      saveLocalRead(merged);
+      applyReadState();
+    }
+  });
+});
+
+function showAllTier1() {
+  document.querySelectorAll('.paper-card--collapsed').forEach(function(el) {
+    el.classList.remove('paper-card--collapsed');
+  });
+  var btn = document.getElementById('showMoreBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+function toggleSelect(filter) {
+  var boxes = document.querySelectorAll('.tab-panel-today .paper-checkbox');
+  boxes.forEach(function(cb) {
+    if (filter === 'none') { cb.checked = false; }
+    else if (filter === 'all') { cb.checked = true; }
+    else if (filter === 'tier1') { cb.checked = cb.dataset.tier === '1'; }
+    else if (filter === 'tier2') { cb.checked = cb.dataset.tier === '2'; }
+  });
+  updateToolbar();
+}
+
+function updateToolbar() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var toolbar = document.getElementById('downloadToolbar');
+  var btn = document.getElementById('downloadBtn');
+  var count = 0;
+  checked.forEach(function(cb) { if (cb.dataset.pdf) count++; });
+  if (checked.length > 0) {
+    toolbar.classList.add('visible');
+    document.body.classList.add('toolbar-active');
+    btn.textContent = 'Download ' + count + ' PDFs';
+    btn.disabled = (count === 0);
+  } else {
+    toolbar.classList.remove('visible');
+    document.body.classList.remove('toolbar-active');
+  }
+}
+
+function downloadSelected() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var urls = [];
+  checked.forEach(function(cb) { if (cb.dataset.pdf) urls.push(cb.dataset.pdf); });
+  if (urls.length === 0) return;
+  urls.forEach(function(url, i) {
+    setTimeout(function() { window.open(url, '_blank'); }, i * 300);
+  });
+}
+</script>
+
+</body>
+</html>

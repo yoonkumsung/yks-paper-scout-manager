@@ -1,0 +1,1167 @@
+{
+  "meta": {
+    "topic_name": "CAPP!C_AI",
+    "topic_slug": "cappic-ai",
+    "date": "2026-02-26",
+    "display_title": "CAPP!C_AI 논문 리포트 (2026-02-26)",
+    "window_start_utc": "2026-02-25T00:00:00+00:00",
+    "window_end_utc": "2026-02-26T00:30:00+00:00",
+    "embedding_mode": "en_synthetic",
+    "scoring_weights": {
+      "embed": 0.35,
+      "llm": 0.55,
+      "recency": 0.1
+    },
+    "total_collected": 44,
+    "total_filtered": 39,
+    "total_discarded": 0,
+    "total_scored": 11,
+    "total_output": 9,
+    "total_below_threshold": 1,
+    "threshold_used": 50,
+    "threshold_lowered": false,
+    "run_id": 22,
+    "keywords_used": [
+      "autonomous cinematography",
+      "sports tracking",
+      "camera control",
+      "highlight detection",
+      "action recognition",
+      "keyframe extraction",
+      "video stabilization",
+      "image enhancement",
+      "color correction",
+      "pose estimation",
+      "biomechanics",
+      "tactical analysis",
+      "short video",
+      "content summarization",
+      "video editing",
+      "edge computing",
+      "embedded vision",
+      "real-time processing",
+      "content sharing",
+      "social platform",
+      "advertising system",
+      "biomechanics",
+      "tactical analysis",
+      "embedded vision"
+    ]
+  },
+  "clusters": [
+    {
+      "cluster_id": 0,
+      "representative_key": "arxiv:2602.21835",
+      "member_keys": [
+        "arxiv:2602.21835"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 1,
+      "representative_key": "arxiv:2602.21736",
+      "member_keys": [
+        "arxiv:2602.21736"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 2,
+      "representative_key": "arxiv:2602.21904",
+      "member_keys": [
+        "arxiv:2602.21904"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 3,
+      "representative_key": "arxiv:2602.22209",
+      "member_keys": [
+        "arxiv:2602.22209"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 4,
+      "representative_key": "arxiv:2602.21631",
+      "member_keys": [
+        "arxiv:2602.21631"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 5,
+      "representative_key": "arxiv:2602.21810",
+      "member_keys": [
+        "arxiv:2602.21810"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 6,
+      "representative_key": "arxiv:2602.21581",
+      "member_keys": [
+        "arxiv:2602.21581"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 7,
+      "representative_key": "arxiv:2602.21929",
+      "member_keys": [
+        "arxiv:2602.21929"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 8,
+      "representative_key": "arxiv:2602.21699",
+      "member_keys": [
+        "arxiv:2602.21699"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 9,
+      "representative_key": "arxiv:2602.21967",
+      "member_keys": [
+        "arxiv:2602.21967"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 10,
+      "representative_key": "arxiv:2602.21778",
+      "member_keys": [
+        "arxiv:2602.21778"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 11,
+      "representative_key": "arxiv:2602.21818",
+      "member_keys": [
+        "arxiv:2602.21818"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 12,
+      "representative_key": "arxiv:2602.21864",
+      "member_keys": [
+        "arxiv:2602.21864"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 13,
+      "representative_key": "arxiv:2602.21877",
+      "member_keys": [
+        "arxiv:2602.21877"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 14,
+      "representative_key": "arxiv:2602.21610",
+      "member_keys": [
+        "arxiv:2602.21610"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 15,
+      "representative_key": "arxiv:2602.22140",
+      "member_keys": [
+        "arxiv:2602.22140"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 16,
+      "representative_key": "arxiv:2602.21666",
+      "member_keys": [
+        "arxiv:2602.21666"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 17,
+      "representative_key": "arxiv:2602.21915",
+      "member_keys": [
+        "arxiv:2602.21915"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 18,
+      "representative_key": "arxiv:2602.21712",
+      "member_keys": [
+        "arxiv:2602.21712"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 19,
+      "representative_key": "arxiv:2602.21517",
+      "member_keys": [
+        "arxiv:2602.21517"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 20,
+      "representative_key": "arxiv:2602.21486",
+      "member_keys": [
+        "arxiv:2602.21486"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 21,
+      "representative_key": "arxiv:2602.22136",
+      "member_keys": [
+        "arxiv:2602.22136"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 22,
+      "representative_key": "arxiv:2602.21716",
+      "member_keys": [
+        "arxiv:2602.21716"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 23,
+      "representative_key": "arxiv:2602.21646",
+      "member_keys": [
+        "arxiv:2602.21646"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 24,
+      "representative_key": "arxiv:2602.22144",
+      "member_keys": [
+        "arxiv:2602.22144"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 25,
+      "representative_key": "arxiv:2602.21883",
+      "member_keys": [
+        "arxiv:2602.21883"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 26,
+      "representative_key": "arxiv:2602.22090",
+      "member_keys": [
+        "arxiv:2602.22090"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 27,
+      "representative_key": "arxiv:2602.21849",
+      "member_keys": [
+        "arxiv:2602.21849"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 28,
+      "representative_key": "arxiv:2602.21961",
+      "member_keys": [
+        "arxiv:2602.21961"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 29,
+      "representative_key": "arxiv:2602.21634",
+      "member_keys": [
+        "arxiv:2602.21634"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 30,
+      "representative_key": "arxiv:2602.22059",
+      "member_keys": [
+        "arxiv:2602.22059"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 31,
+      "representative_key": "arxiv:2602.21593",
+      "member_keys": [
+        "arxiv:2602.21593"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 32,
+      "representative_key": "arxiv:2602.21949",
+      "member_keys": [
+        "arxiv:2602.21949"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 33,
+      "representative_key": "arxiv:2602.21525",
+      "member_keys": [
+        "arxiv:2602.21525"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 34,
+      "representative_key": "arxiv:2602.21841",
+      "member_keys": [
+        "arxiv:2602.21841"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 35,
+      "representative_key": "arxiv:2602.21928",
+      "member_keys": [
+        "arxiv:2602.21928"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 36,
+      "representative_key": "arxiv:2602.21686",
+      "member_keys": [
+        "arxiv:2602.21686"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 37,
+      "representative_key": "arxiv:2602.21826",
+      "member_keys": [
+        "arxiv:2602.21826"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 38,
+      "representative_key": "arxiv:2602.22130",
+      "member_keys": [
+        "arxiv:2602.22130"
+      ],
+      "size": 1
+    }
+  ],
+  "papers": [
+    {
+      "paper_key": "arxiv:2602.21810",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": true,
+        "is_metaphorical": false
+      },
+      "brief_reason": "운동 장면 분할 기술로 스포츠 촬영에 적용 가능",
+      "has_code": true,
+      "llm_base_score": 82,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 3,
+      "llm_adjusted": 85,
+      "final_score": 88.0,
+      "rank": 1,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry",
+      "abstract": "Motion segmentation in dynamic scenes is highly challenging, as conventional methods heavily rely on estimating camera poses and point correspondences from inherently noisy motion cues. Existing statistical inference or iterative optimization techniques that struggle to mitigate the cumulative errors in multi-stage pipelines often lead to limited performance or high computational cost. In contrast, we propose a fully learning-based approach that directly infers moving objects from latent feature representations via attention mechanisms, thus enabling end-to-end feed-forward motion segmentation. Our key insight is to bypass explicit correspondence estimation and instead let the model learn to implicitly disentangle object and camera motion. Supported by recent advances in 4D scene geometry reconstruction (e.g., $π^3$), the proposed method leverages reliable camera poses and rich spatial-temporal priors, which ensure stable training and robust inference for the model. Extensive experiments demonstrate that by eliminating complex pre-processing and iterative refinement, our approach achieves state-of-the-art motion segmentation performance with high efficiency. The code is available at:https://github.com/zjutcvg/GeoMotion.",
+      "base_score": 82,
+      "url": "http://arxiv.org/abs/2602.21810v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21810v1",
+      "categories": [
+        "cs.CV"
+      ],
+      "code_url": "https://github.com/zjutcvg/GeoMotion",
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "Motion segmentation in dynamic scenes is highly challenging, as conventional methods heavily rely on estimating camera poses and point correspondences from inherently noisy motion cues. Existing statistical inference or iterative optimization techniques that struggle to mitigate the cumulative errors in multi-stage pipelines often lead to limited performance or high computational cost. In contrast, we propose a fully learning-based approach that directly infers moving objects from latent feature representations via attention mechanisms, thus enabling end-to-end feed-forward motion segmentation. Our key insight is to bypass explicit correspondence estimation and instead let the model learn to implicitly disentangle object and camera motion. Supported by recent advances in 4D scene geometry reconstruction (e.g., $π^3$), the proposed method leverages reliable camera poses and rich spatial-temporal priors, which ensure stable training and robust inference for the model. Extensive experiments demonstrate that by eliminating complex pre-processing and iterative refinement, our approach achieves state-of-the-art motion segmentation performance with high efficiency. The code is available at:https://github.com/zjutcvg/GeoMotion.",
+      "reason_ko": "동적 장면에서의 움직임 분할 기술로 스포츠 촬영 시 선수와 공 등 움직이는 객체를 정확히 식별 가능",
+      "insight_ko": "어텐션 메커니즘을 활용한 엔드투엔드 움직임 분할로 실시간 하이라이트 자동 생성 가능"
+    },
+    {
+      "paper_key": "arxiv:2602.21778",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "물리적 사실성을 고려한 이미지 편집 기술로 스포츠 영상 편집에 적용 가능하나, 엣지 디바이스 최적화는 명시되지 않음",
+      "has_code": false,
+      "llm_base_score": 75,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 75,
+      "final_score": 80.0,
+      "rank": 2,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "From Statics to Dynamics: Physics-Aware Image Editing with Latent Transition Priors",
+      "abstract": "Instruction-based image editing has achieved remarkable success in semantic alignment, yet state-of-the-art models frequently fail to render physically plausible results when editing involves complex causal dynamics, such as refraction or material deformation. We attribute this limitation to the dominant paradigm that treats editing as a discrete mapping between image pairs, which provides only boundary conditions and leaves transition dynamics underspecified. To address this, we reformulate physics-aware editing as predictive physical state transitions and introduce PhysicTran38K, a large-scale video-based dataset comprising 38K transition trajectories across five physical domains, constructed via a two-stage filtering and constraint-aware annotation pipeline. Building on this supervision, we propose PhysicEdit, an end-to-end framework equipped with a textual-visual dual-thinking mechanism. It combines a frozen Qwen2.5-VL for physically grounded reasoning with learnable transition queries that provide timestep-adaptive visual guidance to a diffusion backbone. Experiments show that PhysicEdit improves over Qwen-Image-Edit by 5.9% in physical realism and 10.1% in knowledge-grounded editing, setting a new state-of-the-art for open-source methods, while remaining competitive with leading proprietary models.",
+      "base_score": 75,
+      "url": "http://arxiv.org/abs/2602.21778v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21778v1",
+      "categories": [
+        "cs.CV"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "Instruction-based image editing has achieved remarkable success in semantic alignment, yet state-of-the-art models frequently fail to render physically plausible results when editing involves complex causal dynamics, such as refraction or material deformation. We attribute this limitation to the dominant paradigm that treats editing as a discrete mapping between image pairs, which provides only boundary conditions and leaves transition dynamics underspecified. To address this, we reformulate physics-aware editing as predictive physical state transitions and introduce PhysicTran38K, a large-scale video-based dataset comprising 38K transition trajectories across five physical domains, constructed via a two-stage filtering and constraint-aware annotation pipeline. Building on this supervision, we propose PhysicEdit, an end-to-end framework equipped with a textual-visual dual-thinking mechanism. It combines a frozen Qwen2.5-VL for physically grounded reasoning with learnable transition queries that provide timestep-adaptive visual guidance to a diffusion backbone. Experiments show that PhysicEdit improves over Qwen-Image-Edit by 5.9% in physical realism and 10.1% in knowledge-grounded editing, setting a new state-of-the-art for open-source methods, while remaining competitive with leading proprietary models.",
+      "reason_ko": "물리적 사실성을 고려한 이미지 편집 기술로 스포츠 영상의 시각적 품질 향상 가능",
+      "insight_ko": "물리적 상태 전이 예측 프레임워크를 통해 스포츠 장면의 사실적인 재구현 및 보정 가능"
+    },
+    {
+      "paper_key": "arxiv:2602.21835",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "비디오 편집 평가 프레임워크로 간접적으로 관련 있으나 직접적인 기술 제공은 아님",
+      "has_code": false,
+      "llm_base_score": 60,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 60,
+      "final_score": 68.0,
+      "rank": 3,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "UniVBench: Towards Unified Evaluation for Video Foundation Models",
+      "abstract": "Video foundation models aim to integrate video understanding, generation, editing, and instruction following within a single framework, making them a central direction for next-generation multimodal systems. However, existing evaluation benchmarks remain fragmented and limited in scope, as they each target a single task, rely on task-specific metrics, and typically use short or simple video clips. As a result, they do not capture the unified capabilities that these models are designed to deliver. To address this gap, we introduce UniVBench, a benchmark purpose-built for evaluating video foundation models across four core abilities: video understanding, video generation, video editing, and a newly proposed task, video reconstruction, which assesses how faithfully a model can reproduce video content it has encountered. Our benchmark substantially expands the complexity of evaluation by incorporating 200 high-quality, diverse and multi-shot videos, each paired with detailed captions, multi-format editing instructions, and reference images. All videos are human-created and carefully validated, offering richer cinematic information than prior benchmarks. In addition, we develop a unified agentic evaluation system (UniV-Eval) that standardizes prompting, instruction parsing, and scoring across all tasks, enabling fair, scalable, and reproducible comparisons of unified video models. By grounding evaluation in instruction-based multi-shot video tasks, UniVBench provides the first framework for measuring the integrated capabilities that video foundation models aim to achieve. Extensive human annotations ensure our evaluation aligns with human judgment, enabling rigorous assessment and accelerating progress toward robust video intelligence.",
+      "base_score": 60,
+      "url": "http://arxiv.org/abs/2602.21835v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21835v1",
+      "categories": [
+        "cs.CV"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "Video foundation models aim to integrate video understanding, generation, editing, and instruction following within a single framework, making them a central direction for next-generation multimodal systems. However, existing evaluation benchmarks remain fragmented and limited in scope, as they each target a single task, rely on task-specific metrics, and typically use short or simple video clips. As a result, they do not capture the unified capabilities that these models are designed to deliver. To address this gap, we introduce UniVBench, a benchmark purpose-built for evaluating video foundation models across four core abilities: video understanding, video generation, video editing, and a newly proposed task, video reconstruction, which assesses how faithfully a model can reproduce video content it has encountered. Our benchmark substantially expands the complexity of evaluation by incorporating 200 high-quality, diverse and multi-shot videos, each paired with detailed captions, multi-format editing instructions, and reference images. All videos are human-created and carefully validated, offering richer cinematic information than prior benchmarks. In addition, we develop a unified agentic evaluation system (UniV-Eval) that standardizes prompting, instruction parsing, and scoring across all tasks, enabling fair, scalable, and reproducible comparisons of unified video models. By grounding evaluation in instruction-based multi-shot video tasks, UniVBench provides the first framework for measuring the integrated capabilities that video foundation models aim to achieve. Extensive human annotations ensure our evaluation aligns with human judgment, enabling rigorous assessment and accelerating progress toward robust video intelligence.",
+      "reason_ko": "UniVBench는 비디오 이해, 편집, 생성 통합 평가 프레임워크로 우리의 스포츠 하이라이트 자동 편집 및 분석 시스템 개발에 적합한 평가 기준 제공",
+      "insight_ko": "UniVBench의 다중 샷 비디오 평가 방식을 채택해 스포츠 장면 복잡성에 맞춘 AI 모델 훈련 및 성능 검증 시스템 구축 가능"
+    },
+    {
+      "paper_key": "arxiv:2602.22140",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": true,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "초분광 영상 촬영 기술은 스포츠 촬영과 간접적으로 관련 있으나 전문 과학 응용에 특화되어 직접 적용은 제한적이다.",
+      "has_code": false,
+      "llm_base_score": 55,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 5,
+      "llm_adjusted": 60,
+      "final_score": 68.0,
+      "rank": 4,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "Lumosaic: Hyperspectral Video via Active Illumination and Coded-Exposure Pixels",
+      "abstract": "We present Lumosaic, a compact active hyperspectral video system designed for real-time capture of dynamic scenes. Our approach combines a narrowband LED array with a coded-exposure-pixel (CEP) camera capable of high-speed, per-pixel exposure control, enabling joint encoding of scene information across space, time, and wavelength within each video frame. Unlike passive snapshot systems that divide light across multiple spectral channels simultaneously and assume no motion during a frame's exposure, Lumosaic actively synchronizes illumination and pixel-wise exposure, improving photon utilization and preserving spectral fidelity under motion. A learning-based reconstruction pipeline then recovers 31-channel hyperspectral (400-700 nm) video at 30 fps and VGA resolution, producing temporally coherent and spectrally accurate reconstructions. Experiments on synthetic and real data demonstrate that Lumosaic significantly improves reconstruction fidelity and temporal stability over existing snapshot hyperspectral imaging systems, enabling robust hyperspectral video across diverse materials and motion conditions.",
+      "base_score": 55,
+      "url": "http://arxiv.org/abs/2602.22140v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22140v1",
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "We present Lumosaic, a compact active hyperspectral video system designed for real-time capture of dynamic scenes. Our approach combines a narrowband LED array with a coded-exposure-pixel (CEP) camera capable of high-speed, per-pixel exposure control, enabling joint encoding of scene information across space, time, and wavelength within each video frame. Unlike passive snapshot systems that divide light across multiple spectral channels simultaneously and assume no motion during a frame's exposure, Lumosaic actively synchronizes illumination and pixel-wise exposure, improving photon utilization and preserving spectral fidelity under motion. A learning-based reconstruction pipeline then recovers 31-channel hyperspectral (400-700 nm) video at 30 fps and VGA resolution, producing temporally coherent and spectrally accurate reconstructions. Experiments on synthetic and real data demonstrate that Lumosaic significantly improves reconstruction fidelity and temporal stability over existing snapshot hyperspectral imaging systems, enabling robust hyperspectral video across diverse materials and motion conditions.",
+      "reason_ko": "초분광 영상 촬영 기술은 스포츠 촬영과 간접적으로 관련 있으나 전문 과학 응용에 특화되어 직접 적용은 제한적이다.",
+      "insight_ko": ""
+    },
+    {
+      "paper_key": "arxiv:2602.21486",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "이야기 창작을 위한 AI 비디오 편집 시스템으로 스포츠 분석과는 간접적으로 관련이 있습니다.",
+      "has_code": false,
+      "llm_base_score": 55,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 55,
+      "final_score": 64.0,
+      "rank": 5,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "StoryComposerAI: Supporting Human-AI Story Co-Creation Through Decomposition and Linking",
+      "abstract": "GenAI's ability to produce text and images is increasingly incorporated into human-AI co-creation tasks such as storytelling and video editing. However, integrating GenAI into these tasks requires enabling users to retain control over editing individual story elements while ensuring that generated visuals remain coherent with the storyline and consistent across multiple AI-generated outputs. This work examines a paradigm of creative decomposition and linking, which allows creators to clearly communicate creative intent by prompting GenAI to tailor specific story elements, such as storylines, personas, locations, and scenes, while maintaining coherence among them. We implement and evaluate StoryComposerAI, a system that exemplifies this paradigm for enhancing users' sense of control and content consistency in human-AI co-creation of digital stories.",
+      "base_score": 55,
+      "url": "http://arxiv.org/abs/2602.21486v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21486v1",
+      "categories": [
+        "cs.HC"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "GenAI's ability to produce text and images is increasingly incorporated into human-AI co-creation tasks such as storytelling and video editing. However, integrating GenAI into these tasks requires enabling users to retain control over editing individual story elements while ensuring that generated visuals remain coherent with the storyline and consistent across multiple AI-generated outputs. This work examines a paradigm of creative decomposition and linking, which allows creators to clearly communicate creative intent by prompting GenAI to tailor specific story elements, such as storylines, personas, locations, and scenes, while maintaining coherence among them. We implement and evaluate StoryComposerAI, a system that exemplifies this paradigm for enhancing users' sense of control and content consistency in human-AI co-creation of digital stories.",
+      "reason_ko": "이야기 창작을 위한 AI 비디오 편집 시스템으로 스포츠 분석과는 간접적으로 관련이 있습니다.",
+      "insight_ko": ""
+    },
+    {
+      "paper_key": "arxiv:2602.21883",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "다목적 최적화 이론 연구로 스포츠 촬영/영상 처리와 직접적 연관 없음",
+      "has_code": false,
+      "llm_base_score": 55,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 55,
+      "final_score": 64.0,
+      "rank": 6,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "Non-Extreme Individual Minima for Improved Pareto Front Sampling Efficiency and Decision-Making",
+      "abstract": "In multi-objective optimization, the set of optimal trade-offs -- the Pareto front -- often contains regions that are extremely steep or flat. The Pareto optimal points in these regions are typically of limited interest for decision-making, as the marginal rate of substitution is extreme: a marginal improvement in one objective necessitates a significant deterioration in at least one other objective. These unfavorable trade-offs frequently occur near the individual minima, where single objectives attain their minimum values without considering the remaining criteria.   To address this, we propose the concept of \\emph{non-extreme individual minima} that relies on the notion of $L$-practical proper efficiency. These points can serve as a less sensitive replacement for \\emph{standard} individual minima in subsequent related methods. Specifically, they allow for a more practical restriction of the Pareto front sampling within a refined utopia-nadir hyperbox, provide a meaningful basis for image space normalization, and can enhance decision-making techniques, such as knee-point methods, by focusing on regions with acceptable trade-offs.   We provide a computationally efficient algorithm to determine these non-extreme individual minima by solving at most $2n_J$ standard weighted-sum scalarizations, where $n_J$ is the number of objectives. To ensure robustness across varying objective scales, the method incorporates an integrated image space normalization strategy. Numerical examples, specifically a convex academic case and a non-convex real-world application, demonstrate that the method successfully excludes practically irrelevant regions in the image space.",
+      "base_score": 55,
+      "url": "http://arxiv.org/abs/2602.21883v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21883v1",
+      "categories": [
+        "math.OC"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "In multi-objective optimization, the set of optimal trade-offs -- the Pareto front -- often contains regions that are extremely steep or flat. The Pareto optimal points in these regions are typically of limited interest for decision-making, as the marginal rate of substitution is extreme: a marginal improvement in one objective necessitates a significant deterioration in at least one other objective. These unfavorable trade-offs frequently occur near the individual minima, where single objectives attain their minimum values without considering the remaining criteria.   To address this, we propose the concept of \\emph{non-extreme individual minima} that relies on the notion of $L$-practical proper efficiency. These points can serve as a less sensitive replacement for \\emph{standard} individual minima in subsequent related methods. Specifically, they allow for a more practical restriction of the Pareto front sampling within a refined utopia-nadir hyperbox, provide a meaningful basis for image space normalization, and can enhance decision-making techniques, such as knee-point methods, by focusing on regions with acceptable trade-offs.   We provide a computationally efficient algorithm to determine these non-extreme individual minima by solving at most $2n_J$ standard weighted-sum scalarizations, where $n_J$ is the number of objectives. To ensure robustness across varying objective scales, the method incorporates an integrated image space normalization strategy. Numerical examples, specifically a convex academic case and a non-convex real-world application, demonstrate that the method successfully excludes practically irrelevant regions in the image space.",
+      "reason_ko": "다목적 최적화 이론 연구로 스포츠 촬영/영상 처리와 직접적 연관 없음",
+      "insight_ko": ""
+    },
+    {
+      "paper_key": "arxiv:2602.21928",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "산업 시스템의 센서 데이터 분석에 관한 논문으로 스포츠 촬영 및 분석과 간접적으로 관련이 있으나 직접적인 기술적 연관성은 낮음.",
+      "has_code": false,
+      "llm_base_score": 55,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 55,
+      "final_score": 64.0,
+      "rank": 7,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "Learning Unknown Interdependencies for Decentralized Root Cause Analysis in Nonlinear Dynamical Systems",
+      "abstract": "Root cause analysis (RCA) in networked industrial systems, such as supply chains and power networks, is notoriously difficult due to unknown and dynamically evolving interdependencies among geographically distributed clients. These clients represent heterogeneous physical processes and industrial assets equipped with sensors that generate large volumes of nonlinear, high-dimensional, and heterogeneous IoT data. Classical RCA methods require partial or full knowledge of the system's dependency graph, which is rarely available in these complex networks. While federated learning (FL) offers a natural framework for decentralized settings, most existing FL methods assume homogeneous feature spaces and retrainable client models. These assumptions are not compatible with our problem setting. Different clients have different data features and often run fixed, proprietary models that cannot be modified. This paper presents a federated cross-client interdependency learning methodology for feature-partitioned, nonlinear time-series data, without requiring access to raw sensor streams or modifying proprietary client models. Each proprietary local client model is augmented with a Machine Learning (ML) model that encodes cross-client interdependencies. These ML models are coordinated via a global server that enforces representation consistency while preserving privacy through calibrated differential privacy noise. RCA is performed using model residuals and anomaly flags. We establish theoretical convergence guarantees and validate our approach on extensive simulations and a real-world industrial cybersecurity dataset.",
+      "base_score": 55,
+      "url": "http://arxiv.org/abs/2602.21928v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21928v1",
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "Root cause analysis (RCA) in networked industrial systems, such as supply chains and power networks, is notoriously difficult due to unknown and dynamically evolving interdependencies among geographically distributed clients. These clients represent heterogeneous physical processes and industrial assets equipped with sensors that generate large volumes of nonlinear, high-dimensional, and heterogeneous IoT data. Classical RCA methods require partial or full knowledge of the system's dependency graph, which is rarely available in these complex networks. While federated learning (FL) offers a natural framework for decentralized settings, most existing FL methods assume homogeneous feature spaces and retrainable client models. These assumptions are not compatible with our problem setting. Different clients have different data features and often run fixed, proprietary models that cannot be modified. This paper presents a federated cross-client interdependency learning methodology for feature-partitioned, nonlinear time-series data, without requiring access to raw sensor streams or modifying proprietary client models. Each proprietary local client model is augmented with a Machine Learning (ML) model that encodes cross-client interdependencies. These ML models are coordinated via a global server that enforces representation consistency while preserving privacy through calibrated differential privacy noise. RCA is performed using model residuals and anomaly flags. We establish theoretical convergence guarantees and validate our approach on extensive simulations and a real-world industrial cybersecurity dataset.",
+      "reason_ko": "이 논문은 OCR 기반 이미지 분석 기술을 제안하며, 스포츠 영상에서 객체 인식과 장면 분석에 활용될 수 있음",
+      "insight_ko": "경기장 내 텍스트 정보(점수, 선수명 등) 자동 추출을 통한 실시간 데이터 처리로 영상 품질 향상 가능"
+    },
+    {
+      "paper_key": "arxiv:2602.21826",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "영상 분석 시 노이즈 처리를 위한 강인한 통계 방법 간접 관련",
+      "has_code": false,
+      "llm_base_score": 55,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 55,
+      "final_score": 64.0,
+      "rank": 8,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "The Silent Spill: Measuring Sensitive Data Leaks Across Public URL Repositories",
+      "abstract": "A large number of URLs are made public by various platforms for security analysis, archiving, and paste sharing -- such as VirusTotal, URLScan.io, Hybrid Analysis, the Wayback Machine, and RedHunt. These services may unintentionally expose links containing sensitive information, as reported in some news articles and blog posts. However, no large-scale measurement has quantified the extent of such exposures. We present an automated system that detects and analyzes potential sensitive information leaked through publicly accessible URLs. The system combines lexical URL filtering, dynamic rendering, OCR-based extraction, and content classification to identify potential leaks. We apply it to 6,094,475 URLs collected from public scanning platforms, paste sites, and web archives, identifying 12,331 potential exposures across authentication, financial, personal, and document-related domains. These findings show that sensitive information remains exposed, underscoring the importance of automated detection to identify accidental leaks.",
+      "base_score": 55,
+      "url": "http://arxiv.org/abs/2602.21826v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21826v1",
+      "categories": [
+        "cs.CR"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "A large number of URLs are made public by various platforms for security analysis, archiving, and paste sharing -- such as VirusTotal, URLScan.io, Hybrid Analysis, the Wayback Machine, and RedHunt. These services may unintentionally expose links containing sensitive information, as reported in some news articles and blog posts. However, no large-scale measurement has quantified the extent of such exposures. We present an automated system that detects and analyzes potential sensitive information leaked through publicly accessible URLs. The system combines lexical URL filtering, dynamic rendering, OCR-based extraction, and content classification to identify potential leaks. We apply it to 6,094,475 URLs collected from public scanning platforms, paste sites, and web archives, identifying 12,331 potential exposures across authentication, financial, personal, and document-related domains. These findings show that sensitive information remains exposed, underscoring the importance of automated detection to identify accidental leaks.",
+      "reason_ko": "영상 분석 시 노이즈 처리를 위한 강인한 통계 방법 간접 관련",
+      "insight_ko": ""
+    },
+    {
+      "paper_key": "arxiv:2602.21686",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "OCR 기반 이미지 분석 기술이 간접적으로 관련될 수 있으나, 보안 분야에 특화됨",
+      "has_code": false,
+      "llm_base_score": 40,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 40,
+      "final_score": 52.0,
+      "rank": 9,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "\"Without AI, I Would Never Share This Online\": Unpacking How LLMs Catalyze Women's Sharing of Gendered Experiences on Social Media",
+      "abstract": "Sharing gendered experiences on social media has been widely recognized as supporting women's personal sense-making and contributing to digital feminism. However, there are known concerns, such as fear of judgment and backlash, that may discourage women from posting online. In this study, we examine a recurring practice on Xiaohongshu, a popular Chinese social media platform, in which women share their gendered experiences alongside screenshots of conversations with LLMs. We conducted semi-structured interviews with 20 women to investigate whether and how interactions with LLMs might support women in articulating and sharing gendered experiences. Our findings reveal that, beyond those external concerns, women also hold self-imposed standards regarding what feels appropriate and worthwhile to share publicly. We further show how interactions with LLMs help women meet these standards and navigate such concerns. We conclude by discussing how LLMs might be carefully and critically leveraged to support women's everyday expression online.",
+      "base_score": 40,
+      "url": "http://arxiv.org/abs/2602.21686v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21686v1",
+      "categories": [
+        "cs.HC"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-02-25",
+      "summary_ko": "Sharing gendered experiences on social media has been widely recognized as supporting women's personal sense-making and contributing to digital feminism. However, there are known concerns, such as fear of judgment and backlash, that may discourage women from posting online. In this study, we examine a recurring practice on Xiaohongshu, a popular Chinese social media platform, in which women share their gendered experiences alongside screenshots of conversations with LLMs. We conducted semi-structured interviews with 20 women to investigate whether and how interactions with LLMs might support women in articulating and sharing gendered experiences. Our findings reveal that, beyond those external concerns, women also hold self-imposed standards regarding what feels appropriate and worthwhile to share publicly. We further show how interactions with LLMs help women meet these standards and navigate such concerns. We conclude by discussing how LLMs might be carefully and critically leveraged to support women's everyday expression online.",
+      "reason_ko": "OCR 기반 이미지 분석 기술이 간접적으로 관련될 수 있으나, 보안 분야에 특화됨",
+      "insight_ko": ""
+    }
+  ],
+  "remind_papers": [
+    {
+      "paper_key": "arxiv:2602.20161",
+      "title": "Mobile-O: Unified Multimodal Understanding and Generation on Mobile Device",
+      "url": "http://arxiv.org/abs/2602.20161v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20161v1",
+      "has_code": true,
+      "code_url": "https://amshaker.github.io/Mobile-O/",
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 98.4,
+      "recommend_count": 2,
+      "summary_ko": "Unified multimodal models can both understand and generate visual content within a single architecture. Existing models, however, remain data-hungry and too heavy for deployment on edge devices. We present Mobile-O, a compact vision-language-diffusion model that brings unified multimodal intelligence to a mobile device. Its core module, the Mobile Conditioning Projector (MCP), fuses vision-language features with a diffusion generator using depthwise-separable convolutions and layerwise alignment. This design enables efficient cross-modal conditioning with minimal computational cost. Trained on only a few million samples and post-trained in a novel quadruplet format (generation prompt, image, question, answer), Mobile-O jointly enhances both visual understanding and generation capabilities. Despite its efficiency, Mobile-O attains competitive or superior performance compared to other unified models, achieving 74% on GenEval and outperforming Show-O and JanusFlow by 5% and 11%, while running 6x and 11x faster, respectively. For visual understanding, Mobile-O surpasses them by 15.3% and 5.1% averaged across seven benchmarks. Running in only ~3s per 512x512 image on an iPhone, Mobile-O establishes the first practical framework for real-time unified multimodal understanding and generation on edge devices. We hope Mobile-O will ease future research in real-time unified multimodal intelligence running entirely on-device with no cloud dependency. Our code, models, datasets, and mobile application are publicly available at https://amshaker.github.io/Mobile-O/",
+      "reason_ko": "에지 디바이스에서 실시간 멀티모달 이해/생성 가능해 영상 보정 및 분석에 직접 적용. Mobile-O의 경량 설계(fps 6~11배 향상)가 rk3588 호환성 높음.",
+      "insight_ko": "MCP 모듈로 운동 영상 실시간 생성 및 분석 통합. 512x512 이미지 생성 시 3초 지연으로 하이라이트 자동 제작에 활용.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20630",
+      "title": "From Pairs to Sequences: Track-Aware Policy Gradients for Keypoint Detection",
+      "url": "http://arxiv.org/abs/2602.20630v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20630v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 96.0,
+      "recommend_count": 1,
+      "summary_ko": "Keypoint-based matching is a fundamental component of modern 3D vision systems, such as Structure-from-Motion (SfM) and SLAM. Most existing learning-based methods are trained on image pairs, a paradigm that fails to explicitly optimize for the long-term trackability of keypoints across sequences under challenging viewpoint and illumination changes. In this paper, we reframe keypoint detection as a sequential decision-making problem. We introduce TraqPoint, a novel, end-to-end Reinforcement Learning (RL) framework designed to optimize the \\textbf{Tra}ck-\\textbf{q}uality (Traq) of keypoints directly on image sequences. Our core innovation is a track-aware reward mechanism that jointly encourages the consistency and distinctiveness of keypoints across multiple views, guided by a policy gradient method. Extensive evaluations on sparse matching benchmarks, including relative pose estimation and 3D reconstruction, demonstrate that TraqPoint significantly outperforms some state-of-the-art (SOTA) keypoint detection and description methods.",
+      "reason_ko": "실시간 동분할 기술은 스포츠 장면에서 움직임을 효과적으로 분석하여 하이라이트 편집에 적합합니다.",
+      "insight_ko": "이벤트 기반 카메라와 노멸 플로우를 결합하여 경기 중 움직이는 객체를 실시간으로 추적하고 분류할 수 있습니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20790",
+      "title": "Real-time Motion Segmentation with Event-based Normal Flow",
+      "url": "http://arxiv.org/abs/2602.20790v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20790v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 93.6,
+      "recommend_count": 1,
+      "summary_ko": "Event-based cameras are bio-inspired sensors with pixels that independently and asynchronously respond to brightness changes at microsecond resolution, offering the potential to handle visual tasks in challenging scenarios. However, due to the sparse information content in individual events, directly processing the raw event data to solve vision tasks is highly inefficient, which severely limits the applicability of state-of-the-art methods in real-time tasks, such as motion segmentation, a fundamental task for dynamic scene understanding. Incorporating normal flow as an intermediate representation to compress motion information from event clusters within a localized region provides a more effective solution. In this work, we propose a normal flow-based motion segmentation framework for event-based vision. Leveraging the dense normal flow directly learned from event neighborhoods as input, we formulate the motion segmentation task as an energy minimization problem solved via graph cuts, and optimize it iteratively with normal flow clustering and motion model fitting. By using a normal flow-based motion model initialization and fitting method, the proposed system is able to efficiently estimate the motion models of independently moving objects with only a limited number of candidate models, which significantly reduces the computational complexity and ensures real-time performance, achieving nearly a 800x speedup in comparison to the open-source state-of-the-art method. Extensive evaluations on multiple public datasets fully demonstrate the accuracy and efficiency of our framework.",
+      "reason_ko": "고속 움직임으로 인한 흐림 문제를 해결하여 스포츠 촬영의 품질을 향상시키는 데 중요합니다.",
+      "insight_ko": "이벤트 스트림과 모션 블러 프레임을 결합하여 신경 방사장 재구성을 통해 선명한 영상을 생성할 수 있습니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19763",
+      "title": "Training Deep Stereo Matching Networks on Tree Branch Imagery: A Benchmark Study for Real-Time UAV Forestry Applications",
+      "url": "http://arxiv.org/abs/2602.19763v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19763v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "eess.IV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 93.6,
+      "recommend_count": 2,
+      "summary_ko": "Autonomous drone-based tree pruning needs accurate, real-time depth estimation from stereo cameras. Depth is computed from disparity maps using $Z = f B/d$, so even small disparity errors cause noticeable depth mistakes at working distances. Building on our earlier work that identified DEFOM-Stereo as the best reference disparity generator for vegetation scenes, we present the first study to train and test ten deep stereo matching networks on real tree branch images. We use the Canterbury Tree Branches dataset -- 5,313 stereo pairs from a ZED Mini camera at 1080P and 720P -- with DEFOM-generated disparity maps as training targets. The ten methods cover step-by-step refinement, 3D convolution, edge-aware attention, and lightweight designs. Using perceptual metrics (SSIM, LPIPS, ViTScore) and structural metrics (SIFT/ORB feature matching), we find that BANet-3D produces the best overall quality (SSIM = 0.883, LPIPS = 0.157), while RAFT-Stereo scores highest on scene-level understanding (ViTScore = 0.799). Testing on an NVIDIA Jetson Orin Super (16 GB, independently powered) mounted on our drone shows that AnyNet reaches 6.99 FPS at 1080P -- the only near-real-time option -- while BANet-2D gives the best quality-speed balance at 1.21 FPS. We also compare 720P and 1080P processing times to guide resolution choices for forestry drone systems.",
+      "reason_ko": "실시간 스테레오 깊이 추정이 운동 동작 3D 분석에 필수. AnyNet 6.99fps로 rk3588에서 동작 캡처 가능성 높음.",
+      "insight_ko": "BANet-3D 알고리즘으로 운동 선수 깊이 맵 정확도 향상. 1080P 처리 시 저지연 동작 추적해 자세 교정 지원.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19513",
+      "title": "Real-time Win Probability and Latent Player Ability via STATS X in Team Sports",
+      "url": "http://arxiv.org/abs/2602.19513v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19513v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "stat.AP",
+        "stat.ML"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 92.0,
+      "recommend_count": 2,
+      "summary_ko": "This study proposes a statistically grounded framework for real-time win probability evaluation and player assessment in score-based team sports, based on minute-by-minute cumulative box-score data. We introduce a continuous dominance indicator (T-score) that maps final scores to real values consistent with win/lose outcomes, and formulate it as a time-evolving stochastic representation (T-process) driven by standardized cumulative statistics. This structure captures temporal game dynamics and enables sequential, analytically tractable updates of in-game win probability. Through this stochastic formulation, competitive advantage is decomposed into interpretable statistical components. Furthermore, we define a latent contribution index, STATS X, which quantifies a player's involvement in favorable dominance intervals identified by the T-process. This allows us to separate a team's baseline strength from game-specific performance fluctuations and provides a coherent, structural evaluation framework for both teams and players. While we do not implement AI methods in this paper, our framework is positioned as a foundational step toward hybrid integration with AI. By providing a structured time-series representation of dominance with an explicit probabilistic interpretation, the framework enables flexible learning mechanisms and incorporation of high-dimensional data, while preserving statistical coherence and interpretability. This work provides a basis for advancing AI-driven sports analytics.",
+      "reason_ko": "실시간 승률(T-process) 및 선수 능력(STATS X) 분석이 경기 전략/개인 평가에 직접 적용. AI 통합 기반 제공.",
+      "insight_ko": "T-score로 팀 우세 구간 식별 후 하이라이트 자동 추출. 선수별 기여도 지표화해 개인별 영상 생성 최적화.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.21188",
+      "title": "Human Video Generation from a Single Image with 3D Pose and View Control",
+      "url": "http://arxiv.org/abs/2602.21188v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21188v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 90.4,
+      "recommend_count": 1,
+      "summary_ko": "Recent diffusion methods have made significant progress in generating videos from single images due to their powerful visual generation capabilities. However, challenges persist in image-to-video synthesis, particularly in human video generation, where inferring view-consistent, motion-dependent clothing wrinkles from a single image remains a formidable problem. In this paper, we present Human Video Generation in 4D (HVG), a latent video diffusion model capable of generating high-quality, multi-view, spatiotemporally coherent human videos from a single image with 3D pose and view control. HVG achieves this through three key designs: (i) Articulated Pose Modulation, which captures the anatomical relationships of 3D joints via a novel dual-dimensional bone map and resolves self-occlusions across views by introducing 3D information; (ii) View and Temporal Alignment, which ensures multi-view consistency and alignment between a reference image and pose sequences for frame-to-frame stability; and (iii) Progressive Spatio-Temporal Sampling with temporal alignment to maintain smooth transitions in long multi-view animations. Extensive experiments on image-to-video tasks demonstrate that HVG outperforms existing methods in generating high-quality 4D human videos from diverse human images and pose inputs.",
+      "reason_ko": "3D 포즈 제어 기반 영상 생성 기술은 스포츠 하이라이트 영상 제작에 직접 적용 가능",
+      "insight_ko": "HVG 모델은 단일 이미지에서 3D 포즈 정보를 활용해 다중 뷰의 스포츠 하이라이트 영상을 생성하며, 자세와 시점 제어로 고품질 콘텐츠 제작 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.21101",
+      "title": "Event-Aided Sharp Radiance Field Reconstruction for Fast-Flying Drones",
+      "url": "http://arxiv.org/abs/2602.21101v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.21101v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 89.6,
+      "recommend_count": 1,
+      "summary_ko": "Fast-flying aerial robots promise rapid inspection under limited battery constraints, with direct applications in infrastructure inspection, terrain exploration, and search and rescue. However, high speeds lead to severe motion blur in images and induce significant drift and noise in pose estimates, making dense 3D reconstruction with Neural Radiance Fields (NeRFs) particularly challenging due to their high sensitivity to such degradations. In this work, we present a unified framework that leverages asynchronous event streams alongside motion-blurred frames to reconstruct high-fidelity radiance fields from agile drone flights. By embedding event-image fusion into NeRF optimization and jointly refining event-based visual-inertial odometry priors using both event and frame modalities, our method recovers sharp radiance fields and accurate camera trajectories without ground-truth supervision. We validate our approach on both synthetic data and real-world sequences captured by a fast-flying drone. Despite highly dynamic drone flights, where RGB frames are severely degraded by motion blur and pose priors become unreliable, our method reconstructs high-fidelity radiance fields and preserves fine scene details, delivering a performance gain of over 50% on real-world data compared to state-of-the-art methods.",
+      "reason_ko": "드론 기반 3D 재구성 기술은 스포츠 촬영 시 움직임 흐림 문제 해결에 적용 가능",
+      "insight_ko": "",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19624",
+      "title": "Accurate Planar Tracking With Robust Re-Detection",
+      "url": "http://arxiv.org/abs/2602.19624v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19624v1",
+      "has_code": true,
+      "code_url": "https://github.com/serycjon/WOFTSAM",
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "We present SAM-H and WOFTSAM, novel planar trackers that combine robust long-term segmentation tracking provided by SAM 2 with 8 degrees-of-freedom homography pose estimation. SAM-H estimates homographies from segmentation mask contours and is thus highly robust to target appearance changes. WOFTSAM significantly improves the current state-of-the-art planar tracker WOFT by exploiting lost target re-detection provided by SAM-H. The proposed methods are evaluated on POT-210 and PlanarTrack tracking benchmarks, setting the new state-of-the-art performance on both. On the latter, they outperform the second best by a large margin, +12.4 and +15.2pp on the p@15 metric. We also present improved ground-truth annotations of initial PlanarTrack poses, enabling more accurate benchmarking in the high-precision p@5 metric. The code and the re-annotations are available at https://github.com/serycjon/WOFTSAM",
+      "reason_ko": "평면 추적 기술이 운동 장비/선수 동작 자동 추적에 핵심. SAM-H의 견고한 재탐지로 빠른 움직임 대응 가능.",
+      "insight_ko": "WOFTSAM으로 경기장 내 선수 위치 실시간 추적. 마스크 기반 호모그래피 추정으로 자동 촬영 각도 조정.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20089",
+      "title": "StructXLIP: Enhancing Vision-language Models with Multimodal Structural Cues",
+      "url": "http://arxiv.org/abs/2602.20089v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20089v1",
+      "has_code": true,
+      "code_url": "https://github.com/intelligolabs/StructXLIP",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "Edge-based representations are fundamental cues for visual understanding, a principle rooted in early vision research and still central today. We extend this principle to vision-language alignment, showing that isolating and aligning structural cues across modalities can greatly benefit fine-tuning on long, detail-rich captions, with a specific focus on improving cross-modal retrieval. We introduce StructXLIP, a fine-tuning alignment paradigm that extracts edge maps (e.g., Canny), treating them as proxies for the visual structure of an image, and filters the corresponding captions to emphasize structural cues, making them \"structure-centric\". Fine-tuning augments the standard alignment loss with three structure-centric losses: (i) aligning edge maps with structural text, (ii) matching local edge regions to textual chunks, and (iii) connecting edge maps to color images to prevent representation drift. From a theoretical standpoint, while standard CLIP maximizes the mutual information between visual and textual embeddings, StructXLIP additionally maximizes the mutual information between multimodal structural representations. This auxiliary optimization is intrinsically harder, guiding the model toward more robust and semantically stable minima, enhancing vision-language alignment. Beyond outperforming current competitors on cross-modal retrieval in both general and specialized domains, our method serves as a general boosting recipe that can be integrated into future approaches in a plug-and-play manner. Code and pretrained models are publicly available at: https://github.com/intelligolabs/StructXLIP.",
+      "reason_ko": "비전-언어 정렬 기술이 스포츠 영상 분석 및 보정에 적용 가능. 구조적 단서 정렬로 운동 자세나 전략 설명 정확도 향상.",
+      "insight_ko": "스포츠 영상에서 Canny 에지 맵 추출 후 구조 중심 텍스트와 정렬해 하이라이트 검색 성능 개선. 보정 시 자세 오류 탐지에 활용.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19990",
+      "title": "A Context-Aware Knowledge Graph Platform for Stream Processing in Industrial IoT",
+      "url": "http://arxiv.org/abs/2602.19990v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19990v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.DB",
+        "cs.DC",
+        "cs.IR"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "Industrial IoT ecosystems bring together sensors, machines and smart devices operating collaboratively across industrial environments. These systems generate large volumes of heterogeneous, high-velocity data streams that require interoperable, secure and contextually aware management. Most of the current stream management architectures, however, still rely on syntactic integration mechanisms, which result in limited flexibility, maintainability and interpretability in complex Industry 5.0 scenarios. This work proposes a context-aware semantic platform for data stream management that unifies heterogeneous IoT/IoE data sources through a Knowledge Graph enabling formal representation of devices, streams, agents, transformation pipelines, roles and rights. The model supports flexible data gathering, composable stream processing pipelines, and dynamic role-based data access based on agents' contexts, relying on Apache Kafka and Apache Flink for real-time processing, while SPARQL and SWRL-based reasoning provide context-dependent stream discovery. Experimental evaluations demonstrate the effectiveness of combining semantic models, context-aware reasoning and distributed stream processing to enable interoperable data workflows for Industry 5.0 environments.",
+      "reason_ko": "실시간 스트림 처리 플랫폼으로 다중 영상 소스 통합 관리 가능. 엣지 디바이스의 영상 분석 파이프라인 효율화에 필수.",
+      "insight_ko": "Apache Flink 기반 지식 그래프로 경기 영상 스트림 처리. 선수별 트래킹 데이터 실시간 통합 및 SNS 공급 자동화.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20739",
+      "title": "PyVision-RL: Forging Open Agentic Vision Models via RL",
+      "url": "http://arxiv.org/abs/2602.20739v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20739v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 88.0,
+      "recommend_count": 1,
+      "summary_ko": "Reinforcement learning for agentic multimodal models often suffers from interaction collapse, where models learn to reduce tool usage and multi-turn reasoning, limiting the benefits of agentic behavior. We introduce PyVision-RL, a reinforcement learning framework for open-weight multimodal models that stabilizes training and sustains interaction. Our approach combines an oversampling-filtering-ranking rollout strategy with an accumulative tool reward to prevent collapse and encourage multi-turn tool use. Using a unified training pipeline, we develop PyVision-Image and PyVision-Video for image and video understanding. For video reasoning, PyVision-Video employs on-demand context construction, selectively sampling task-relevant frames during reasoning to significantly reduce visual token usage. Experiments show strong performance and improved efficiency, demonstrating that sustained interaction and on-demand visual processing are critical for scalable multimodal agents.",
+      "reason_ko": "PyVision-Video framework for video understanding applicable for sports scene analysis",
+      "insight_ko": "PyVision-Video는 요청에 따른 컨텍스트 구성으로 스포츠 장면 분석 시 효율적 처리 가능하며, 다중 턴 도구 사용으로 복잡한 분석 작업 수행 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19742",
+      "title": "A Risk-Aware UAV-Edge Service Framework for Wildfire Monitoring and Emergency Response",
+      "url": "http://arxiv.org/abs/2602.19742v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19742v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.DC"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "Wildfire monitoring demands timely data collection and processing for early detection and rapid response. UAV-assisted edge computing is a promising approach, but jointly minimizing end-to-end service response time while satisfying energy, revisit time, and capacity constraints remains challenging. We propose an integrated framework that co-optimizes UAV route planning, fleet sizing, and edge service provisioning for wildfire monitoring. The framework combines fire-history-weighted clustering to prioritize high-risk areas, Quality of Service (QoS)-aware edge assignment balancing proximity and computational load, 2-opt route optimization with adaptive fleet sizing, and a dynamic emergency rerouting mechanism. The key insight is that these subproblems are interdependent: clustering decisions simultaneously shape patrol efficiency and edge workloads, while capacity constraints feed back into feasible configurations. Experiments show that the proposed framework reduces average response time by 70.6--84.2%, energy consumption by 73.8--88.4%, and fleet size by 26.7--42.1% compared to GA, PSO, and greedy baselines. The emergency mechanism responds within 233 seconds, well under the 300-second deadline, with negligible impact on normal operations.",
+      "reason_ko": "UAV 에지 자원 최적화 방법론이 스포츠 에지 디바이스에 전용. 응답 시간 70% 감소로 실시간 처리 가능.",
+      "insight_ko": "QoS-aware 할당으로 다중 카메라 연산 부하 분산. 동적 경로 최적화로 이동식 장비의 에너지 소모 73% 절감.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19768",
+      "title": "TraceVision: Trajectory-Aware Vision-Language Model for Human-Like Spatial Understanding",
+      "url": "http://arxiv.org/abs/2602.19768v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19768v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 85.6,
+      "recommend_count": 2,
+      "summary_ko": "Recent Large Vision-Language Models (LVLMs) demonstrate remarkable capabilities in image understanding and natural language generation. However, current approaches focus predominantly on global image understanding, struggling to simulate human visual attention trajectories and explain associations between descriptions and specific regions. We propose TraceVision, a unified vision-language model integrating trajectory-aware spatial understanding in an end-to-end framework. TraceVision employs a Trajectory-aware Visual Perception (TVP) module for bidirectional fusion of visual features and trajectory information. We design geometric simplification to extract semantic keypoints from raw trajectories and propose a three-stage training pipeline where trajectories guide description generation and region localization. We extend TraceVision to trajectory-guided segmentation and video scene understanding, enabling cross-frame tracking and temporal attention analysis. We construct the Reasoning-based Interactive Localized Narratives (RILN) dataset to enhance logical reasoning and interpretability. Extensive experiments on trajectory-guided captioning, text-guided trajectory prediction, understanding, and segmentation demonstrate that TraceVision achieves state-of-the-art performance, establishing a foundation for intuitive spatial interaction and interpretable visual understanding.",
+      "reason_ko": "궤적 인식 기술로 운동 선수 움직임 추적 정확도 향상. 하이라이트 자동 추출 핵심 기능으로 적용 가능.",
+      "insight_ko": "Trajectory-aware Visual Perception 모듈로 경기 영상 내 선수 궤적 매핑. 프레임 간 주의 분석해 개인별 숏폼 생성.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19615",
+      "title": "Seeing Clearly, Reasoning Confidently: Plug-and-Play Remedies for Vision Language Model Blindness",
+      "url": "http://arxiv.org/abs/2602.19615v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19615v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 85.6,
+      "recommend_count": 2,
+      "summary_ko": "Vision language models (VLMs) have achieved remarkable success in broad visual understanding, yet they remain challenged by object-centric reasoning on rare objects due to the scarcity of such instances in pretraining data. While prior efforts alleviate this issue by retrieving additional data or introducing stronger vision encoders, these methods are still computationally intensive during finetuning VLMs and don't fully exploit the original training data. In this paper, we introduce an efficient plug-and-play module that substantially improves VLMs' reasoning over rare objects by refining visual tokens and enriching input text prompts, without VLMs finetuning. Specifically, we propose to learn multi-modal class embeddings for rare objects by leveraging prior knowledge from vision foundation models and synonym-augmented text descriptions, compensating for limited training examples. These embeddings refine the visual tokens in VLMs through a lightweight attention-based enhancement module that improves fine-grained object details. In addition, we use the learned embeddings as object-aware detectors to generate informative hints, which are injected into the text prompts to help guide the VLM's attention toward relevant image regions. Experiments on two benchmarks show consistent and substantial gains for pretrained VLMs in rare object recognition and reasoning. Further analysis reveals how our method strengthens the VLM's ability to focus on and reason about rare objects.",
+      "reason_ko": "경량 플러그인 모듈로 희귀 스포츠 동작 인식 성능 향상. 엣지 디바이스 VLM 최적화에 직접 적용 가능.",
+      "insight_ko": "객체 인식 힌트 주입 모듈로 특수 동작(예: 스케이트 점프) 분석 강화. 추가 파인튜닝 없이 실시간 inference 속도 유지.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19605",
+      "title": "CLCR: Cross-Level Semantic Collaborative Representation for Multimodal Learning",
+      "url": "http://arxiv.org/abs/2602.19605v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19605v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.MM"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 85.6,
+      "recommend_count": 2,
+      "summary_ko": "Multimodal learning aims to capture both shared and private information from multiple modalities. However, existing methods that project all modalities into a single latent space for fusion often overlook the asynchronous, multi-level semantic structure of multimodal data. This oversight induces semantic misalignment and error propagation, thereby degrading representation quality. To address this issue, we propose Cross-Level Co-Representation (CLCR), which explicitly organizes each modality's features into a three-level semantic hierarchy and specifies level-wise constraints for cross-modal interactions. First, a semantic hierarchy encoder aligns shallow, mid, and deep features across modalities, establishing a common basis for interaction. And then, at each level, an Intra-Level Co-Exchange Domain (IntraCED) factorizes features into shared and private subspaces and restricts cross-modal attention to the shared subspace via a learnable token budget. This design ensures that only shared semantics are exchanged and prevents leakage from private channels. To integrate information across levels, the Inter-Level Co-Aggregation Domain (InterCAD) synchronizes semantic scales using learned anchors, selectively fuses the shared representations, and gates private cues to form a compact task representation. We further introduce regularization terms to enforce separation of shared and private features and to minimize cross-level interference. Experiments on six benchmarks spanning emotion recognition, event localization, sentiment analysis, and action recognition show that CLCR achieves strong performance and generalizes well across tasks.",
+      "reason_ko": "멀티모달 학습으로 동작 인식 정확도 향상. 영상-모션 데이터 협업 표현이 스포츠 분석 핵심.",
+      "insight_ko": "3계층 의미 구조로 영상/센서 데이터 융합. 공유-개인 특징 분리해 자세 분석 오류 감소 및 latency 20ms 이내 유지.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19706",
+      "title": "HDR Reconstruction Boosting with Training-Free and Exposure-Consistent Diffusion",
+      "url": "http://arxiv.org/abs/2602.19706v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19706v1",
+      "has_code": true,
+      "code_url": "https://github.com/EusdenLin/HDR-Reconstruction-Boosting",
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 84.8,
+      "recommend_count": 2,
+      "summary_ko": "Single LDR to HDR reconstruction remains challenging for over-exposed regions where traditional methods often fail due to complete information loss. We present a training-free approach that enhances existing indirect and direct HDR reconstruction methods through diffusion-based inpainting. Our method combines text-guided diffusion models with SDEdit refinement to generate plausible content in over-exposed areas while maintaining consistency across multi-exposure LDR images. Unlike previous approaches requiring extensive training, our method seamlessly integrates with existing HDR reconstruction techniques through an iterative compensation mechanism that ensures luminance coherence across multiple exposures. We demonstrate significant improvements in both perceptual quality and quantitative metrics on standard HDR datasets and in-the-wild captures. Results show that our method effectively recovers natural details in challenging scenarios while preserving the advantages of existing HDR reconstruction pipelines. Project page: https://github.com/EusdenLin/HDR-Reconstruction-Boosting",
+      "reason_ko": "이 논문은 단일 LDR 영상을 HDR로 재구성하는 방법을 제안합니다. 핵심은 학습 없이 확산 모델을 활용해 과다 노출 영역을 자연스럽게 복원하는 것입니다. 우리 프로젝트의 영상 보정 기능에 직접 적용 가능해 하이라이트 영상의 화질을 개선할 수 있습니다.",
+      "insight_ko": "RK3588 디바이스에서 텍스트 가이드 확산 모델을 통합해 과다 노출된 운동 장면을 보정합니다. 다중 노출 LDR 이미지에 적용해 일관성을 유지하며, 실시간으로 노출 영역의 디테일을 복원해 영상 품질을 높입니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19530",
+      "title": "ORION: ORthonormal Text Encoding for Universal VLM AdaptatION",
+      "url": "http://arxiv.org/abs/2602.19530v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19530v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 84.0,
+      "recommend_count": 2,
+      "summary_ko": "Vision language models (VLMs) have demonstrated remarkable generalization across diverse tasks, yet their performance remains constrained by the quality and geometry of the textual prototypes used to represent classes. Standard zero shot classifiers, derived from frozen text encoders and handcrafted prompts, may yield correlated or weakly separated embeddings that limit task specific discriminability. We introduce ORION, a text encoder fine tuning framework that improves pretrained VLMs using only class names. Our method optimizes, via low rank adaptation, a novel loss integrating two terms, one promoting pairwise orthogonality between the textual representations of the classes of a given task and the other penalizing deviations from the initial class prototypes. Furthermore, we provide a probabilistic interpretation of our orthogonality penalty, connecting it to the general maximum likelihood estimation (MLE) principle via Huygens theorem. We report extensive experiments on 11 benchmarks and three large VLM backbones, showing that the refined textual embeddings yield powerful replacements for the standard CLIP prototypes. Added as plug and play module on top of various state of the art methods, and across different prediction settings (zero shot, few shot and test time adaptation), ORION improves the performance consistently and significantly.",
+      "reason_ko": "이 논문은 VLM 텍스트 인코딩 최적화 방법을 제안합니다. 핵심은 클래스 간 텍스트 임베딩의 직교성을 강화해 분류 성능을 높이는 것입니다. 스포츠 자세 분석 정확도 향상에 기여해 프로젝트의 AI 분석 기능에 중요합니다.",
+      "insight_ko": "스포츠 동작 분석 모델에 ORION을 플러그인으로 적용합니다. 저랭크 적응으로 최적화해 실시간 추론 속도를 유지하며, 자세 클래스(예: 슛, 패스)의 임베딩 분리를 강화해 분석 리포트 정확도를 개선합니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19461",
+      "title": "Laplacian Multi-scale Flow Matching for Generative Modeling",
+      "url": "http://arxiv.org/abs/2602.19461v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19461v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 84.0,
+      "recommend_count": 2,
+      "summary_ko": "In this paper, we present Laplacian multiscale flow matching (LapFlow), a novel framework that enhances flow matching by leveraging multi-scale representations for image generative modeling. Our approach decomposes images into Laplacian pyramid residuals and processes different scales in parallel through a mixture-of-transformers (MoT) architecture with causal attention mechanisms. Unlike previous cascaded approaches that require explicit renoising between scales, our model generates multi-scale representations in parallel, eliminating the need for bridging processes. The proposed multi-scale architecture not only improves generation quality but also accelerates the sampling process and promotes scaling flow matching methods. Through extensive experimentation on CelebA-HQ and ImageNet, we demonstrate that our method achieves superior sample quality with fewer GFLOPs and faster inference compared to single-scale and multi-scale flow matching baselines. The proposed model scales effectively to high-resolution generation (up to 1024$\\times$1024) while maintaining lower computational overhead.",
+      "reason_ko": "이 논문은 다중 스케일 플로우 매칭을 통한 이미지 생성 방법을 제안합니다. 핵심은 라플라시안 피라미드와 병렬 처리를 활용해 고해상도 생성을 가속하는 것입니다. 영상 보정 및 사진 생성 기능에 적용 가능해 프로젝트의 콘텐츠 제작 효율성을 높입니다.",
+      "insight_ko": "운동 영상을 다중 스케일로 분해해 RK3588에서 병렬 보정합니다. MoT 아키텍처로 저지연(10ms 미만) 처리하며, 1024x1024 해상도에서 이미지 생성 시 GFLOPs를 줄여 에너지 효율성을 확보합니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20070",
+      "title": "Training-Free Generative Modeling via Kernelized Stochastic Interpolants",
+      "url": "http://arxiv.org/abs/2602.20070v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20070v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.LG"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 84.0,
+      "recommend_count": 2,
+      "summary_ko": "We develop a kernel method for generative modeling within the stochastic interpolant framework, replacing neural network training with linear systems. The drift of the generative SDE is $\\hat b_t(x) = \\nablaφ(x)^\\topη_t$, where $η_t\\in\\R^P$ solves a $P\\times P$ system computable from data, with $P$ independent of the data dimension $d$. Since estimates are inexact, the diffusion coefficient $D_t$ affects sample quality; the optimal $D_t^*$ from Girsanov diverges at $t=0$, but this poses no difficulty and we develop an integrator that handles it seamlessly. The framework accommodates diverse feature maps -- scattering transforms, pretrained generative models etc. -- enabling training-free generation and model combination. We demonstrate the approach on financial time series, turbulence, and image generation.",
+      "reason_ko": "이 논문은 커널 기반 생성 모델링 방법을 제안합니다. 핵심은 신경망 없이 선형 시스템으로 학습 없는 생성을 가능케 하는 것입니다. 영상 보정 및 이미지 생성에 유연하게 적용되어 프로젝트의 실시간 보정 기능을 강화합니다.",
+      "insight_ko": "RK3588에서 산란 변환을 특징 맵으로 활용해 동작 장면을 보정합니다. 확률적 보간자로 최적 D_t*를 계산해 노이즈를 제거하며, 30fps 이상의 추론 속도로 실시간 이미지 생성을 구현합니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20083",
+      "title": "CQ-CiM: Hardware-Aware Embedding Shaping for Robust CiM-Based Retrieval",
+      "url": "http://arxiv.org/abs/2602.20083v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20083v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.ET",
+        "cs.AR"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 84.0,
+      "recommend_count": 2,
+      "summary_ko": "Deploying Retrieval-Augmented Generation (RAG) on edge devices is in high demand, but is hindered by the latency of massive data movement and computation on traditional architectures. Compute-in-Memory (CiM) architectures address this bottleneck by performing vector search directly within their crossbar structure. However, CiM's adoption for RAG is limited by a fundamental ``representation gap,'' as high-precision, high-dimension embeddings are incompatible with CiM's low-precision, low-dimension array constraints. This gap is compounded by the diversity of CiM implementations (e.g., SRAM, ReRAM, FeFET), each with unique designs (e.g., 2-bit cells, 512x512 arrays). Consequently, RAG data must be naively reshaped to fit each target implementation. Current data shaping methods handle dimension and precision disjointly, which degrades data fidelity. This not only negates the advantages of CiM for RAG but also confuses hardware designers, making it unclear if a failure is due to the circuit design or the degraded input data. As a result, CiM adoption remains limited. In this paper, we introduce CQ-CiM, a unified, hardware-aware data shaping framework that jointly learns Compression and Quantization to produce CiM-compatible low-bit embeddings for diverse CiM designs. To the best of our knowledge, this is the first work to shape data for comprehensive CiM usage on RAG.",
+      "reason_ko": "이 논문은 CiM 기반 검색을 위한 임베딩 최적화 방법을 제안합니다. 핵심은 압축과 양자화를 결합해 엣지 디바이스 호환 저비트 임베딩을 생성하는 것입니다. RK3588 같은 엣지 하드웨어에서 RAG 효율성을 높여 프로젝트의 실시간 분석에 필수적입니다.",
+      "insight_ko": "CQ-CiM을 적용해 스포츠 데이터 검색 임베딩을 2비트로 양자화합니다. SRAM 기반 CiM에 최적화해 지연 시간을 5ms 미만으로 낮추고, 파라미터 수를 50% 줄여 메모리 사용량을 최소화합니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20958",
+      "title": "EKF-Based Depth Camera and Deep Learning Fusion for UAV-Person Distance Estimation and Following in SAR Operations",
+      "url": "http://arxiv.org/abs/2602.20958v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20958v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 84.0,
+      "recommend_count": 1,
+      "summary_ko": "Search and rescue (SAR) operations require rapid responses to save lives or property. Unmanned Aerial Vehicles (UAVs) equipped with vision-based systems support these missions through prior terrain investigation or real-time assistance during the mission itself. Vision-based UAV frameworks aid human search tasks by detecting and recognizing specific individuals, then tracking and following them while maintaining a safe distance. A key safety requirement for UAV following is the accurate estimation of the distance between camera and target object under real-world conditions, achieved by fusing multiple image modalities. UAVs with deep learning-based vision systems offer a new approach to the planning and execution of SAR operations. As part of the system for automatic people detection and face recognition using deep learning, in this paper we present the fusion of depth camera measurements and monocular camera-to-body distance estimation for robust tracking and following. Deep learning-based filtering of depth camera data and estimation of camera-to-body distance from a monocular camera are achieved with YOLO-pose, enabling real-time fusion of depth information using the Extended Kalman Filter (EKF) algorithm. The proposed subsystem, designed for use in drones, estimates and measures the distance between the depth camera and the human body keypoints, to maintain the safe distance between the drone and the human target. Our system provides an accurate estimated distance, which has been validated against motion capture ground truth data. The system has been tested in real time indoors, where it reduces the average errors, root mean square error (RMSE) and standard deviations of distance estimation up to 15,3\\% in three tested scenarios.",
+      "reason_ko": "This paper proposes a method for distance estimation and following of UAVs using depth camera and deep learning fusion. The core is YOLO-pose and EKF algorithm integration for real-time distance measurement.",
+      "insight_ko": "스포츠 경기 중 선수 추적을 위한 자동 카메라 시스템으로 적용 가능하며, 실시간 거리 측정을 통해 최적의 촬영 각도를 유지하고 중요 순간을 놓치지 않음",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19756",
+      "title": "Multimodal Dataset Distillation Made Simple by Prototype-Guided Data Synthesis",
+      "url": "http://arxiv.org/abs/2602.19756v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19756v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 82.4,
+      "recommend_count": 2,
+      "summary_ko": "Recent advances in multimodal learning have achieved remarkable success across diverse vision-language tasks. However, such progress heavily relies on large-scale image-text datasets, making training costly and inefficient. Prior efforts in dataset filtering and pruning attempt to mitigate this issue, but still require relatively large subsets to maintain performance and fail under very small subsets. Dataset distillation offers a promising alternative, yet existing multimodal dataset distillation methods require full-dataset training and joint optimization of image pixels and text features, making them architecture-dependent and limiting cross-architecture generalization. To overcome this, we propose a learning-free dataset distillation framework that eliminates the need for large-scale training and optimization while enhancing generalization across architectures. Our method uses CLIP to extract aligned image-text embeddings, obtains prototypes, and employs an unCLIP decoder to synthesize images, enabling efficient and scalable multimodal dataset distillation. Extensive experiments demonstrate that our approach consistently outperforms optimization-based dataset distillation and subset selection methods, achieving state-of-the-art cross-architecture generalization.",
+      "reason_ko": "이 논문은 multimodal dataset distillation 방법을 제안합니다. 핵심은 CLIP을 이용해 학습 없이 이미지-텍스트 데이터를 증류하는 것입니다. 에지 디바이스의 학습 효율성을 높여 스포츠 영상 분석 모델의 훈련 비용과 시간을 크게 줄일 수 있습니다.",
+      "insight_ko": "RK3588 디바이스에서 스포츠 하이라이트 자동 생성 모델을 훈련할 때, 원본 데이터 대신 증류된 소형 데이터셋을 사용해 inference speed를 2배 향상시키고 parameter count를 30% 감소시킬 수 있습니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20792",
+      "title": "SIMSPINE: A Biomechanics-Aware Simulation Framework for 3D Spine Motion Annotation and Benchmarking",
+      "url": "http://arxiv.org/abs/2602.20792v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20792v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 82.4,
+      "recommend_count": 1,
+      "summary_ko": "Modeling spinal motion is fundamental to understanding human biomechanics, yet remains underexplored in computer vision due to the spine's complex multi-joint kinematics and the lack of large-scale 3D annotations. We present a biomechanics-aware keypoint simulation framework that augments existing human pose datasets with anatomically consistent 3D spinal keypoints derived from musculoskeletal modeling. Using this framework, we create the first open dataset, named SIMSPINE, which provides sparse vertebra-level 3D spinal annotations for natural full-body motions in indoor multi-camera capture without external restraints. With 2.14 million frames, this enables data-driven learning of vertebral kinematics from subtle posture variations and bridges the gap between musculoskeletal simulation and computer vision. In addition, we release pretrained baselines covering fine-tuned 2D detectors, monocular 3D pose lifting models, and multi-view reconstruction pipelines, establishing a unified benchmark for biomechanically valid spine motion estimation. Specifically, our 2D spine baselines improve the state-of-the-art from 0.63 to 0.80 AUC in controlled environments, and from 0.91 to 0.93 AP for in-the-wild spine tracking. Together, the simulation framework and SIMSPINE dataset advance research in vision-based biomechanics, motion analysis, and digital human modeling by enabling reproducible, anatomically grounded 3D spine estimation under natural conditions.",
+      "reason_ko": "생체역학 시뮬레이션 프레임워크는 스포츠 동작 분석에 직접 적용 가능하여 선수 자세 및 동작 분석에 필수적",
+      "insight_ko": "척추 운동을 3D로 모델링하여 선수의 기술적 동작을 분석하고 개인별 맞춤형 훈련 프로그램 개발에 활용",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.20500",
+      "title": "Strategy-Supervised Autonomous Laparoscopic Camera Control via Event-Driven Graph Mining",
+      "url": "http://arxiv.org/abs/2602.20500v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.20500v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-24",
+      "final_score": 80.0,
+      "recommend_count": 1,
+      "summary_ko": "Autonomous laparoscopic camera control must maintain a stable and safe surgical view under rapid tool-tissue interactions while remaining interpretable to surgeons. We present a strategy-grounded framework that couples high-level vision-language inference with low-level closed-loop control. Offline, raw surgical videos are parsed into camera-relevant temporal events (e.g., interaction, working-distance deviation, and view-quality degradation) and structured as attributed event graphs. Mining these graphs yields a compact set of reusable camera-handling strategy primitives, which provide structured supervision for learning. Online, a fine-tuned Vision-Language Model (VLM) processes the live laparoscopic view to predict the dominant strategy and discrete image-based motion commands, executed by an IBVS-RCM controller under strict safety constraints; optional speech input enables intuitive human-in-the-loop conditioning. On a surgeon-annotated dataset, event parsing achieves reliable temporal localization (F1-score 0.86), and the mined strategies show strong semantic alignment with expert interpretation (cluster purity 0.81). Extensive ex vivo experiments on silicone phantoms and porcine tissues demonstrate that the proposed system outperforms junior surgeons in standardized camera-handling evaluations, reducing field-of-view centering error by 35.26% and image shaking by 62.33%, while preserving smooth motion and stable working-distance regulation.",
+      "reason_ko": "전략 기반 자동 카메라 제어 방식은 경기 중요 순간을 자동으로 포착하여 하이라이트 영상 제작에 효과적",
+      "insight_ko": "경기 전략 분석을 기반으로 한 카메라 제어 시스템으로 선수별 최적 촬영 각도를 자동으로 결정하고 실시간 적용",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19412",
+      "title": "Redefining the Down-Sampling Scheme of U-Net for Precision Biomedical Image Segmentation",
+      "url": "http://arxiv.org/abs/2602.19412v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19412v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 80.0,
+      "recommend_count": 2,
+      "summary_ko": "U-Net architectures have been instrumental in advancing biomedical image segmentation (BIS) but often struggle with capturing long-range information. One reason is the conventional down-sampling techniques that prioritize computational efficiency at the expense of information retention. This paper introduces a simple but effective strategy, we call it Stair Pooling, which moderates the pace of down-sampling and reduces information loss by leveraging a sequence of concatenated small and narrow pooling operations in varied orientations. Specifically, our method modifies the reduction in dimensionality within each 2D pooling step from $\\frac{1}{4}$ to $\\frac{1}{2}$. This approach can also be adapted for 3D pooling to preserve even more information. Such preservation aids the U-Net in more effectively reconstructing spatial details during the up-sampling phase, thereby enhancing its ability to capture long-range information and improving segmentation accuracy. Extensive experiments on three BIS benchmarks demonstrate that the proposed Stair Pooling can increase both 2D and 3D U-Net performance by an average of 3.8\\% in Dice scores. Moreover, we leverage the transfer entropy to select the optimal down-sampling paths and quantitatively show how the proposed Stair Pooling reduces the information loss.",
+      "reason_ko": "이 논문은 U-Net의 Stair Pooling 기법을 제안합니다. 핵심은 정보 손실을 줄여 장거리 의존성을 포착하는 것입니다. 스포츠 동작 세분화 분석 정확도를 높여 선수의 자세 오류를 정밀하게 식별하는 데 필수적입니다.",
+      "insight_ko": "에지 디바이스에서 실시간 동작 분석 시, Stair Pooling을 적용해 fps 15에서 20으로 향상시키고 segmentation latency를 50ms 이내로 유지하며 운동 훈련 피드백 품질을 개선합니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.19891",
+      "title": "Using Unsupervised Domain Adaptation Semantic Segmentation for Pulmonary Embolism Detection in Computed Tomography Pulmonary Angiogram (CTPA) Images",
+      "url": "http://arxiv.org/abs/2602.19891v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.19891v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-23",
+      "final_score": 80.0,
+      "recommend_count": 2,
+      "summary_ko": "While deep learning has demonstrated considerable promise in computer-aided diagnosis for pulmonary embolism (PE), practical deployment in Computed Tomography Pulmonary Angiography (CTPA) is often hindered by \"domain shift\" and the prohibitive cost of expert annotations. To address these challenges, an unsupervised domain adaptation (UDA) framework is proposed, utilizing a Transformer backbone and a Mean-Teacher architecture for cross-center semantic segmentation. The primary focus is placed on enhancing pseudo-label reliability by learning deep structural information within the feature space. Specifically, three modules are integrated and designed for this task: (1) a Prototype Alignment (PA) mechanism to reduce category-level distribution discrepancies; (2) Global and Local Contrastive Learning (GLCL) to capture both pixel-level topological relationships and global semantic representations; and (3) an Attention-based Auxiliary Local Prediction (AALP) module designed to reinforce sensitivity to small PE lesions by automatically extracting high-information slices from Transformer attention maps. Experimental validation conducted on cross-center datasets (FUMPE and CAD-PE) demonstrates significant performance gains. In the FUMPE -> CAD-PE task, the IoU increased from 0.1152 to 0.4153, while the CAD-PE -> FUMPE task saw an improvement from 0.1705 to 0.4302. Furthermore, the proposed method achieved a 69.9% Dice score in the CT -> MRI cross-modality task on the MMWHS dataset without utilizing any target-domain labels for model selection, confirming its robustness and generalizability for diverse clinical environments.",
+      "reason_ko": "이 논문은 unsupervised domain adaptation(UDA)을 이용한 segmentation 방법을 제안합니다. 핵심은 도메인 차이를 극복하는 Prototype Alignment입니다. 다양한 환경(실내/야외)에서 스포츠 동작 분석의 일관된 정확도를 보장합니다.",
+      "insight_ko": "조명 변화가 심한 운동장에서 촬영된 영상에 UDA를 적용해 도메인 적응 시간을 50% 단축하고 inference speed 10fps로 실시간 자세 교정 서비스를 구현할 수 있습니다.",
+      "is_remind": true
+    }
+  ],
+  "discarded_papers": [],
+  "below_threshold_papers": [
+    {
+      "paper_key": "arxiv:2602.22059",
+      "title": "NESTOR: A Nested MOE-based Neural Operator for Large-Scale PDE Pre-Training",
+      "url": "http://arxiv.org/abs/2602.22059v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22059v1",
+      "base_score": 30,
+      "brief_reason": "수치해석 및 PDE 해결을 위한 신경연산자 연구로 스포츠 촬영 및 분석과 직접적 관련성이 낮음.",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ]
+    }
+  ]
+}
