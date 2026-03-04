@@ -1,0 +1,1463 @@
+{
+  "meta": {
+    "topic_name": "CAPP!C_AI",
+    "topic_slug": "cappic-ai",
+    "date": "2026-03-04",
+    "display_title": "CAPP!C_AI 논문 리포트 (2026-03-04)",
+    "window_start_utc": "2026-03-03T00:00:00+00:00",
+    "window_end_utc": "2026-03-04T00:30:00+00:00",
+    "embedding_mode": "en_synthetic",
+    "scoring_weights": {
+      "embed": 0.35,
+      "llm": 0.55,
+      "recency": 0.1
+    },
+    "total_collected": 80,
+    "total_filtered": 74,
+    "total_discarded": 0,
+    "total_scored": 4,
+    "total_output": 4,
+    "total_below_threshold": 0,
+    "threshold_used": 50,
+    "threshold_lowered": false,
+    "run_id": 28,
+    "keywords_used": [
+      "autonomous cinematography",
+      "sports tracking",
+      "camera control",
+      "highlight detection",
+      "action recognition",
+      "keyframe extraction",
+      "video stabilization",
+      "image enhancement",
+      "color correction",
+      "pose estimation",
+      "biomechanics",
+      "tactical analysis",
+      "short video",
+      "content summarization",
+      "video editing",
+      "edge computing",
+      "embedded vision",
+      "real-time processing",
+      "content sharing",
+      "social platform",
+      "advertising system",
+      "biomechanics",
+      "tactical analysis",
+      "embedded vision"
+    ]
+  },
+  "clusters": [
+    {
+      "cluster_id": 0,
+      "representative_key": "arxiv:2603.02499",
+      "member_keys": [
+        "arxiv:2603.02499"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 1,
+      "representative_key": "arxiv:2603.02985",
+      "member_keys": [
+        "arxiv:2603.02985"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 2,
+      "representative_key": "arxiv:2603.02802",
+      "member_keys": [
+        "arxiv:2603.02802"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 3,
+      "representative_key": "arxiv:2603.03160",
+      "member_keys": [
+        "arxiv:2603.03160"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 4,
+      "representative_key": "arxiv:2603.02598",
+      "member_keys": [
+        "arxiv:2603.02598"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 5,
+      "representative_key": "arxiv:2603.02936",
+      "member_keys": [
+        "arxiv:2603.02936"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 6,
+      "representative_key": "arxiv:2603.02888",
+      "member_keys": [
+        "arxiv:2603.02888"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 7,
+      "representative_key": "arxiv:2603.02623",
+      "member_keys": [
+        "arxiv:2603.02623"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 8,
+      "representative_key": "arxiv:2603.02872",
+      "member_keys": [
+        "arxiv:2603.02872"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 9,
+      "representative_key": "arxiv:2603.02519",
+      "member_keys": [
+        "arxiv:2603.02519"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 10,
+      "representative_key": "arxiv:2603.03060",
+      "member_keys": [
+        "arxiv:2603.03060"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 11,
+      "representative_key": "arxiv:2603.03066",
+      "member_keys": [
+        "arxiv:2603.03066"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 12,
+      "representative_key": "arxiv:2603.02893",
+      "member_keys": [
+        "arxiv:2603.02893"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 13,
+      "representative_key": "arxiv:2603.03143",
+      "member_keys": [
+        "arxiv:2603.03143"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 14,
+      "representative_key": "arxiv:2603.02548",
+      "member_keys": [
+        "arxiv:2603.02548"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 15,
+      "representative_key": "arxiv:2603.02646",
+      "member_keys": [
+        "arxiv:2603.02646"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 16,
+      "representative_key": "arxiv:2603.02972",
+      "member_keys": [
+        "arxiv:2603.02972"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 17,
+      "representative_key": "arxiv:2603.02882",
+      "member_keys": [
+        "arxiv:2603.02882"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 18,
+      "representative_key": "arxiv:2603.02881",
+      "member_keys": [
+        "arxiv:2603.02881"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 19,
+      "representative_key": "arxiv:2603.02569",
+      "member_keys": [
+        "arxiv:2603.02569"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 20,
+      "representative_key": "arxiv:2603.02883",
+      "member_keys": [
+        "arxiv:2603.02883"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 21,
+      "representative_key": "arxiv:2603.02596",
+      "member_keys": [
+        "arxiv:2603.02596"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 22,
+      "representative_key": "arxiv:2603.03269",
+      "member_keys": [
+        "arxiv:2603.03269"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 23,
+      "representative_key": "arxiv:2603.03138",
+      "member_keys": [
+        "arxiv:2603.03138"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 24,
+      "representative_key": "arxiv:2603.02658",
+      "member_keys": [
+        "arxiv:2603.02658"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 25,
+      "representative_key": "arxiv:2603.02692",
+      "member_keys": [
+        "arxiv:2603.02692"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 26,
+      "representative_key": "arxiv:2603.02907",
+      "member_keys": [
+        "arxiv:2603.02907"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 27,
+      "representative_key": "arxiv:2603.02618",
+      "member_keys": [
+        "arxiv:2603.02618"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 28,
+      "representative_key": "arxiv:2603.03241",
+      "member_keys": [
+        "arxiv:2603.03241"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 29,
+      "representative_key": "arxiv:2603.03075",
+      "member_keys": [
+        "arxiv:2603.03075"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 30,
+      "representative_key": "arxiv:2603.03212",
+      "member_keys": [
+        "arxiv:2603.03212"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 31,
+      "representative_key": "arxiv:2603.02866",
+      "member_keys": [
+        "arxiv:2603.02866"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 32,
+      "representative_key": "arxiv:2603.03026",
+      "member_keys": [
+        "arxiv:2603.03026"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 33,
+      "representative_key": "arxiv:2603.02726",
+      "member_keys": [
+        "arxiv:2603.02726"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 34,
+      "representative_key": "arxiv:2603.02924",
+      "member_keys": [
+        "arxiv:2603.02924"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 35,
+      "representative_key": "arxiv:2603.02816",
+      "member_keys": [
+        "arxiv:2603.02816"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 36,
+      "representative_key": "arxiv:2603.03146",
+      "member_keys": [
+        "arxiv:2603.03146"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 37,
+      "representative_key": "arxiv:2603.02579",
+      "member_keys": [
+        "arxiv:2603.02579"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 38,
+      "representative_key": "arxiv:2603.02842",
+      "member_keys": [
+        "arxiv:2603.02842"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 39,
+      "representative_key": "arxiv:2603.03239",
+      "member_keys": [
+        "arxiv:2603.03239"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 40,
+      "representative_key": "arxiv:2603.03089",
+      "member_keys": [
+        "arxiv:2603.03089"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 41,
+      "representative_key": "arxiv:2603.02901",
+      "member_keys": [
+        "arxiv:2603.02901"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 42,
+      "representative_key": "arxiv:2603.03281",
+      "member_keys": [
+        "arxiv:2603.03281"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 43,
+      "representative_key": "arxiv:2603.02803",
+      "member_keys": [
+        "arxiv:2603.02803"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 44,
+      "representative_key": "arxiv:2603.02691",
+      "member_keys": [
+        "arxiv:2603.02691"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 45,
+      "representative_key": "arxiv:2603.03234",
+      "member_keys": [
+        "arxiv:2603.03234"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 46,
+      "representative_key": "arxiv:2603.02886",
+      "member_keys": [
+        "arxiv:2603.02886"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 47,
+      "representative_key": "arxiv:2603.02581",
+      "member_keys": [
+        "arxiv:2603.02581"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 48,
+      "representative_key": "arxiv:2603.02813",
+      "member_keys": [
+        "arxiv:2603.02813"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 49,
+      "representative_key": "arxiv:2603.02556",
+      "member_keys": [
+        "arxiv:2603.02556"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 50,
+      "representative_key": "arxiv:2603.02701",
+      "member_keys": [
+        "arxiv:2603.02701"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 51,
+      "representative_key": "arxiv:2603.02536",
+      "member_keys": [
+        "arxiv:2603.02536"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 52,
+      "representative_key": "arxiv:2603.02944",
+      "member_keys": [
+        "arxiv:2603.02944"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 53,
+      "representative_key": "arxiv:2603.02484",
+      "member_keys": [
+        "arxiv:2603.02484"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 54,
+      "representative_key": "arxiv:2603.02847",
+      "member_keys": [
+        "arxiv:2603.02847"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 55,
+      "representative_key": "arxiv:2603.02526",
+      "member_keys": [
+        "arxiv:2603.02526"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 56,
+      "representative_key": "arxiv:2603.02724",
+      "member_keys": [
+        "arxiv:2603.02724"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 57,
+      "representative_key": "arxiv:2603.03140",
+      "member_keys": [
+        "arxiv:2603.03140"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 58,
+      "representative_key": "arxiv:2603.03270",
+      "member_keys": [
+        "arxiv:2603.03270"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 59,
+      "representative_key": "arxiv:2603.02711",
+      "member_keys": [
+        "arxiv:2603.02711"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 60,
+      "representative_key": "arxiv:2603.03147",
+      "member_keys": [
+        "arxiv:2603.03147"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 61,
+      "representative_key": "arxiv:2603.03242",
+      "member_keys": [
+        "arxiv:2603.03242"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 62,
+      "representative_key": "arxiv:2603.03134",
+      "member_keys": [
+        "arxiv:2603.03134"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 63,
+      "representative_key": "arxiv:2603.03194",
+      "member_keys": [
+        "arxiv:2603.03194"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 64,
+      "representative_key": "arxiv:2603.02794",
+      "member_keys": [
+        "arxiv:2603.02794"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 65,
+      "representative_key": "arxiv:2603.02512",
+      "member_keys": [
+        "arxiv:2603.02512"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 66,
+      "representative_key": "arxiv:2603.02792",
+      "member_keys": [
+        "arxiv:2603.02792"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 67,
+      "representative_key": "arxiv:2603.03095",
+      "member_keys": [
+        "arxiv:2603.03095"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 68,
+      "representative_key": "arxiv:2603.03094",
+      "member_keys": [
+        "arxiv:2603.03094"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 69,
+      "representative_key": "arxiv:2603.02745",
+      "member_keys": [
+        "arxiv:2603.02745"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 70,
+      "representative_key": "arxiv:2603.02540",
+      "member_keys": [
+        "arxiv:2603.02540"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 71,
+      "representative_key": "arxiv:2603.03080",
+      "member_keys": [
+        "arxiv:2603.03080"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 72,
+      "representative_key": "arxiv:2603.03203",
+      "member_keys": [
+        "arxiv:2603.03203"
+      ],
+      "size": 1
+    },
+    {
+      "cluster_id": 73,
+      "representative_key": "arxiv:2603.03047",
+      "member_keys": [
+        "arxiv:2603.03047"
+      ],
+      "size": 1
+    }
+  ],
+  "papers": [
+    {
+      "paper_key": "arxiv:2603.02936",
+      "flags": {
+        "is_edge": true,
+        "is_realtime": true,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "드론 레이싱 게이트 포즈 추정 기술로 스포츠 분석에 부분적으로 적용 가능하나 매우 구체적 사례",
+      "has_code": false,
+      "llm_base_score": 75,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 10,
+      "llm_adjusted": 85,
+      "final_score": 88.0,
+      "rank": 1,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "Self-supervised Domain Adaptation for Visual 3D Pose Estimation of Nano-drone Racing Gates by Enforcing Geometric Consistency",
+      "abstract": "We consider the task of visually estimating the relative pose of a drone racing gate in front of a nano-quadrotor, using a convolutional neural network pre-trained on simulated data to regress the gate's pose. Due to the sim-to-real gap, the pre-trained model underperforms in the real world and must be adapted to the target domain. We propose an unsupervised domain adaptation (UDA) approach using only real image sequences collected by the drone flying an arbitrary trajectory in front of a gate; sequences are annotated in a self-supervised fashion with the drone's odometry as measured by its onboard sensors. On this dataset, a state consistency loss enforces that two images acquired at different times yield pose predictions that are consistent with the drone's odometry. Results indicate that our approach outperforms other SoA UDA approaches, has a low mean absolute error in position (x=26, y=28, z=10 cm) and orientation ($ψ$=13${^{\\circ}}$), an improvement of 40% in position and 37% in orientation over a baseline. The approach's effectiveness is appreciable with as few as 10 minutes of real-world flight data and yields models with an inference time of 30.4ms (33 fps) when deployed aboard the Crazyflie 2.1 Brushless nano-drone.",
+      "base_score": 75,
+      "url": "http://arxiv.org/abs/2603.02936v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02936v1",
+      "categories": [
+        "cs.RO"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-03-03",
+      "summary_ko": "We consider the task of visually estimating the relative pose of a drone racing gate in front of a nano-quadrotor, using a convolutional neural network pre-trained on simulated data to regress the gate's pose. Due to the sim-to-real gap, the pre-trained model underperforms in the real world and must be adapted to the target domain. We propose an unsupervised domain adaptation (UDA) approach using only real image sequences collected by the drone flying an arbitrary trajectory in front of a gate; sequences are annotated in a self-supervised fashion with the drone's odometry as measured by its onboard sensors. On this dataset, a state consistency loss enforces that two images acquired at different times yield pose predictions that are consistent with the drone's odometry. Results indicate that our approach outperforms other SoA UDA approaches, has a low mean absolute error in position (x=26, y=28, z=10 cm) and orientation ($ψ$=13${^{\\circ}}$), an improvement of 40% in position and 37% in orientation over a baseline. The approach's effectiveness is appreciable with as few as 10 minutes of real-world flight data and yields models with an inference time of 30.4ms (33 fps) when deployed aboard the Crazyflie 2.1 Brushless nano-drone.",
+      "reason_ko": "드론 레이싱 게이트 포즈 추정 기술로 스포츠 분석에 부분적으로 적용 가능하나 매우 구체적 사례",
+      "insight_ko": "자율 학습 도메인 적용 기술을 통해 실제 환경에서의 포즈 추정 정확도를 향상시키며, 33fps의 실시간 처리로 스포츠 장면 분석에 적합함"
+    },
+    {
+      "paper_key": "arxiv:2603.02499",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "의료 보행 분석 기술이 스포츠 자세 분석에 적용 가능하나 특정 분야에 한정됨",
+      "has_code": false,
+      "llm_base_score": 78,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 0,
+      "llm_adjusted": 78,
+      "final_score": 82.4,
+      "rank": 2,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "Biomechanically Accurate Gait Analysis: A 3d Human Reconstruction Framework for Markerless Estimation of Gait Parameters",
+      "abstract": "This paper presents a biomechanically interpretable framework for gait analysis using 3D human reconstruction from video data. Unlike conventional keypoint based approaches, the proposed method extracts biomechanically meaningful markers analogous to motion capture systems and integrates them within OpenSim for joint kinematic estimation. To evaluate performance, both spatiotemporal and kinematic gait parameters were analysed against reference marker-based data. Results indicate strong agreement with marker-based measurements, with considerable improvements when compared with pose-estimation methods alone. The proposed framework offers a scalable, markerless, and interpretable approach for accurate gait assessment, supporting broader clinical and real world deployment of vision based biomechanics",
+      "base_score": 78,
+      "url": "http://arxiv.org/abs/2603.02499v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02499v1",
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-03-03",
+      "summary_ko": "This paper presents a biomechanically interpretable framework for gait analysis using 3D human reconstruction from video data. Unlike conventional keypoint based approaches, the proposed method extracts biomechanically meaningful markers analogous to motion capture systems and integrates them within OpenSim for joint kinematic estimation. To evaluate performance, both spatiotemporal and kinematic gait parameters were analysed against reference marker-based data. Results indicate strong agreement with marker-based measurements, with considerable improvements when compared with pose-estimation methods alone. The proposed framework offers a scalable, markerless, and interpretable approach for accurate gait assessment, supporting broader clinical and real world deployment of vision based biomechanics",
+      "reason_ko": "이 논문은 마커리스 3D 인간 재구성 프레임워크를 제공하여 스포츠 자세 분석에 직접 적용 가능하며, 특수 장비 없이 운동 동작을 분석할 수 있다는 점에서 프로젝트 목표와 정확히 일치한다.",
+      "insight_ko": "OpenSim 통합 프레임워크를 활용해 선수들의 관절 운동학적 데이터를 실시간으로 추출하고, 이를 바탕으로 기술 개선점을 분석하며 하이라이트 장면을 자동 생성할 수 있다."
+    },
+    {
+      "paper_key": "arxiv:2603.03060",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": true,
+        "mentions_code": false,
+        "is_metaphorical": false
+      },
+      "brief_reason": "실시간 라이브 스트리밍 시스템이지만 스포츠 촬영 및 분석과 직접적인 연관성은 낮음",
+      "has_code": false,
+      "llm_base_score": 72,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 5,
+      "llm_adjusted": 77,
+      "final_score": 81.6,
+      "rank": 3,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "DLIOS: An LLM-Augmented Real-Time Multi-Modal Interactive Enhancement Overlay System for Douyin Live Streaming",
+      "abstract": "We present DLIOS, a Large Language Model (LLM)-augmented real-time multi-modal interactive enhancement overlay system for Douyin (TikTok) live streaming. DLIOS employs a three-layer transparent window architecture for independent rendering of danmaku (scrolling text), gift and like particle effects, and VIP entrance animations, built around an event-driven WebView2 capture pipeline and a thread-safe event bus. On top of this foundation we contribute an LLM broadcast automation framework comprising: (1) a per-song four-segment prompt scheduling system (T1 opening/transition, T2 empathy, T3 era story/production notes, T4 closing) that generates emotionally coherent radio-style commentary from lyric metadata; (2) a JSON-serializable RadioPersonaConfig schema supporting hot-swap multi-persona broadcasting; (3) a real-time danmaku quick-reaction engine with keyword routing to static urgent speech or LLM-generated empathetic responses; and (4) the Suwan Li AI singer-songwriter persona case study -- over 100 AI-generated songs produced with Suno. A 36-hour stress test demonstrates: zero danmaku overlap, zero deadlock crashes, gift effect P95 latency <= 180 ms, LLM-to-TTS segment P95 latency <= 2.1 s, and TTS integrated loudness gain of 9.5 LUFS. live streaming; danmaku; large language model; prompt engineering; virtual persona; WebView2; WINMM; TTS; Suno; loudness normalization; real-time scheduling",
+      "base_score": 72,
+      "url": "http://arxiv.org/abs/2603.03060v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.03060v1",
+      "categories": [
+        "eess.IV",
+        "eess.AS"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-03-03",
+      "summary_ko": "We present DLIOS, a Large Language Model (LLM)-augmented real-time multi-modal interactive enhancement overlay system for Douyin (TikTok) live streaming. DLIOS employs a three-layer transparent window architecture for independent rendering of danmaku (scrolling text), gift and like particle effects, and VIP entrance animations, built around an event-driven WebView2 capture pipeline and a thread-safe event bus. On top of this foundation we contribute an LLM broadcast automation framework comprising: (1) a per-song four-segment prompt scheduling system (T1 opening/transition, T2 empathy, T3 era story/production notes, T4 closing) that generates emotionally coherent radio-style commentary from lyric metadata; (2) a JSON-serializable RadioPersonaConfig schema supporting hot-swap multi-persona broadcasting; (3) a real-time danmaku quick-reaction engine with keyword routing to static urgent speech or LLM-generated empathetic responses; and (4) the Suwan Li AI singer-songwriter persona case study -- over 100 AI-generated songs produced with Suno. A 36-hour stress test demonstrates: zero danmaku overlap, zero deadlock crashes, gift effect P95 latency <= 180 ms, LLM-to-TTS segment P95 latency <= 2.1 s, and TTS integrated loudness gain of 9.5 LUFS. live streaming; danmaku; large language model; prompt engineering; virtual persona; WebView2; WINMM; TTS; Suno; loudness normalization; real-time scheduling",
+      "reason_ko": "실시간 라이브 스트리밍 시스템이지만 스포츠 촬영 및 분석과 직접적인 연관성은 낮음",
+      "insight_ko": ""
+    },
+    {
+      "paper_key": "arxiv:2603.02646",
+      "flags": {
+        "is_edge": false,
+        "is_realtime": false,
+        "mentions_code": true,
+        "is_metaphorical": false
+      },
+      "brief_reason": "로봇 계획을 위한 비디오 분할 기술로 스포츠 분석에 간접적 적용 가능",
+      "has_code": true,
+      "llm_base_score": 55,
+      "discarded": false,
+      "embed_score": null,
+      "bonus_score": 3,
+      "llm_adjusted": 58,
+      "final_score": 66.4,
+      "rank": 4,
+      "tier": 1,
+      "score_lowered": false,
+      "title": "Compositional Visual Planning via Inference-Time Diffusion Scaling",
+      "abstract": "Diffusion models excel at short-horizon robot planning, yet scaling them to long-horizon tasks remains challenging due to computational constraints and limited training data. Existing compositional approaches stitch together short segments by separately denoising each component and averaging overlapping regions. However, this suffers from instability as the factorization assumption breaks down in noisy data space, leading to inconsistent global plans. We propose that the key to stable compositional generation lies in enforcing boundary agreement on the estimated clean data (Tweedie estimates) rather than on noisy intermediate states. Our method formulates long-horizon planning as inference over a chain-structured factor graph of overlapping video chunks, where pretrained short-horizon video diffusion models provide local priors. At inference time, we enforce boundary agreement through a novel combination of synchronous and asynchronous message passing that operates on Tweedie estimates, producing globally consistent guidance without requiring additional training. Our training-free framework demonstrates significant improvements over existing baselines, effectively generalizing to unseen start-goal combinations that were not present in the original training data. Project website: https://comp-visual-planning.github.io/",
+      "base_score": 55,
+      "url": "http://arxiv.org/abs/2603.02646v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02646v1",
+      "categories": [
+        "cs.RO"
+      ],
+      "code_url": null,
+      "published_at_utc": "2026-03-03",
+      "summary_ko": "Diffusion models excel at short-horizon robot planning, yet scaling them to long-horizon tasks remains challenging due to computational constraints and limited training data. Existing compositional approaches stitch together short segments by separately denoising each component and averaging overlapping regions. However, this suffers from instability as the factorization assumption breaks down in noisy data space, leading to inconsistent global plans. We propose that the key to stable compositional generation lies in enforcing boundary agreement on the estimated clean data (Tweedie estimates) rather than on noisy intermediate states. Our method formulates long-horizon planning as inference over a chain-structured factor graph of overlapping video chunks, where pretrained short-horizon video diffusion models provide local priors. At inference time, we enforce boundary agreement through a novel combination of synchronous and asynchronous message passing that operates on Tweedie estimates, producing globally consistent guidance without requiring additional training. Our training-free framework demonstrates significant improvements over existing baselines, effectively generalizing to unseen start-goal combinations that were not present in the original training data. Project website: https://comp-visual-planning.github.io/",
+      "reason_ko": "로봇 계획을 위한 비디오 분할 기술로 스포츠 분석에 간접적 적용 가능",
+      "insight_ko": ""
+    }
+  ],
+  "remind_papers": [
+    {
+      "paper_key": "arxiv:2602.23141",
+      "title": "No Labels, No Look-Ahead: Unsupervised Online Video Stabilization with Classical Priors",
+      "url": "http://arxiv.org/abs/2602.23141v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23141v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 100.0,
+      "recommend_count": 2,
+      "summary_ko": "We propose a new unsupervised framework for online video stabilization. Unlike methods based on deep learning that require paired stable and unstable datasets, our approach instantiates the classical stabilization pipeline with three stages and incorporates a multithreaded buffering mechanism. This design addresses three longstanding challenges in end-to-end learning: limited data, poor controllability, and inefficiency on hardware with constrained resources. Existing benchmarks focus mainly on handheld videos with a forward view in visible light, which restricts the applicability of stabilization to domains such as UAV nighttime remote sensing. To fill this gap, we introduce a new multimodal UAV aerial video dataset (UAV-Test). Experiments show that our method consistently outperforms state-of-the-art online stabilizers in both quantitative metrics and visual quality, while achieving performance comparable to offline methods.",
+      "reason_ko": "실시간 골격 그래프 구성 및 효율적 공간 추론 기술이 스포츠 장면 추적에 적합",
+      "insight_ko": "계층적 온디맨드 전략을 적용해 선수 위치 추적 및 경기 전략 분석에 활용 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.02134",
+      "title": "OnlineX: Unified Online 3D Reconstruction and Understanding with Active-to-Stable State Evolution",
+      "url": "http://arxiv.org/abs/2603.02134v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02134v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 96.0,
+      "recommend_count": 1,
+      "summary_ko": "Recent advances in generalizable 3D Gaussian Splatting (3DGS) have enabled rapid 3D scene reconstruction within seconds, eliminating the need for per-scene optimization. However, existing methods primarily follow an offline reconstruction paradigm, lacking the capacity for continuous reconstruction, which limits their applicability to online scenarios such as robotics and VR/AR. In this paper, we introduce OnlineX, a feed-forward framework that reconstructs both 3D visual appearance and language fields in an online manner using only streaming images. A key challenge in online formulation is the cumulative drift issue, which is rooted in the fundamental conflict between two opposing roles of the memory state: an active role that constantly refreshes to capture high-frequency local geometry, and a stable role that conservatively accumulates and preserves the long-term global structure. To address this, we introduce a decoupled active-to-stable state evolution paradigm. Our framework decouples the memory state into a dedicated active state and a persistent stable state, and then cohesively fuses the information from the former into the latter to achieve both fidelity and stability. Moreover, we jointly model visual appearance and language fields and incorporate an implicit Gaussian fusion module to enhance reconstruction quality. Experiments on mainstream datasets demonstrate that our method consistently outperforms prior work in novel view synthesis and semantic understanding, showcasing robust performance across input sequences of varying lengths with real-time inference speed.",
+      "reason_ko": "실시간 3D 재구성 기술로 스포츠 장면 포착 및 분석에 적합",
+      "insight_ko": "스트리밍 영상으로 3D 장면 재구성하여 실시간 경기 분석 및 하이라이트 생성 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22691",
+      "title": "U-Net-Based Generative Joint Source-Channel Coding for Wireless Image Transmission",
+      "url": "http://arxiv.org/abs/2602.22691v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22691v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "eess.IV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 96.0,
+      "recommend_count": 2,
+      "summary_ko": "Deep learning (DL)-based joint source-channel coding (JSCC) methods have achieved remarkable success in wireless image transmission. However, these methods either focus on conventional distortion metrics that do not necessarily yield high perceptual quality or incur high computational complexity. In this paper, we propose two DL-based JSCC (DeepJSCC) methods that leverage deep generative architectures for wireless image transmission. Specifically, we propose G-UNet-JSCC, a scheme comprising an encoder and a U-Net-based generator serving as the decoder. Its skip connections enable multi-scale feature fusion to improve both pixel-level fidelity and perceptual quality of reconstructed images by integrating low- and high-level features. To further enhance pixel-level fidelity, the encoder and the U-Net-based decoder are jointly optimized using a weighted sum of structural similarity and mean-squared error (MSE) losses. Building upon G-UNet-JSCC, we further develop a DeepJSCC method called cGAN-JSCC, where the decoder is enhanced through adversarial training. In this scheme, we retain the encoder of G-UNet-JSCC and adversarially train the decoder's generator against a patch-based discriminator. cGAN-JSCC employs a two-stage training procedure. The outer stage trains the encoder and the decoder end-to-end using an MSE loss, while the inner stage adversarially trains the decoder's generator and the discriminator by minimizing a joint loss combining adversarial and distortion losses. Simulation results demonstrate that the proposed methods achieve superior pixel-level fidelity and perceptual quality on both high- and low-resolution images. For low-resolution images, cGAN-JSCC achieves better reconstruction performance and greater robustness to channel variations than G-UNet-JSCC.",
+      "reason_ko": "U-Net 아키텍처와 생성적 방법이 비디오/이미지 처리에 적용 가능",
+      "insight_ko": "",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22707",
+      "title": "SCOPE: Skeleton Graph-Based Computation-Efficient Framework for Autonomous UAV Exploration",
+      "url": "http://arxiv.org/abs/2602.22707v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22707v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.RO"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 96.0,
+      "recommend_count": 2,
+      "summary_ko": "Autonomous exploration in unknown environments is key for mobile robots, helping them perceive, map, and make decisions in complex areas. However, current methods often rely on frequent global optimization, suffering from high computational latency and trajectory oscillation, especially on resource-constrained edge devices. To address these limitations, we propose SCOPE, a novel framework that incrementally constructs a real-time skeletal graph and introduces Implicit Unknown Region Analysis for efficient spatial reasoning. The planning layer adopts a hierarchical on-demand strategy: the Proximal Planner generates smooth, high-frequency local trajectories, while the Region-Sequence Planner is activated only when necessary to optimize global visitation order. Comparative evaluations in simulation demonstrate that SCOPE achieves competitive exploration performance comparable to state-of-the-art global planners, while reducing computational cost by an average of 86.9%. Real-world experiments further validate the system's robustness and low latency in practical scenarios.",
+      "reason_ko": "U-Net 아키텍처와 생성적 방법이 비디오/이미지 처리에 적용 가능",
+      "insight_ko": "다중 스케일 특성 융합으로 영상 품질 향상 및 실시간 보정에 효과적",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01706",
+      "title": "Search Multilayer Perceptron-Based Fusion for Efficient and Accurate Siamese Tracking",
+      "url": "http://arxiv.org/abs/2603.01706v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01706v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 96.0,
+      "recommend_count": 1,
+      "summary_ko": "Siamese visual trackers have recently advanced through increasingly sophisticated fusion mechanisms built on convolutional or Transformer architectures. However, both struggle to deliver pixel-level interactions efficiently on resource-constrained hardware, leading to a persistent accuracy-efficiency imbalance. Motivated by this limitation, we redesign the Siamese neck with a simple yet effective Multilayer Perception (MLP)-based fusion module that enables pixel-level interaction with minimal structural overhead. Nevertheless, naively stacking MLP blocks introduces a new challenge: computational cost can scale quadratically with channel width. To overcome this, we construct a hierarchical search space of carefully designed MLP modules and introduce a customized relaxation strategy that enables differentiable neural architecture search (DNAS) to decouple channel-width optimization from other architectural choices. This targeted decoupling automatically balances channel width and depth, yielding a low-complexity architecture. The resulting tracker achieves state-of-the-art accuracy-efficiency trade-offs. It ranks among the top performers on four general-purpose and three aerial tracking benchmarks, while maintaining real-time performance on both resource-constrained Graphics Processing Units (GPUs) and Neural Processing Units (NPUs).",
+      "reason_ko": "자원 제한 하드웨어에서 실시간 추적 성능으로 선수 추적에 최적",
+      "insight_ko": "MLP 기반 융합 모듈로 선수 실시간 추적 및 동작 분석에 효과적",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23224",
+      "title": "UniScale: Unified Scale-Aware 3D Reconstruction for Multi-View Understanding via Prior Injection for Robotic Perception",
+      "url": "http://arxiv.org/abs/2602.23224v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23224v1",
+      "has_code": true,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 94.4,
+      "recommend_count": 2,
+      "summary_ko": "We present UniScale, a unified, scale-aware multi-view 3D reconstruction framework for robotic applications that flexibly integrates geometric priors through a modular, semantically informed design. In vision-based robotic navigation, the accurate extraction of environmental structure from raw image sequences is critical for downstream tasks. UniScale addresses this challenge with a single feed-forward network that jointly estimates camera intrinsics and extrinsics, scale-invariant depth and point maps, and the metric scale of a scene from multi-view images, while optionally incorporating auxiliary geometric priors when available. By combining global contextual reasoning with camera-aware feature representations, UniScale is able to recover the metric-scale of the scene. In robotic settings where camera intrinsics are known, they can be easily incorporated to improve performance, with additional gains obtained when camera poses are also available. This co-design enables robust, metric-aware 3D reconstruction within a single unified model. Importantly, UniScale does not require training from scratch, and leverages world priors exhibited in pre-existing models without geometric encoding strategies, making it particularly suitable for resource-constrained robotic teams. We evaluate UniScale on multiple benchmarks, demonstrating strong generalization and consistent performance across diverse environments. We will release our implementation upon acceptance.",
+      "reason_ko": "자원 제약이 있는 엣지 디바이스에서 스포츠 촬영을 위한 3D 재구성 기술",
+      "insight_ko": "다중 뷰 이미지로부터 장치의 내부/외부 파라미터와 깊이 맵을 동시 추출해 정확한 3D 모델링",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23288",
+      "title": "BRIDGE: Borderless Reconfiguration for Inclusive and Diverse Gameplay Experience via Embodiment Transformation",
+      "url": "http://arxiv.org/abs/2602.23288v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23288v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.HC"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 93.6,
+      "recommend_count": 2,
+      "summary_ko": "Training resources for parasports are limited, reducing opportunities for athletes and coaches to engage with sport-specific movements and tactical coordination. To address this gap, we developed BRIDGE, a system that integrates a reconstruction pipeline, which detects and tracks players from broadcast video to generate 3D play sequences, with an embodiment-aware visualization framework that decomposes head, trunk, and wheelchair base orientations to represent attention, intent, and mobility. We evaluated BRIDGE in two controlled studies with 20 participants (10 national wheelchair basketball team players and 10 amateur players). The results showed that BRIDGE significantly enhanced the perceived naturalness of player postures and made tactical intentions easier to understand. In addition, it supported functional classification by realistically conveying players' capabilities, which in turn improved participants' sense of self-efficacy. This work advances inclusive sports learning and accessible coaching practices, contributing to more equitable access to tactical resources in parasports.",
+      "reason_ko": "스포츠 비디오 분석과 전략 이해를 위한 3D 재구성 시스템",
+      "insight_ko": "선수들의 움직임을 3D 시퀀스로 변환해 자세와 전략 분석을 통해 하이라이트 영상 생성",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23228",
+      "title": "MovieTeller: Tool-augmented Movie Synopsis with ID Consistent Progressive Abstraction",
+      "url": "http://arxiv.org/abs/2602.23228v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23228v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 93.6,
+      "recommend_count": 2,
+      "summary_ko": "With the explosive growth of digital entertainment, automated video summarization has become indispensable for applications such as content indexing, personalized recommendation, and efficient media archiving. Automatic synopsis generation for long-form videos, such as movies and TV series, presents a significant challenge for existing Vision-Language Models (VLMs). While proficient at single-image captioning, these general-purpose models often exhibit critical failures in long-duration contexts, primarily a lack of ID-consistent character identification and a fractured narrative coherence. To overcome these limitations, we propose MovieTeller, a novel framework for generating movie synopses via tool-augmented progressive abstraction. Our core contribution is a training-free, tool-augmented, fact-grounded generation process. Instead of requiring costly model fine-tuning, our framework directly leverages off-the-shelf models in a plug-and-play manner. We first invoke a specialized face recognition model as an external \"tool\" to establish Factual Groundings--precise character identities and their corresponding bounding boxes. These groundings are then injected into the prompt to steer the VLM's reasoning, ensuring the generated scene descriptions are anchored to verifiable facts. Furthermore, our progressive abstraction pipeline decomposes the summarization of a full-length movie into a multi-stage process, effectively mitigating the context length limitations of current VLMs. Experiments demonstrate that our approach yields significant improvements in factual accuracy, character consistency, and overall narrative coherence compared to end-to-end baselines.",
+      "reason_ko": "비디오 요약 및 캐릭터 일관성 유지 기술이 스포츠 하이라이트 자동 생성에 적용 가능",
+      "insight_ko": "MovieTeller의 툴 증강 프로그레시브 추상화 기법을 스포츠 영상 요약에 적용하여 선수별 주요 장면 자동 생성 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.02130",
+      "title": "Stereo-Inertial Poser: Towards Metric-Accurate Shape-Aware Motion Capture Using Sparse IMUs and a Single Stereo Camera",
+      "url": "http://arxiv.org/abs/2603.02130v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02130v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 93.6,
+      "recommend_count": 1,
+      "summary_ko": "Recent advancements in visual-inertial motion capture systems have demonstrated the potential of combining monocular cameras with sparse inertial measurement units (IMUs) as cost-effective solutions, which effectively mitigate occlusion and drift issues inherent in single-modality systems. However, they are still limited by metric inaccuracies in global translations stemming from monocular depth ambiguity, and shape-agnostic local motion estimations that ignore anthropometric variations. We present Stereo-Inertial Poser, a real-time motion capture system that leverages a single stereo camera and six IMUs to estimate metric-accurate and shape-aware 3D human motion. By replacing the monocular RGB with stereo vision, our system resolves depth ambiguity through calibrated baseline geometry, enabling direct 3D keypoint extraction and body shape parameter estimation. IMU data and visual cues are fused for predicting drift-compensated joint positions and root movements, while a novel shape-aware fusion module dynamically harmonizes anthropometry variations with global translations. Our end-to-end pipeline achieves over 200 FPS without optimization-based post-processing, enabling real-time deployment. Quantitative evaluations across various datasets demonstrate state-of-the-art performance. Qualitative results show our method produces drift-free global translation under a long recording time and reduces foot-skating effects.",
+      "reason_ko": "200fps 초고속 동작 캡처로 스포츠 동작 정밀 분석 가능",
+      "insight_ko": "스테레오 카메라와 IMU 결합하여 선수의 정확한 동작 및 자세 분석",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01593",
+      "title": "PPEDCRF: Privacy-Preserving Enhanced Dynamic CRF for Location-Privacy Protection for Sequence Videos with Minimal Detection Degradation",
+      "url": "http://arxiv.org/abs/2603.01593v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01593v1",
+      "has_code": true,
+      "code_url": "https://github.com/mabo1215/PPEDCRF.git",
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 92.8,
+      "recommend_count": 1,
+      "summary_ko": "Dashcam videos collected by autonomous or assisted-driving systems are increasingly shared for safety auditing and model improvement. Even when explicit GPS metadata are removed, an attacker can still infer the recording location by matching background visual cues (e.g., buildings and road layouts) against large-scale street-view imagery. This paper studies location-privacy leakage under a background-based retrieval attacker, and proposes PPEDCRF, a privacy-preserving enhanced dynamic conditional random field framework that injects calibrated perturbations only into inferred location-sensitive background regions while preserving foreground detection utility. PPEDCRF consists of three components: (i) a dynamic CRF that enforces temporal consistency to discover and track location sensitive regions across frames, (ii) a normalized control penalty (NCP) that allocates perturbation strength according to a hierarchical sensitivity model, and (iii) a utility-preserving noise injection module that minimizes interference to object detection and segmentation. Experiments on public driving datasets demonstrate that PPEDCRF significantly reduces location-retrieval attack success (e.g., Top-k retrieval accuracy) while maintaining competitive detection performance (e.g., mAP and segmentation metrics) compared with common baselines such as global noise, white-noise masking, and feature-based anonymization. The source code is in https://github.com/mabo1215/PPEDCRF.git",
+      "reason_ko": "영상 처리 및 프라이버시 보호 기술로 사용자 데이터 보강",
+      "insight_ko": "민감한 영역 보호하면서 객체 감지 성능 유지하여 콘텐츠 공유 보안 강화",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23069",
+      "title": "Align then Adapt: Rethinking Parameter-Efficient Transfer Learning in 4D Perception",
+      "url": "http://arxiv.org/abs/2602.23069v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23069v1",
+      "has_code": true,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 92.0,
+      "recommend_count": 2,
+      "summary_ko": "Point cloud video understanding is critical for robotics as it accurately encodes motion and scene interaction. We recognize that 4D datasets are far scarcer than 3D ones, which hampers the scalability of self-supervised 4D models. A promising alternative is to transfer 3D pre-trained models to 4D perception tasks. However, rigorous empirical analysis reveals two critical limitations that impede transfer capability: overfitting and the modality gap. To overcome these challenges, we develop a novel \"Align then Adapt\" (PointATA) paradigm that decomposes parameter-efficient transfer learning into two sequential stages. Optimal-transport theory is employed to quantify the distributional discrepancy between 3D and 4D datasets, enabling our proposed point align embedder to be trained in Stage 1 to alleviate the underlying modality gap. To mitigate overfitting, an efficient point-video adapter and a spatial-context encoder are integrated into the frozen 3D backbone to enhance temporal modeling capacity in Stage 2. Notably, with the above engineering-oriented designs, PointATA enables a pre-trained 3D model without temporal knowledge to reason about dynamic video content at a smaller parameter cost compared to previous work. Extensive experiments show that PointATA can match or even outperform strong full fine-tuning models, whilst enjoying the advantage of parameter efficiency, e.g. 97.21 \\% accuracy on 3D action recognition, $+8.7 \\%$ on 4 D action segmentation, and 84.06\\% on 4D semantic segmentation.",
+      "reason_ko": "4D perception technology with parameter-efficient transfer learning applicable to edge devices for sports video analysis",
+      "insight_ko": "3D 모델을 4D 스포츠 영상 분석으로 전이 학습하여 에지 디바이스에서 실시간 동작 분석 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22941",
+      "title": "Velocity and stroke rate reconstruction of canoe sprint team boats based on panned and zoomed video recordings",
+      "url": "http://arxiv.org/abs/2602.22941v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22941v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 92.0,
+      "recommend_count": 2,
+      "summary_ko": "Pacing strategies, defined by velocity and stroke rate profiles, are essential for peak performance in canoe sprint. While GPS is the gold standard for analysis, its limited availability necessitates automated video-based solutions. This paper presents an extended framework for reconstructing performance metrics from panned and zoomed video recordings across all sprint disciplines (K1-K4, C1-C2) and distances (200m-500m). Our method utilizes YOLOv8 for buoy and athlete detection, leveraging the known buoy grid to estimate homographies. We generalized the estimation of the boat position by means of learning a boat-specific athlete offset using a U-net based boat tip calibration. Further, we implement a robust tracking scheme using optical flow to adapt to multi-athlete boat types. Finally, we introduce methods to extract stroke rate information from either pose estimations or the athlete bounding boxes themselves. Evaluation against GPS data from elite competitions yields a velocity RRMSE of 0.020 +- 0.011 (rho = 0.956) and a stroke rate RRMSE of 0.022 +- 0.024 (rho = 0.932). The methods provide coaches with highly accurate, automated feedback without requiring on-boat sensors or manual annotation.",
+      "reason_ko": "스포츠 비디오 분석을 위한 컴퓨터 비전 기술로 프로젝트와 직접 관련 있으나 특정 스포츠(카누)에 국한됨",
+      "insight_ko": "YOLOv8과 광학 흐름 기반 추적 기술을 다양한 스포츠로 확장하여 선수 속도 및 동작 패턴 분석 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22960",
+      "title": "UCM: Unifying Camera Control and Memory with Time-aware Positional Encoding Warping for World Models",
+      "url": "http://arxiv.org/abs/2602.22960v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22960v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 90.4,
+      "recommend_count": 2,
+      "summary_ko": "World models based on video generation demonstrate remarkable potential for simulating interactive environments but face persistent difficulties in two key areas: maintaining long-term content consistency when scenes are revisited and enabling precise camera control from user-provided inputs. Existing methods based on explicit 3D reconstruction often compromise flexibility in unbounded scenarios and fine-grained structures. Alternative methods rely directly on previously generated frames without establishing explicit spatial correspondence, thereby constraining controllability and consistency. To address these limitations, we present UCM, a novel framework that unifies long-term memory and precise camera control via a time-aware positional encoding warping mechanism. To reduce computational overhead, we design an efficient dual-stream diffusion transformer for high-fidelity generation. Moreover, we introduce a scalable data curation strategy utilizing point-cloud-based rendering to simulate scene revisiting, facilitating training on over 500K monocular videos. Extensive experiments on real-world and synthetic benchmarks demonstrate that UCM significantly outperforms state-of-the-art methods in long-term scene consistency, while also achieving precise camera controllability in high-fidelity video generation.",
+      "reason_ko": "카메라 제어 및 일관성 유지 기술이 스포츠 경기 자동 촬영에 활용 가능",
+      "insight_ko": "UCM의 시간 인코딩 왜핑 메커니즘을 활용해 스포츠 장면의 일관성 유지 및 카메라 제어 정밀도 향상",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.02175",
+      "title": "Kiwi-Edit: Versatile Video Editing via Instruction and Reference Guidance",
+      "url": "http://arxiv.org/abs/2603.02175v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02175v1",
+      "has_code": true,
+      "code_url": "https://github.com/showlab/Kiwi-Edit",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 90.4,
+      "recommend_count": 1,
+      "summary_ko": "Instruction-based video editing has witnessed rapid progress, yet current methods often struggle with precise visual control, as natural language is inherently limited in describing complex visual nuances. Although reference-guided editing offers a robust solution, its potential is currently bottlenecked by the scarcity of high-quality paired training data. To bridge this gap, we introduce a scalable data generation pipeline that transforms existing video editing pairs into high-fidelity training quadruplets, leveraging image generative models to create synthesized reference scaffolds. Using this pipeline, we construct RefVIE, a large-scale dataset tailored for instruction-reference-following tasks, and establish RefVIE-Bench for comprehensive evaluation. Furthermore, we propose a unified editing architecture, Kiwi-Edit, that synergizes learnable queries and latent visual features for reference semantic guidance. Our model achieves significant gains in instruction following and reference fidelity via a progressive multi-stage training curriculum. Extensive experiments demonstrate that our data and architecture establish a new state-of-the-art in controllable video editing. All datasets, models, and code is released at https://github.com/showlab/Kiwi-Edit.",
+      "reason_ko": "지침 기반 비디오 편집으로 스포츠 하이라이트 제작 효율화",
+      "insight_ko": "참조 이미지와 지침으로 정교한 하이라이트 편집 및 콘텐츠 생성 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01767",
+      "title": "Downstream Task Inspired Underwater Image Enhancement: A Perception-Aware Study from Dataset Construction to Network Design",
+      "url": "http://arxiv.org/abs/2603.01767v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01767v1",
+      "has_code": true,
+      "code_url": "https://github.com/oucailab/DTIUIE",
+      "categories": [
+        "cs.CV",
+        "eess.IV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 90.4,
+      "recommend_count": 1,
+      "summary_ko": "In real underwater environments, downstream image recognition tasks such as semantic segmentation and object detection often face challenges posed by problems like blurring and color inconsistencies. Underwater image enhancement (UIE) has emerged as a promising preprocessing approach, aiming to improve the recognizability of targets in underwater images. However, most existing UIE methods mainly focus on enhancing images for human visual perception, frequently failing to reconstruct high-frequency details that are critical for task-specific recognition. To address this issue, we propose a Downstream Task-Inspired Underwater Image Enhancement (DTI-UIE) framework, which leverages human visual perception model to enhance images effectively for underwater vision tasks. Specifically, we design an efficient two-branch network with task-aware attention module for feature mixing. The network benefits from a multi-stage training framework and a task-driven perceptual loss. Additionally, inspired by human perception, we automatically construct a Task-Inspired UIE Dataset (TI-UIED) using various task-specific networks. Experimental results demonstrate that DTI-UIE significantly improves task performance by generating preprocessed images that are beneficial for downstream tasks such as semantic segmentation, object detection, and instance segmentation. The codes are publicly available at https://github.com/oucailab/DTIUIE.",
+      "reason_ko": "Task-aware 이미지 향상 기술이 스포츠 영상 품질 개선에 직접 적용 가능하여 분석 정확도 향상",
+      "insight_ko": "다운스트림 작업 인식 네트워크를 스포츠 장면에 맞게 튜닝하여 실시간 영상 보정 및 하이라이트 생성 성능 개선",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23169",
+      "title": "Learning Continuous Wasserstein Barycenter Space for Generalized All-in-One Image Restoration",
+      "url": "http://arxiv.org/abs/2602.23169v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23169v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 89.6,
+      "recommend_count": 2,
+      "summary_ko": "Despite substantial advances in all-in-one image restoration for addressing diverse degradations within a unified model, existing methods remain vulnerable to out-of-distribution degradations, thereby limiting their generalization in real-world scenarios. To tackle the challenge, this work is motivated by the intuition that multisource degraded feature distributions are induced by different degradation-specific shifts from an underlying degradation-agnostic distribution, and recovering such a shared distribution is thus crucial for achieving generalization across degradations. With this insight, we propose BaryIR, a representation learning framework that aligns multisource degraded features in the Wasserstein barycenter (WB) space, which models a degradation-agnostic distribution by minimizing the average of Wasserstein distances to multisource degraded distributions. We further introduce residual subspaces, whose embeddings are mutually contrasted while remaining orthogonal to the WB embeddings. Consequently, BaryIR explicitly decouples two orthogonal spaces: a WB space that encodes the degradation-agnostic invariant contents shared across degradations, and residual subspaces that adaptively preserve the degradation-specific knowledge. This disentanglement mitigates overfitting to in-distribution degradations and enables adaptive restoration grounded on the degradation-agnostic shared invariance. Extensive experiments demonstrate that BaryIR performs competitively against state-of-the-art all-in-one methods. Notably, BaryIR generalizes well to unseen degradations (\\textit{e.g.,} types and levels) and shows remarkable robustness in learning generalized features, even when trained on limited degradation types and evaluated on real-world data with mixed degradations.",
+      "reason_ko": "이미지 복원 및 향상 기술로 스포츠 영상 보정에 직접 적용 가능",
+      "insight_ko": "다양한 품질 저하된 스포츠 영상을 통합 복원하여 사진처럼 고품질 콘텐츠 생성",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.02137",
+      "title": "NextAds: Towards Next-generation Personalized Video Advertising",
+      "url": "http://arxiv.org/abs/2603.02137v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02137v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.IR",
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 88.0,
+      "recommend_count": 1,
+      "summary_ko": "With the rapid growth of online video consumption, video advertising has become increasingly dominant in the digital advertising landscape. Yet diverse users and viewing contexts makes one-size-fits-all ad creatives insufficient for consistent effectiveness, underlining the importance of personalization. In practice, most personalized video advertising systems follow a retrieval-based paradigm, selecting the optimal one from a small set of professionally pre-produced creatives for each user. Such static and finite inventories limits both the granularity and the timeliness of personalization, and prevents the creatives from being continuously refined based on online user feedback. Recent advances in generative AI make it possible to move beyond retrieval toward optimizing video creatives in a continuous space at serving time.   In this light, we propose NextAds, a generation-based paradigm for next-generation personalized video advertising, and conceptualize NextAds with four core components. To enable comparable research progress, we formulate two representative tasks: personalized creative generation and personalized creative integration, and introduce corresponding lightweight benchmarks. To assess feasibility, we instantiate end-to-end pipelines for both tasks and conduct initial exploratory experiments, demonstrating that GenAI can generate and integrate personalized creatives with encouraging performance. Moreover, we discuss the key challenges and opportunities under this paradigm, aiming to provide actionable insights for both researchers and practitioners and to catalyze progress in personalized video advertising.",
+      "reason_ko": "생성 기반 개인화 동영상 광고 기술이 플랫폼의 광고 기능에 직접 적용 가능하여 수익 모델 다각화",
+      "insight_ko": "GenAI를 활용한 실시간 맞춤형 광고 생성 시스템 구축으로 사용자 참여도와 광고 효과 동시 향상",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.02109",
+      "title": "Orchestrating Multimodal DNN Workloads in Wireless Neural Processing",
+      "url": "http://arxiv.org/abs/2603.02109v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02109v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "eess.SP",
+        "cs.LG"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 88.0,
+      "recommend_count": 1,
+      "summary_ko": "In edge inference, wireless resource allocation and accelerator-level deep neural network (DNN) scheduling have yet to be co-optimized in an end-to-end manner. The lack of coordination between wireless transmission and accelerator-level DNN execution prevents efficient overlap, leading to higher end-to-end inference latency. To address this issue, this paper investigates multimodal DNN workload orchestration in wireless neural processing (WNP), a paradigm that integrates wireless transmission and multi-core accelerator execution into a unified end-to-end pipeline. First, we develop a unified communication-computation model for multimodal DNN execution and formulate the corresponding optimization problem. Second, we propose O-WiN, a framework that orchestrates DNN workloads in WNP through two tightly coupled stages: simulation-based optimization and runtime execution. Third, we develop two algorithms, RTFS and PACS. RTFS schedules communication and computation sequentially, whereas PACS interleaves them to enable pipeline parallelism by overlapping wireless data transfer with accelerator-level DNN execution. Simulation results demonstrate that PACS significantly outperforms RTFS under high modality heterogeneity by better masking wireless latency through communication-computation overlap, thereby highlighting the effectiveness of communication-computation pipelining in accelerating multimodal DNN execution in WNP.",
+      "reason_ko": "다중 모달 DNN 워크로드 오케스트레이션 기술은 rk3588 엣지 디바이스에서 실시간 스포츠 콘텐츠 처리를 최적화하는 데 직접적으로 적용 가능하며, 지연 시간을 줄이고 계산 자원을 효율적으로 사용하는 데 기여합니다.",
+      "insight_ko": "O-WiN 프레임워크와 PACS 알고리즘을 적용하여 무선 데이터 전송과 DNN 실행을 겹치게 처리함으로써 다중 모달 스포츠 영상 분석의 처리 속도를 향상시키고 실시간 하이라이트 생성을 가능하게 합니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01431",
+      "title": "SeaVIS: Sound-Enhanced Association for Online Audio-Visual Instance Segmentation",
+      "url": "http://arxiv.org/abs/2603.01431v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01431v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 88.0,
+      "recommend_count": 1,
+      "summary_ko": "Recently, an audio-visual instance segmentation (AVIS) task has been introduced, aiming to identify, segment and track individual sounding instances in videos. However, prevailing methods primarily adopt the offline paradigm, that cannot associate detected instances across consecutive clips, making them unsuitable for real-world scenarios that involve continuous video streams. To address this limitation, we introduce SeaVIS, the first online framework designed for audio-visual instance segmentation. SeaVIS leverages the Causal Cross Attention Fusion (CCAF) module to enable efficient online processing, which integrates visual features from the current frame with the entire audio history under strict causal constraints. A major challenge for conventional VIS methods is that appearance-based instance association fails to distinguish between an object's sounding and silent states, resulting in the incorrect segmentation of silent objects. To tackle this, we employ an Audio-Guided Contrastive Learning (AGCL) strategy to generate instance prototypes that encode not only visual appearance but also sounding activity. In this way, instances preserved during per-frame prediction that do not emit sound can be effectively suppressed during instance association process, thereby significantly enhancing the audio-following capability of SeaVIS. Extensive experiments conducted on the AVISeg dataset demonstrate that SeaVIS surpasses existing state-of-the-art models across multiple evaluation metrics while maintaining a competitive inference speed suitable for real-time processing.",
+      "reason_ko": "실시간 오디오-비전 인스턴스 분할 기술로 스포츠 영상에서 선수 추적 및 동작 분석 정확도 향상",
+      "insight_ko": "CCAF 모듈과 AGCL 전략을 적용하여 소리를 내는 선수와 침묵하는 선수를 정확히 구분하고 실시간 추적 성능 최적화",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01475",
+      "title": "WildCross: A Cross-Modal Large Scale Benchmark for Place Recognition and Metric Depth Estimation in Natural Environments",
+      "url": "http://arxiv.org/abs/2603.01475v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01475v1",
+      "has_code": true,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 88.0,
+      "recommend_count": 1,
+      "summary_ko": "Recent years have seen a significant increase in demand for robotic solutions in unstructured natural environments, alongside growing interest in bridging 2D and 3D scene understanding. However, existing robotics datasets are predominantly captured in structured urban environments, making them inadequate for addressing the challenges posed by complex, unstructured natural settings. To address this gap, we propose WildCross, a cross-modal benchmark for place recognition and metric depth estimation in large-scale natural environments. WildCross comprises over 476K sequential RGB frames with semi-dense depth and surface normal annotations, each aligned with accurate 6DoF poses and synchronized dense lidar submaps. We conduct comprehensive experiments on visual, lidar, and cross-modal place recognition, as well as metric depth estimation, demonstrating the value of WildCross as a challenging benchmark for multi-modal robotic perception tasks. We provide access to the code repository and dataset at https://csiro-robotics.github.io/WildCross.",
+      "reason_ko": "교차 모달 환경 인식 기술이 스포츠 장면 분석에 적용 가능",
+      "insight_ko": "",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23188",
+      "title": "Efficient Real-Time Adaptation of ROMs for Unsteady Flows Using Data Assimilation",
+      "url": "http://arxiv.org/abs/2602.23188v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23188v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.LG",
+        "physics.flu-dyn"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "We propose an efficient retraining strategy for a parameterized Reduced Order Model (ROM) that attains accuracy comparable to full retraining while requiring only a fraction of the computational time and relying solely on sparse observations of the full system. The architecture employs an encode-process-decode structure: a Variational Autoencoder (VAE) to perform dimensionality reduction, and a transformer network to evolve the latent states and model the dynamics. The ROM is parameterized by an external control variable, the Reynolds number in the Navier-Stokes setting, with the transformer exploiting attention mechanisms to capture both temporal dependencies and parameter effects. The probabilistic VAE enables stochastic sampling of trajectory ensembles, providing predictive means and uncertainty quantification through the first two moments. After initial training on a limited set of dynamical regimes, the model is adapted to out-of-sample parameter regions using only sparse data. Its probabilistic formulation naturally supports ensemble generation, which we employ within an ensemble Kalman filtering framework to assimilate data and reconstruct full-state trajectories from minimal observations. We further show that, for the dynamical system considered, the dominant source of error in out-of-sample forecasts stems from distortions of the latent manifold rather than changes in the latent dynamics. Consequently, retraining can be limited to the autoencoder, allowing for a lightweight, computationally efficient, real-time adaptation procedure with very sparse fine-tuning data.",
+      "reason_ko": "Real-time adaptation techniques applicable to edge device AI processing",
+      "insight_ko": "",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22794",
+      "title": "Doubly Adaptive Channel and Spatial Attention for Semantic Image Communication by IoT Devices",
+      "url": "http://arxiv.org/abs/2602.22794v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22794v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.LG"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "Internet of Things (IoT) networks face significant challenges such as limited communication bandwidth, constrained computational and energy resources, and highly dynamic wireless channel conditions. Utilization of deep neural networks (DNNs) combined with semantic communication has emerged as a promising paradigm to address these limitations. Deep joint source-channel coding (DJSCC) has recently been proposed to enable semantic communication of images. Building upon the original DJSCC formulation, low-complexity attention-style architectures has been added to the DNNs for further performance enhancement. As a main hurdle, training these DNNs separately for various signal-to-noise ratios (SNRs) will amount to excessive storage or communication overhead, which can not be maintained by small IoT devices. SNR Adaptive DJSCC (ADJSCC), has been proposed to train the DNNs once but feed the current SNR as part of the data to the channel-wise attention mechanism. We improve upon ADJSCC by a simultaneous utilization of doubly adaptive channel-wise and spatial attention modules at both transmitter and receiver. These modules dynamically adjust to varying channel conditions and spatial feature importance, enabling robust and efficient feature extraction and semantic information recovery. Simulation results corroborate that our proposed doubly adaptive DJSCC (DA-DJSCC) significantly improves upon ADJSCC in several performance criteria, while incurring a mild increase in complexity. These facts render DA-DJSCC a desirable choice for semantic communication in performance demanding but low-complexity IoT networks.",
+      "reason_ko": "IoT device image communication with adaptive attention, applicable to edge device video processing",
+      "insight_ko": "제한된 리소스를 가진 edge 디바이스에서도 다양한 통신 환경에 적응하여 효율적인 영상 처리 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22607",
+      "title": "LoR-LUT: Learning Compact 3D Lookup Tables via Low-Rank Residuals",
+      "url": "http://arxiv.org/abs/2602.22607v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22607v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "We present LoR-LUT, a unified low-rank formulation for compact and interpretable 3D lookup table (LUT) generation. Unlike conventional 3D-LUT-based techniques that rely on fusion of basis LUTs, which are usually dense tensors, our unified approach extends the current framework by jointly using residual corrections, which are in fact low-rank tensors, together with a set of basis LUTs. The approach described here improves the existing perceptual quality of an image, which is primarily due to the technique's novel use of residual corrections. At the same time, we achieve the same level of trilinear interpolation complexity, using a significantly smaller number of network, residual corrections, and LUT parameters. The experimental results obtained from LoR-LUT, which is trained on the MIT-Adobe FiveK dataset, reproduce expert-level retouching characteristics with high perceptual fidelity and a sub-megabyte model size. Furthermore, we introduce an interactive visualization tool, termed LoR-LUT Viewer, which transforms an input image into the LUT-adjusted output image, via a number of slidebars that control different parameters. The tool provides an effective way to enhance interpretability and user confidence in the visual results. Overall, our proposed formulation offers a compact, interpretable, and efficient direction for future LUT-based image enhancement and style transfer.",
+      "reason_ko": "컴팩트 3D 룩업 테이블 기술로 스포츠 영상 및 이미지 보정에 직접적으로 적용 가능",
+      "insight_ko": "스포츠 영상과 이미지의 품질을 향상시키면서도 적은 파라미터로 edge 디바이스에서 실시간 처리 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23294",
+      "title": "Towards Long-Form Spatio-Temporal Video Grounding",
+      "url": "http://arxiv.org/abs/2602.23294v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23294v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 88.0,
+      "recommend_count": 2,
+      "summary_ko": "In real scenarios, videos can span several minutes or even hours. However, existing research on spatio-temporal video grounding (STVG), given a textual query, mainly focuses on localizing targets in short videos of tens of seconds, typically less than one minute, which limits real-world applications. In this paper, we explore Long-Form STVG (LF-STVG), which aims to locate targets in long-term videos. Compared with short videos, long-term videos contain much longer temporal spans and more irrelevant information, making it difficult for existing STVG methods that process all frames at once. To address this challenge, we propose an AutoRegressive Transformer architecture for LF-STVG, termed ART-STVG. Unlike conventional STVG methods that require the entire video sequence to make predictions at once, ART-STVG treats the video as streaming input and processes frames sequentially, enabling efficient handling of long videos. To model spatio-temporal context, we design spatial and temporal memory banks and apply them to the decoders. Since memories from different moments are not always relevant to the current frame, we introduce simple yet effective memory selection strategies to provide more relevant information to the decoders, significantly improving performance. Furthermore, instead of parallel spatial and temporal localization, we propose a cascaded spatio-temporal design that connects the spatial decoder to the temporal decoder, allowing fine-grained spatial cues to assist complex temporal localization in long videos. Experiments on newly extended LF-STVG datasets show that ART-STVG significantly outperforms state-of-the-art methods, while achieving competitive performance on conventional short-form STVG.",
+      "reason_ko": "Long-form video processing technology applicable to sports game analysis",
+      "insight_ko": "긴 경기 영상에서 주요 장면을 자동으로 식별하여 하이라이트 편집 기능 구현 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01528",
+      "title": "Boosting AI Reliability with an FSM-Driven Streaming Inference Pipeline: An Industrial Case",
+      "url": "http://arxiv.org/abs/2603.01528v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01528v1",
+      "has_code": true,
+      "code_url": "https://github.com/thulab/video-streamling-inference-pipeline",
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 86.4,
+      "recommend_count": 1,
+      "summary_ko": "The widespread adoption of AI in industry is often hampered by its limited robustness when faced with scenarios absent from training data, leading to prediction bias and vulnerabilities. To address this, we propose a novel streaming inference pipeline that enhances data-driven models by explicitly incorporating prior knowledge. This paper presents the work on an industrial AI application that automatically counts excavator workloads from surveillance videos. Our approach integrates an object detection model with a Finite State Machine (FSM), which encodes knowledge of operational scenarios to guide and correct the AI's predictions on streaming data. In experiments on a real-world dataset of over 7,000 images from 12 site videos, encompassing more than 300 excavator workloads, our method demonstrates superior performance and greater robustness compared to the original solution based on manual heuristic rules. We will release the code at https://github.com/thulab/video-streamling-inference-pipeline.",
+      "reason_ko": "어안렌즈의 넓은 시야각은 스포츠 장면 촬영에 유리하며, 환경 다양성 확보를 통해 일반화 성능 향상 가능",
+      "insight_ko": "어안렌즈를 장착한 엣지 디바이스로 스포츠 전체 장면 캡처, RSA 전략으로 다양한 스포츠 환경에 적응",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22800",
+      "title": "GSTurb: Gaussian Splatting for Atmospheric Turbulence Mitigation",
+      "url": "http://arxiv.org/abs/2602.22800v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22800v1",
+      "has_code": true,
+      "code_url": "https://github.com/DuhlLiamz/3DGS_turbulence/tree/main",
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 86.4,
+      "recommend_count": 2,
+      "summary_ko": "Atmospheric turbulence causes significant image degradation due to pixel displacement (tilt) and blur, particularly in long-range imaging applications. In this paper, we propose a novel framework for atmospheric turbulence mitigation, GSTurb, which integrates optical flow-guided tilt correction and Gaussian splatting for modeling non-isoplanatic blur. The framework employs Gaussian parameters to represent tilt and blur, and optimizes them across multiple frames to enhance restoration. Experimental results on the ATSyn-static dataset demonstrate the effectiveness of our method, achieving a peak PSNR of 27.67 dB and SSIM of 0.8735. Compared to the state-of-the-art method, GSTurb improves PSNR by 1.3 dB (a 4.5% increase) and SSIM by 0.048 (a 5.8% increase). Additionally, on real datasets, including the TSRWGAN Real-World and CLEAR datasets, GSTurb outperforms existing methods, showing significant improvements in both qualitative and quantitative performance. These results highlight that combining optical flow-guided tilt correction with Gaussian splatting effectively enhances image restoration under both synthetic and real-world turbulence conditions. The code for this method will be available at https://github.com/DuhlLiamz/3DGS_turbulence/tree/main.",
+      "reason_ko": "대기 왜곡으로 인한 스포츠 영상 저하 문제 해결에 필수적인 기술",
+      "insight_ko": "가우시안 스플래팅 기술로 실시간 영상 보정 가능, 경기장 장거리 촬영 시 품질 향상",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23115",
+      "title": "FLIGHT: Fibonacci Lattice-based Inference for Geometric Heading in real-Time",
+      "url": "http://arxiv.org/abs/2602.23115v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23115v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV",
+        "cs.CG",
+        "cs.RO"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 86.4,
+      "recommend_count": 2,
+      "summary_ko": "Estimating camera motion from monocular video is a fundamental problem in computer vision, central to tasks such as SLAM, visual odometry, and structure-from-motion. Existing methods that recover the camera's heading under known rotation, whether from an IMU or an optimization algorithm, tend to perform well in low-noise, low-outlier conditions, but often decrease in accuracy or become computationally expensive as noise and outlier levels increase. To address these limitations, we propose a novel generalization of the Hough transform on the unit sphere (S(2)) to estimate the camera's heading. First, the method extracts correspondences between two frames and generates a great circle of directions compatible with each pair of correspondences. Then, by discretizing the unit sphere using a Fibonacci lattice as bin centers, each great circle casts votes for a range of directions, ensuring that features unaffected by noise or dynamic objects vote consistently for the correct motion direction. Experimental results on three datasets demonstrate that the proposed method is on the Pareto frontier of accuracy versus efficiency. Additionally, experiments on SLAM show that the proposed method reduces RMSE by correcting the heading during camera pose initialization.",
+      "reason_ko": "실시간 카메라 모션 추정으로 자동 촬영 정확도 향상, 노이즈 많은 스포츠 환경에서도 효과적",
+      "insight_ko": "피보나치 격자 기반 헤딩 추정을 슬로모션 촬영 및 자세 분석에 적용하여 하이라이트 자동 생성",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01400",
+      "title": "Token Reduction via Local and Global Contexts Optimization for Efficient Video Large Language Models",
+      "url": "http://arxiv.org/abs/2603.01400v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01400v1",
+      "has_code": true,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 86.4,
+      "recommend_count": 1,
+      "summary_ko": "Video Large Language Models (VLLMs) demonstrate strong video understanding but suffer from inefficiency due to redundant visual tokens. Existing pruning primary targets intra-frame spatial redundancy or prunes inside the LLM with shallow-layer overhead, yielding suboptimal spatiotemporal reduction and underutilizing long-context compressibility. All of them often discard subtle yet informative context from merged or pruned tokens. In this paper, we propose a new perspective that elaborates token \\textbf{A}nchors within intra-frame and inter-frame to comprehensively aggregate the informative contexts via local-global \\textbf{O}ptimal \\textbf{T}ransport (\\textbf{AOT}). Specifically, we first establish local- and global-aware token anchors within each frame under the attention guidance, which then optimal transport aggregates the informative contexts from pruned tokens, constructing intra-frame token anchors. Then, building on the temporal frame clips, the first frame within each clip will be considered as the keyframe anchors to ensemble similar information from consecutive frames through optimal transport, while keeping distinct tokens to represent temporal dynamics, leading to efficient token reduction in a training-free manner. Extensive evaluations show that our proposed AOT obtains competitive performances across various short- and long-video benchmarks on leading video LLMs, obtaining substantial computational efficiency while preserving temporal and visual fidelity. Project webpage: \\href{https://tyroneli.github.io/AOT}{AOT}.",
+      "reason_ko": "Token reduction method for efficient video understanding applicable to sports content analysis",
+      "insight_ko": "",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.02049",
+      "title": "WorldStereo: Bridging Camera-Guided Video Generation and Scene Reconstruction via 3D Geometric Memories",
+      "url": "http://arxiv.org/abs/2603.02049v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02049v1",
+      "has_code": true,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 86.4,
+      "recommend_count": 1,
+      "summary_ko": "Recent advances in foundational Video Diffusion Models (VDMs) have yielded significant progress. Yet, despite the remarkable visual quality of generated videos, reconstructing consistent 3D scenes from these outputs remains challenging, due to limited camera controllability and inconsistent generated content when viewed from distinct camera trajectories. In this paper, we propose WorldStereo, a novel framework that bridges camera-guided video generation and 3D reconstruction via two dedicated geometric memory modules. Formally, the global-geometric memory enables precise camera control while injecting coarse structural priors through incrementally updated point clouds. Moreover, the spatial-stereo memory constrains the model's attention receptive fields with 3D correspondence to focus on fine-grained details from the memory bank. These components enable WorldStereo to generate multi-view-consistent videos under precise camera control, facilitating high-quality 3D reconstruction. Furthermore, the flexible control branch-based WorldStereo shows impressive efficiency, benefiting from the distribution matching distilled VDM backbone without joint training. Extensive experiments across both camera-guided video generation and 3D reconstruction benchmarks demonstrate the effectiveness of our approach. Notably, we show that WorldStereo acts as a powerful world model, tackling diverse scene generation tasks (whether starting from perspective or panoramic images) with high-fidelity 3D results. Models will be released.",
+      "reason_ko": "카메라 가이드 비디오 생성과 3D 복원을 위한 프레임워크가 스포츠 콘텐츠 제작에 적용 가능",
+      "insight_ko": "3D 기하 메모리를 활용한 스포츠 콘텐츠 생성으로 고품질 경기 장면 복원 및 분석 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.02139",
+      "title": "Rethinking Camera Choice: An Empirical Study on Fisheye Camera Properties in Robotic Manipulation",
+      "url": "http://arxiv.org/abs/2603.02139v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.02139v1",
+      "has_code": true,
+      "code_url": null,
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 86.4,
+      "recommend_count": 1,
+      "summary_ko": "The adoption of fisheye cameras in robotic manipulation, driven by their exceptionally wide Field of View (FoV), is rapidly outpacing a systematic understanding of their downstream effects on policy learning. This paper presents the first comprehensive empirical study to bridge this gap, rigorously analyzing the properties of wrist-mounted fisheye cameras for imitation learning. Through extensive experiments in both simulation and the real world, we investigate three critical research questions: spatial localization, scene generalization, and hardware generalization. Our investigation reveals that: (1) The wide FoV significantly enhances spatial localization, but this benefit is critically contingent on the visual complexity of the environment. (2) Fisheye-trained policies, while prone to overfitting in simple scenes, unlock superior scene generalization when trained with sufficient environmental diversity. (3) While naive cross-camera transfer leads to failures, we identify the root cause as scale overfitting and demonstrate that hardware generalization performance can be improved with a simple Random Scale Augmentation (RSA) strategy. Collectively, our findings provide concrete, actionable guidance for the large-scale collection and effective use of fisheye datasets in robotic learning. More results and videos are available on https://robo-fisheye.github.io/",
+      "reason_ko": "비디오 토큰 감소 기술은 스포츠 영상 분석 효율성을 높이고 하이라이트 추출 속도 개선 가능",
+      "insight_ko": "AOT 알고리즘을 영상 분석 파이프라인에 적용해 스포츠 영상 처리 속도 향상, 품유지하며 하이라이트 자동 생성",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01640",
+      "title": "MSP-ReID: Hairstyle-Robust Cloth-Changing Person Re-Identification",
+      "url": "http://arxiv.org/abs/2603.01640v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01640v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 85.6,
+      "recommend_count": 1,
+      "summary_ko": "Cloth-Changing Person Re-Identification (CC-ReID) aims to match the same individual across cameras under varying clothing conditions. Existing approaches often remove apparel and focus on the head region to reduce clothing bias. However, treating the head holistically without distinguishing between face and hair leads to over-reliance on volatile hairstyle cues, causing performance degradation under hairstyle changes. To address this issue, we propose the Mitigating Hairstyle Distraction and Structural Preservation (MSP) framework. Specifically, MSP introduces Hairstyle-Oriented Augmentation (HSOA), which generates intra-identity hairstyle diversity to reduce hairstyle dependence and enhance attention to stable facial and body cues. To prevent the loss of structural information, we design Cloth-Preserved Random Erasing (CPRE), which performs ratio-controlled erasing within clothing regions to suppress texture bias while retaining body shape and context. Furthermore, we employ Region-based Parsing Attention (RPA) to incorporate parsing-guided priors that highlight face and limb regions while suppressing hair features. Extensive experiments on multiple CC-ReID benchmarks demonstrate that MSP achieves state-of-the-art performance, providing a robust and practical solution for long-term person re-identification.",
+      "reason_ko": "선수 추적 기술이 스포츠 장면에서 선수 추적에 적용 가능",
+      "insight_ko": "선수의 옷 변화에도 일관되게 추적하여 경기 분석과 하이라이트 편집에 활용 가능",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2603.01586",
+      "title": "InterCoG: Towards Spatially Precise Image Editing with Interleaved Chain-of-Grounding Reasoning",
+      "url": "http://arxiv.org/abs/2603.01586v1",
+      "pdf_url": "https://arxiv.org/pdf/2603.01586v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-03-02",
+      "final_score": 84.0,
+      "recommend_count": 1,
+      "summary_ko": "Emerging unified editing models have demonstrated strong capabilities in general object editing tasks. However, it remains a significant challenge to perform fine-grained editing in complex multi-entity scenes, particularly those where targets are not visually salient and require spatial reasoning. To this end, we propose InterCoG, a novel text-vision Interleaved Chain-of-Grounding reasoning framework for fine-grained image editing in complex real-world scenes. The key insight of InterCoG is to first perform object position reasoning solely within text that includes spatial relation details to explicitly deduce the location and identity of the edited target. It then conducts visual grounding via highlighting the editing targets with generated bounding boxes and masks in pixel space, and finally rewrites the editing description to specify the intended outcomes. To further facilitate this paradigm, we propose two auxiliary training modules: multimodal grounding reconstruction supervision and multimodal grounding reasoning alignment to enforce spatial localization accuracy and reasoning interpretability, respectively. We also construct GroundEdit-45K, a dataset comprising 45K grounding-oriented editing samples with detailed reasoning annotations, and GroundEdit-Bench for grounding-aware editing evaluation. Extensive experiments substantiate the superiority of our approach in highly precise edits under spatially intricate and multi-entity scenes.",
+      "reason_ko": "복잡한 스포츠 장면에서 정밀한 이미지 편집 기술로 영상 보정 및 하이라이트 생성에 적용 가능",
+      "insight_ko": "텍스트-비전 연쇄적 추론 프레임워크를 활용해 스포츠 영상 내 특정 객체나 장면을 정밀하게 식별하고 편집",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23101",
+      "title": "Locally Adaptive Decay Surfaces for High-Speed Face and Landmark Detection with Event Cameras",
+      "url": "http://arxiv.org/abs/2602.23101v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23101v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 84.0,
+      "recommend_count": 2,
+      "summary_ko": "Event cameras record luminance changes with microsecond resolution, but converting their sparse, asynchronous output into dense tensors that neural networks can exploit remains a core challenge. Conventional histograms or globally-decayed time-surface representations apply fixed temporal parameters across the entire image plane, which in practice creates a trade-off between preserving spatial structure during still periods and retaining sharp edges during rapid motion. We introduce Locally Adaptive Decay Surfaces (LADS), a family of event representations in which the temporal decay at each location is modulated according to local signal dynamics. Three strategies are explored, based on event rate, Laplacian-of-Gaussian response, and high-frequency spectral energy. These adaptive schemes preserve detail in quiescent regions while reducing blur in regions of dense activity. Extensive experiments on the public data show that LADS consistently improves both face detection and facial landmark accuracy compared to standard non-adaptive representations. At 30 Hz, LADS achieves higher detection accuracy and lower landmark error than either baseline, and at 240 Hz it mitigates the accuracy decline typically observed at higher frequencies, sustaining 2.44 % normalized mean error for landmarks and 0.966 mAP50 in face detection. These high-frequency results even surpass the accuracy reported in prior works operating at 30 Hz, setting new benchmarks for event-based face analysis. Moreover, by preserving spatial structure at the representation stage, LADS supports the use of much lighter network architectures while still retaining real-time performance. These results highlight the importance of context-aware temporal integration for neuromorphic vision and point toward real-time, high-frequency human-computer interaction systems that exploit the unique advantages of event cameras.",
+      "reason_ko": "고속 스포츠 동작 캡처에 적용 가능한 이벤트 카메라 기술로 빠른 움직임을 정확히 포착할 수 있습니다.",
+      "insight_ko": "LADS 기술을 rk3588 에지 디바이스에 통합하여 실시간으로 선수 추적 및 빠른 동작 분석이 가능하며, 240Hz 고주파 성능으로 빠른 스포츠 장면을 명확하게 캡처할 수 있습니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22520",
+      "title": "TEFL: Prediction-Residual-Guided Rolling Forecasting for Multi-Horizon Time Series",
+      "url": "http://arxiv.org/abs/2602.22520v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22520v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.LG"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 84.0,
+      "recommend_count": 2,
+      "summary_ko": "Time series forecasting plays a critical role in domains such as transportation, energy, and meteorology. Despite their success, modern deep forecasting models are typically trained to minimize point-wise prediction loss without leveraging the rich information contained in past prediction residuals from rolling forecasts - residuals that reflect persistent biases, unmodeled patterns, or evolving dynamics. We propose TEFL (Temporal Error Feedback Learning), a unified learning framework that explicitly incorporates these historical residuals into the forecasting pipeline during both training and evaluation. To make this practical in deep multi-step settings, we address three key challenges: (1) selecting observable multi-step residuals under the partial observability of rolling forecasts, (2) integrating them through a lightweight low-rank adapter to preserve efficiency and prevent overfitting, and (3) designing a two-stage training procedure that jointly optimizes the base forecaster and error module. Extensive experiments across 10 real-world datasets and 5 backbone architectures show that TEFL consistently improves accuracy, reducing MAE by 5-10% on average. Moreover, it demonstrates strong robustness under abrupt changes and distribution shifts, with error reductions exceeding 10% (up to 19.5%) in challenging scenarios. By embedding residual-based feedback directly into the learning process, TEFL offers a simple, general, and effective enhancement to modern deep forecasting systems.",
+      "reason_ko": "스포츠 선수의 동작 패턴과 성적 예측을 위한 정확한 시계열 분석 필요",
+      "insight_ko": "예측 오차 기반 학습으로 경기 전략 분석 및 선수 성과 예측 정확도 향상",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23040",
+      "title": "PackUV: Packed Gaussian UV Maps for 4D Volumetric Video",
+      "url": "http://arxiv.org/abs/2602.23040v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23040v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 82.4,
+      "recommend_count": 2,
+      "summary_ko": "Volumetric videos offer immersive 4D experiences, but remain difficult to reconstruct, store, and stream at scale. Existing Gaussian Splatting based methods achieve high-quality reconstruction but break down on long sequences, temporal inconsistency, and fail under large motions and disocclusions. Moreover, their outputs are typically incompatible with conventional video coding pipelines, preventing practical applications.   We introduce PackUV, a novel 4D Gaussian representation that maps all Gaussian attributes into a sequence of structured, multi-scale UV atlas, enabling compact, image-native storage. To fit this representation from multi-view videos, we propose PackUV-GS, a temporally consistent fitting method that directly optimizes Gaussian parameters in the UV domain. A flow-guided Gaussian labeling and video keyframing module identifies dynamic Gaussians, stabilizes static regions, and preserves temporal coherence even under large motions and disocclusions. The resulting UV atlas format is the first unified volumetric video representation compatible with standard video codecs (e.g., FFV1) without losing quality, enabling efficient streaming within existing multimedia infrastructure.   To evaluate long-duration volumetric capture, we present PackUV-2B, the largest multi-view video dataset to date, featuring more than 50 synchronized cameras, substantial motion, and frequent disocclusions across 100 sequences and 2B (billion) frames. Extensive experiments demonstrate that our method surpasses existing baselines in rendering fidelity while scaling to sequences up to 30 minutes with consistent quality.",
+      "reason_ko": "대용량 스포츠 영상 효율적 저장 및 공플랫폼에서의 실시간 스트리밍 필요",
+      "insight_ko": "표준 비디오 코덱과 호환되는 4D 볼륨 비디오 포맷으로 콘텐츠 제작 및 공유 효율화",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.22759",
+      "title": "Beyond Detection: Multi-Scale Hidden-Code for Natural Image Deepfake Recovery and Factual Retrieval",
+      "url": "http://arxiv.org/abs/2602.22759v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.22759v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.CV"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 80.0,
+      "recommend_count": 2,
+      "summary_ko": "Recent advances in image authenticity have primarily focused on deepfake detection and localization, leaving recovery of tampered contents for factual retrieval relatively underexplored. We propose a unified hidden-code recovery framework that enables both retrieval and restoration from post-hoc and in-generation watermarking paradigms. Our method encodes semantic and perceptual information into a compact hidden-code representation, refined through multi-scale vector quantization, and enhances contextual reasoning via conditional Transformer modules. To enable systematic evaluation for natural images, we construct ImageNet-S, a benchmark that provides paired image-label factual retrieval tasks. Extensive experiments on ImageNet-S demonstrate that our method exhibits promising retrieval and reconstruction performance while remaining fully compatible with diverse watermarking pipelines. This framework establishes a foundation for general-purpose image recovery beyond detection and localization.",
+      "reason_ko": "이미지 복구 및 사실 검색 기술로 스포츠 영상 보정에 적용 가능하며 저조나 저품질 촬영 영상을 향상시킬 수 있습니다.",
+      "insight_ko": "다중 벡터 양자화 기술을 활용하여 스포츠 영상의 품질을 향상시키고, 조건부 Transformer 모듈로 경기 장면의 맥락적 추론을 강화하여 하이라이트 편집의 정확도를 높일 수 있습니다.",
+      "is_remind": true
+    },
+    {
+      "paper_key": "arxiv:2602.23353",
+      "title": "SOTAlign: Semi-Supervised Alignment of Unimodal Vision and Language Models via Optimal Transport",
+      "url": "http://arxiv.org/abs/2602.23353v1",
+      "pdf_url": "https://arxiv.org/pdf/2602.23353v1",
+      "has_code": false,
+      "code_url": null,
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published_at_utc": "2026-02-26",
+      "final_score": 80.0,
+      "recommend_count": 2,
+      "summary_ko": "The Platonic Representation Hypothesis posits that neural networks trained on different modalities converge toward a shared statistical model of the world. Recent work exploits this convergence by aligning frozen pretrained vision and language models with lightweight alignment layers, but typically relies on contrastive losses and millions of paired samples. In this work, we ask whether meaningful alignment can be achieved with substantially less supervision. We introduce a semi-supervised setting in which pretrained unimodal encoders are aligned using a small number of image-text pairs together with large amounts of unpaired data. To address this challenge, we propose SOTAlign, a two-stage framework that first recovers a coarse shared geometry from limited paired data using a linear teacher, then refines the alignment on unpaired samples via an optimal-transport-based divergence that transfers relational structure without overconstraining the target space. Unlike existing semi-supervised methods, SOTAlign effectively leverages unpaired images and text, learning robust joint embeddings across datasets and encoder pairs, and significantly outperforming supervised and semi-supervised baselines.",
+      "reason_ko": "생물학적 조직 세포 계산 알고리즘으로 스포츠 분석에 직접 적용 불가",
+      "insight_ko": "커널 카운터 개념은 스포츠 장면 객체 인식에 간접적 참고 가능성",
+      "is_remind": true
+    }
+  ],
+  "discarded_papers": [],
+  "below_threshold_papers": []
+}
