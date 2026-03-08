@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Paper Report: 20260308</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a2e;
+      --card-bg: #f8f9fa;
+      --card-border: #e0e0e0;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --muted: #6b7280;
+      --divider: #e5e7eb;
+      --score-bg: #e5e7eb;
+      --score-fill: #2563eb;
+      --tier2-bg: #f3f4f6;
+      --tag-bg: #fef3c7;
+      --tag-fg: #92400e;
+      --flag-edge: #dbeafe;
+      --flag-realtime: #dcfce7;
+      --flag-code: #f3e8ff;
+      --remind-bg: #fffbeb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --fg: #e2e8f0;
+        --card-bg: #1e293b;
+        --card-border: #334155;
+        --accent: #60a5fa;
+        --accent-light: #1e3a5f;
+        --muted: #94a3b8;
+        --divider: #334155;
+        --score-bg: #334155;
+        --score-fill: #60a5fa;
+        --tier2-bg: #1e293b;
+        --tag-bg: #78350f;
+        --tag-fg: #fef3c7;
+        --flag-edge: #1e3a5f;
+        --flag-realtime: #14532d;
+        --flag-code: #3b0764;
+        --remind-bg: #451a03;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .header { margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .stats span { white-space: nowrap; }
+    .stats span::after { content: ""; }
+    .stats-arrow { color: var(--muted); font-size: 0.75rem; opacity: 0.6; }
+    .below-score { color: #f59e0b; }
+    .window-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.3rem;
+      line-height: 1.6;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .window-label {
+      font-weight: 600;
+      color: var(--fg);
+      margin-right: 0.2rem;
+    }
+    .window-range {
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--divider);
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+    }
+    .window-sep {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    details { margin-bottom: 1rem; }
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before {
+      content: '\25B6';
+      font-size: 0.6em;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    details[open] > summary::before { transform: rotate(90deg); }
+    details[open] summary { border-radius: 4px 4px 0 0; }
+    details .details-content {
+      padding: 0.75rem;
+      border: 1px solid var(--card-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+    }
+
+    .tabs {
+      margin-bottom: 1rem;
+    }
+    .tabs input[type="radio"] { display: none; }
+    .tab-labels {
+      display: flex;
+      border-bottom: 2px solid var(--divider);
+      margin-bottom: 1rem;
+    }
+    .tab-labels label {
+      padding: 0.6rem 1rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-labels label:hover { color: var(--fg); }
+    .tab-content { display: none; }
+    #tab-today:checked ~ .tab-labels label[for="tab-today"],
+    #tab-remind:checked ~ .tab-labels label[for="tab-remind"],
+    #tab-below:checked ~ .tab-labels label[for="tab-below"],
+    #tab-excluded:checked ~ .tab-labels label[for="tab-excluded"] {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    #tab-today:checked ~ .tab-panel-today { display: block; }
+    #tab-remind:checked ~ .tab-panel-remind { display: block; }
+    #tab-below:checked ~ .tab-panel-below { display: block; }
+    #tab-excluded:checked ~ .tab-panel-excluded { display: block; }
+
+    .paper-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .paper-card--collapsed { display: none; }
+    .show-more-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .show-more-btn:hover { background: var(--accent-light); }
+    .paper-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .paper-card .rank {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .paper-card .paper-title {
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+    }
+    .paper-card .paper-title a {
+      color: var(--fg);
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .paper-card .paper-title a:hover { color: var(--accent); }
+
+    .score-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .score-bar {
+      flex: 1;
+      max-width: 200px;
+      height: 8px;
+      background: var(--score-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      max-width: 100%;
+      background: var(--score-fill);
+      border-radius: 4px;
+    }
+    .score-detail { color: var(--muted); font-size: 0.75rem; }
+
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .cat-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .flags {
+      display: flex;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .flag-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .flag-edge { background: var(--flag-edge); }
+    .flag-realtime { background: var(--flag-realtime); }
+    .flag-code { background: var(--flag-code); }
+
+    .lowered-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--tag-bg);
+      color: var(--tag-fg);
+      font-weight: 600;
+    }
+
+    .paper-links {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .paper-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .paper-links a:hover {
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .abstract-section {
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .abstract-section .abstract-full {
+      margin-top: 0.3rem;
+      margin-bottom: 0;
+    }
+    .abstract-section .abstract-full summary {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.2rem 0.4rem;
+      background: transparent;
+      border: 1px solid var(--card-border);
+      display: inline-flex;
+    }
+
+    .cluster-links {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .tier-divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      position: relative;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .tier-divider::before, .tier-divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 35%;
+      border-top: 1px solid var(--divider);
+    }
+    .tier-divider::before { left: 0; }
+    .tier-divider::after { right: 0; }
+
+    /* Unified compact card - used by Tier 2, remind, below-threshold, discarded */
+    .compact-card {
+      background: var(--tier2-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .compact-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+    }
+    .compact-card .rank {
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .compact-card .paper-title {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .compact-card .paper-title a {
+      color: var(--fg);
+    }
+    .compact-card .paper-title a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .compact-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .compact-link {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.3rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+    }
+    .compact-body {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .compact-reason {
+      margin-top: 0.2rem;
+      margin-left: 0.4rem;
+      padding-left: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--accent);
+      line-height: 1.3;
+      border-left: 3px solid var(--accent);
+    }
+    .compact-card .categories {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+    }
+    .recommend-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    /* Modifier: remind */
+    .compact-card--remind { background: var(--remind-bg); }
+    /* Modifier: below threshold */
+    .compact-card--below { opacity: 0.75; }
+    .compact-card--below .score-detail { color: #f59e0b; font-weight: 600; }
+    /* Modifier: discarded */
+    .compact-card--discarded { opacity: 0.7; }
+
+    /* Read state - Gmail-style dimming */
+    .paper-read { opacity: 0.5; }
+    .paper-read .paper-title a { font-weight: 400; }
+
+    .empty-message {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--divider);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    footer p { margin-bottom: 0.3rem; }
+
+    .index-list { list-style: none; }
+    .index-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .index-list li:last-child { border-bottom: none; }
+
+    /* Paper checkbox - matches rank text height */
+    .paper-checkbox {
+      width: 1em;
+      height: 1em;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin: 0;
+    }
+    .compact-card .paper-links {
+      display: inline-flex;
+      gap: 0.4rem;
+      margin: 0;
+      font-size: 0.8rem;
+    }
+
+    /* Download toolbar */
+    .download-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      padding: 0.6rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    }
+    .download-toolbar.visible { display: flex; }
+    body.toolbar-active { padding-bottom: 3.5rem; }
+    .toolbar-selects {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar-btn.primary:hover { opacity: 0.9; }
+    .toolbar-btn.primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  
+<div class="header">
+  <h1>Weekly Paper Report</h1>
+  <div class="stats">
+    <span>20260308</span>
+    <span>ISO 2026-W10</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <input type="radio" name="intel-tab" id="intel-tab-briefing" checked>
+  <input type="radio" name="intel-tab" id="intel-tab-papers">
+  <input type="radio" name="intel-tab" id="intel-tab-trends">
+
+  <div class="tab-labels">
+    <label for="intel-tab-briefing">1. Briefing</label>
+    <label for="intel-tab-papers">2. Top Papers</label>
+    <label for="intel-tab-trends">3. Trends</label>
+  </div>
+
+  
+  
+  
+  
+  
+  
+  <div class="tab-content intel-panel-briefing">
+    <div class="intel-section-desc">
+      Executive Summary + Tech Radar
+    </div>
+
+    
+    
+    <div class="intel-briefing">
+      <div class="intel-briefing-icon">AI</div>
+      <div class="intel-briefing-text">금주 평가 논문 총 117편으로 전주(107편) 대비 소폭 증가하며 4주간 상승세가 안정화되고 있습니다. CS.CV 분야 논문(70편, 전주 대비 -1)과 평균 점수(76.42, +0.02)는 미미한 변동에 그쳤으나, 키워드 히트 건수(0건)는 2주 연속 변동 없음이 지속되었습니다. 특히 티어 1 논문 비중(67.5%)이 높게 유지된 점이 주목됩니다.</div>
+    </div>
+    
+
+    
+    
+    <div class="intel-kpi-grid">
+      
+      <div class="intel-kpi-card">
+        <div class="intel-kpi-value">117</div>
+        <div class="intel-kpi-label">Evaluated</div>
+        
+      </div>
+      
+      <div class="intel-kpi-card">
+        <div class="intel-kpi-value">79</div>
+        <div class="intel-kpi-label">Tier 1</div>
+        
+      </div>
+      
+      <div class="intel-kpi-card">
+        <div class="intel-kpi-value">70</div>
+        <div class="intel-kpi-label">cs.CV</div>
+        
+        <div class="intel-kpi-wow wow-down">
+          -1 vs prev
+        </div>
+        
+      </div>
+      
+      <div class="intel-kpi-card">
+        <div class="intel-kpi-value">0</div>
+        <div class="intel-kpi-label">Keyword Hits</div>
+        
+        <div class="intel-kpi-wow ">
+          0 vs prev
+        </div>
+        
+      </div>
+      
+      <div class="intel-kpi-card">
+        <div class="intel-kpi-value">76.42</div>
+        <div class="intel-kpi-label">Avg Score</div>
+        
+        <div class="intel-kpi-wow wow-up">
+          +0.02 vs prev
+        </div>
+        
+      </div>
+      
+    </div>
+    
+
+    
+    
+    
+    
+    
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>4-Week Trend</span>
+        <span class="intel-trend-badge trend-up">
+          &#9650; UP
+        </span>
+      </div>
+      <div class="intel-trend-chart">
+        
+        <div class="intel-trend-row">
+          <div class="intel-trend-label">W1</div>
+          <div class="intel-trend-bars">
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-papers" style="width: 100.0%;">
+                <span>323</span>
+              </div>
+            </div>
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-cv" style="width: 53.0%;">
+                <span>172</span>
+              </div>
+            </div>
+          </div>
+          <div class="intel-trend-score">71.3</div>
+        </div>
+        
+        <div class="intel-trend-row">
+          <div class="intel-trend-label">W2</div>
+          <div class="intel-trend-bars">
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-papers" style="width: 33.0%;">
+                <span>108</span>
+              </div>
+            </div>
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-cv" style="width: 12.0%;">
+                <span>39</span>
+              </div>
+            </div>
+          </div>
+          <div class="intel-trend-score">74.17</div>
+        </div>
+        
+        <div class="intel-trend-row">
+          <div class="intel-trend-label">W3</div>
+          <div class="intel-trend-bars">
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-papers" style="width: 33.0%;">
+                <span>107</span>
+              </div>
+            </div>
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-cv" style="width: 22.0%;">
+                <span>71</span>
+              </div>
+            </div>
+          </div>
+          <div class="intel-trend-score">76.4</div>
+        </div>
+        
+        <div class="intel-trend-row">
+          <div class="intel-trend-label">W4 <span class="intel-this-week">now</span></div>
+          <div class="intel-trend-bars">
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-papers" style="width: 36.0%;">
+                <span>117</span>
+              </div>
+            </div>
+            <div class="intel-bar-group">
+              <div class="intel-bar intel-bar-cv" style="width: 22.0%;">
+                <span>70</span>
+              </div>
+            </div>
+          </div>
+          <div class="intel-trend-score">76.42</div>
+        </div>
+        
+      </div>
+      <div class="intel-trend-legend">
+        <span><span class="intel-legend-dot" style="background: var(--accent);"></span>Total Papers</span>
+        <span><span class="intel-legend-dot" style="background: #3b82f6;"></span>cs.CV</span>
+        <span class="intel-legend-score">Score &#8594;</span>
+      </div>
+    </div>
+    
+
+    
+    
+    
+    
+    <div class="intel-card">
+      <div class="intel-card-header">Top Categories</div>
+      <div class="intel-cat-list">
+        
+        <div class="intel-cat-row">
+          <div class="intel-cat-name">
+            <span class="cat-tag">cs.CV</span>
+          </div>
+          <div class="intel-cat-bar-wrap">
+            <div class="intel-cat-bar" style="width: 100.0%;"></div>
+          </div>
+          <div class="intel-cat-count">70</div>
+          <div class="intel-cat-wow ">
+            -1.4
+          </div>
+        </div>
+        
+        <div class="intel-cat-row">
+          <div class="intel-cat-name">
+            <span class="cat-tag">cs.RO</span>
+          </div>
+          <div class="intel-cat-bar-wrap">
+            <div class="intel-cat-bar" style="width: 34.0%;"></div>
+          </div>
+          <div class="intel-cat-count">24</div>
+          <div class="intel-cat-wow ">
+            100.0
+          </div>
+        </div>
+        
+        <div class="intel-cat-row">
+          <div class="intel-cat-name">
+            <span class="cat-tag">cs.AI</span>
+          </div>
+          <div class="intel-cat-bar-wrap">
+            <div class="intel-cat-bar" style="width: 31.0%;"></div>
+          </div>
+          <div class="intel-cat-count">22</div>
+          <div class="intel-cat-wow ">
+            -4.3
+          </div>
+        </div>
+        
+        <div class="intel-cat-row">
+          <div class="intel-cat-name">
+            <span class="cat-tag">cs.LG</span>
+          </div>
+          <div class="intel-cat-bar-wrap">
+            <div class="intel-cat-bar" style="width: 29.0%;"></div>
+          </div>
+          <div class="intel-cat-count">20</div>
+          <div class="intel-cat-wow ">
+            17.6
+          </div>
+        </div>
+        
+        <div class="intel-cat-row">
+          <div class="intel-cat-name">
+            <span class="cat-tag">eess.IV</span>
+          </div>
+          <div class="intel-cat-bar-wrap">
+            <div class="intel-cat-bar" style="width: 10.0%;"></div>
+          </div>
+          <div class="intel-cat-count">7</div>
+          <div class="intel-cat-wow ">
+            0.0
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+
+    
+    
+    
+    <div class="intel-remind-bar">
+      <span class="intel-remind-item">
+        <span class="intel-remind-dot" style="background: #22c55e;"></span>
+        Graduated <strong>220</strong>
+      </span>
+      <span class="intel-remind-item">
+        <span class="intel-remind-dot" style="background: #f59e0b;"></span>
+        Active <strong>22</strong>
+      </span>
+    </div>
+    
+
+    
+
+    
+    
+    
+    
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>Auto-detected Keywords</span>
+        <span class="intel-card-sub">TF-IDF analysis of this week's papers</span>
+      </div>
+      <div class="intel-tfidf-grid">
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">video</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">data</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">image</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">reasoning</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">time</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">long</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-rising">
+          <span class="intel-tfidf-label">RISING</span>
+          <span class="intel-tfidf-name">visual</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">memory</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">semantic</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">real</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">detection</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">reconstruction</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">multi</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">generation</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">segmentation</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">images</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">training</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">task</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-stable">
+          <span class="intel-tfidf-label">STABLE</span>
+          <span class="intel-tfidf-name">human</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-new">
+          <span class="intel-tfidf-label">NEW</span>
+          <span class="intel-tfidf-name">dataset</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">scale</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">language</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">tasks</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">learning</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">control</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">quality</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">social</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">knowledge</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">temporal</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">object</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">graph</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">classification</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">vision</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">accuracy</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">system</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">camera</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">motion</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">alignment</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">multimodal</span>
+        </div>
+        
+        <div class="intel-tfidf-tag intel-tfidf-disappeared">
+          <span class="intel-tfidf-label">DISAPPEARED</span>
+          <span class="intel-tfidf-name">aware</span>
+        </div>
+        
+      </div>
+      <div class="intel-tfidf-legend">
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-new">NEW</span> New this week</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-rising">RISING</span> Rapidly increasing</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-stable">STABLE</span> Maintained</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-falling">FALLING</span> Decreasing</span>
+        <span><span class="intel-tfidf-tag-sm intel-tfidf-disappeared">GONE</span> Disappeared</span>
+      </div>
+    </div>
+    
+
+    
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+  
+  
+  
+  
+  
+  <div class="tab-content intel-panel-papers">
+    <div class="intel-section-desc">
+      Top papers by score, graduated reminds, and notable researchers.
+    </div>
+
+    
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#1</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.04379v1">Helios: Real Real-Time Long Video Generation Model</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 98.4%;"></div>
+        </div>
+        <span class="score-detail">98.4</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.CV</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">We introduce Helios, the first 14B video generation model that runs at 19.5 FPS on a single NVIDIA H100 GPU and supports minute-scale generation while matching the quality of a strong baseline. We make breakthroughs along three key dimensions: (1) robustness to long-video drifting without commonly used anti-drifting heuristics such as self-forcing, error-banks, or keyframe sampling; (2) real-time generation without standard acceleration techniques such as KV-cache, sparse/linear attention, or quantization; and (3) training without parallelism or sharding frameworks, enabling image-diffusion-scale batch sizes while fitting up to four 14B models within 80 GB of GPU memory. Specifically, Helios is a 14B autoregressive diffusion model with a unified input representation that natively supports T2V, I2V, and V2V tasks. To mitigate drifting in long-video generation, we characterize typical failure modes and propose simple yet effective training strategies that explicitly simulate drifting during training, while eliminating repetitive motion at its source. For efficiency, we heavily compress the historical and noisy context and reduce the number of sampling steps, yielding computational costs comparable to -- or lower than -- those of 1.3B video generative models. Moreover, we introduce infrastructure-level optimizations that accelerate both inference and training while reducing memory consumption. Extensive experiments demonstrate that Helios consistently outperforms prior methods on both short- and long-video generation. We plan to release the code, base model, and distilled model to support further development by the community.</div>
+      
+      
+      <div class="compact-reason">엣지 컴퓨팅 프레임워크가 AI 카메라 엣지 디바이스 배포에 직접적으로 관련</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.04379v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#2</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.01706v1">Search Multilayer Perceptron-Based Fusion for Efficient and Accurate Siamese Tracking</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 96.0%;"></div>
+        </div>
+        <span class="score-detail">96.0</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.CV</span>
+        
+        <span class="cat-tag">cs.LG</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">Siamese visual trackers have recently advanced through increasingly sophisticated fusion mechanisms built on convolutional or Transformer architectures. However, both struggle to deliver pixel-level interactions efficiently on resource-constrained hardware, leading to a persistent accuracy-efficiency imbalance. Motivated by this limitation, we redesign the Siamese neck with a simple yet effective Multilayer Perception (MLP)-based fusion module that enables pixel-level interaction with minimal structural overhead. Nevertheless, naively stacking MLP blocks introduces a new challenge: computational cost can scale quadratically with channel width. To overcome this, we construct a hierarchical search space of carefully designed MLP modules and introduce a customized relaxation strategy that enables differentiable neural architecture search (DNAS) to decouple channel-width optimization from other architectural choices. This targeted decoupling automatically balances channel width and depth, yielding a low-complexity architecture. The resulting tracker achieves state-of-the-art accuracy-efficiency trade-offs. It ranks among the top performers on four general-purpose and three aerial tracking benchmarks, while maintaining real-time performance on both resource-constrained Graphics Processing Units (GPUs) and Neural Processing Units (NPUs).</div>
+      
+      
+      <div class="compact-reason">자원 제한 하드웨어에서 실시간 추적 성능으로 선수 추적에 최적</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.01706v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#3</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.02134v1">OnlineX: Unified Online 3D Reconstruction and Understanding with Active-to-Stable State Evolution</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 96.0%;"></div>
+        </div>
+        <span class="score-detail">96.0</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.CV</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">Recent advances in generalizable 3D Gaussian Splatting (3DGS) have enabled rapid 3D scene reconstruction within seconds, eliminating the need for per-scene optimization. However, existing methods primarily follow an offline reconstruction paradigm, lacking the capacity for continuous reconstruction, which limits their applicability to online scenarios such as robotics and VR/AR. In this paper, we introduce OnlineX, a feed-forward framework that reconstructs both 3D visual appearance and language fields in an online manner using only streaming images. A key challenge in online formulation is the cumulative drift issue, which is rooted in the fundamental conflict between two opposing roles of the memory state: an active role that constantly refreshes to capture high-frequency local geometry, and a stable role that conservatively accumulates and preserves the long-term global structure. To address this, we introduce a decoupled active-to-stable state evolution paradigm. Our framework decouples the memory state into a dedicated active state and a persistent stable state, and then cohesively fuses the information from the former into the latter to achieve both fidelity and stability. Moreover, we jointly model visual appearance and language fields and incorporate an implicit Gaussian fusion module to enhance reconstruction quality. Experiments on mainstream datasets demonstrate that our method consistently outperforms prior work in novel view synthesis and semantic understanding, showcasing robust performance across input sequences of varying lengths with real-time inference speed.</div>
+      
+      
+      <div class="compact-reason">실시간 3D 재구성 기술로 스포츠 장면 포착 및 분석에 적합</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.02134v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#4</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.03753v1">Agentic Peer-to-Peer Networks: From Content Distribution to Capability and Action Sharing</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 96.0%;"></div>
+        </div>
+        <span class="score-detail">96.0</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.NI</span>
+        
+        <span class="cat-tag">cs.AI</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">The ongoing shift of AI models from centralized cloud APIs to local AI agents on edge devices is enabling \textit{Client-Side Autonomous Agents (CSAAs)} -- persistent personal agents that can plan, access local context, and invoke tools on behalf of users. As these agents begin to collaborate by delegating subtasks directly between clients, they naturally form \emph{Agentic Peer-to-Peer (P2P) Networks}. Unlike classic file-sharing overlays where the exchanged object is static, hash-indexed content (e.g., files in BitTorrent), agentic overlays exchange \emph{capabilities and actions} that are heterogeneous, state-dependent, and potentially unsafe if delegated to untrusted peers. This article outlines the networking foundations needed to make such collaboration practical. We propose a plane-based reference architecture that decouples connectivity/identity, semantic discovery, and execution. Besides, we introduce signed, soft-state capability descriptors to support intent- and constraint-aware discovery. To cope with adversarial settings, we further present a \textit{tiered verification} spectrum: Tier~1 relies on reputation signals, Tier~2 applies lightweight canary challenge-response with fallback selection, and Tier~3 requires evidence packages such as signed tool receipts/traces (and, when applicable, attestation). Using a discrete-event simulator that models registry-based discovery, Sybil-style index poisoning, and capability drift, we show that tiered verification substantially improves end-to-end workflow success while keeping discovery latency near-constant and control-plane overhead modest.</div>
+      
+      
+      <div class="compact-reason">엣지 디바이스 및 AI 에이전트 기술이 프로젝트의 AI 촬영 장치 및 플랫폼에 직접 적용 가능</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.03753v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#5</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.04869v1">SURE: Semi-dense Uncertainty-REfined Feature Matching</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 96.0%;"></div>
+        </div>
+        <span class="score-detail">96.0</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.CV</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">Establishing reliable image correspondences is essential for many robotic vision problems. However, existing methods often struggle in challenging scenarios with large viewpoint changes or textureless regions, where incorrect cor- respondences may still receive high similarity scores. This is mainly because conventional models rely solely on fea- ture similarity, lacking an explicit mechanism to estimate the reliability of predicted matches, leading to overconfident errors. To address this issue, we propose SURE, a Semi- dense Uncertainty-REfined matching framework that jointly predicts correspondences and their confidence by modeling both aleatoric and epistemic uncertainties. Our approach in- troduces a novel evidential head for trustworthy coordinate regression, along with a lightweight spatial fusion module that enhances local feature precision with minimal overhead. We evaluated our method on multiple standard benchmarks, where it consistently outperforms existing state-of-the-art semi-dense matching models in both accuracy and efficiency. our code will be available on https://github.com/LSC-ALAN/SURE.</div>
+      
+      
+      <div class="compact-reason">시각적 표현 향상 기술은 스포츠 영상 보정 및 하이라이트 편집에 직접적으로 적용 가능하며, 자세 및 동작 분석에도 활용될 수 있습니다.</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.04869v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#6</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.04098v1">Real Eyes Realize Faster: Gaze Stability and Pupil Novelty for Efficient Egocentric Learning</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 96.0%;"></div>
+        </div>
+        <span class="score-detail">96.0</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.CV</span>
+        
+        <span class="cat-tag">cs.HC</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">Always-on egocentric cameras are increasingly used as demonstrations for embodied robotics, imitation learning, and assistive AR, but the resulting video streams are dominated by redundant and low-quality frames. Under the storage and battery constraints of wearable devices, choosing which frames to keep is as important as how to learn from them. We observe that modern eye-tracking headsets provide a continuous, training-free side channel that decomposes into two complementary axes: gaze fixation captures visual stability (quality), while pupil response captures arousal-linked moments (novelty). We operationalize this insight as a Dual-Criterion Frame Curator that first gates frames by gaze quality and then ranks the survivors by pupil-derived novelty. On the Visual Experience Dataset (VEDB), curated frames at 10% budget match the classification performance of the full stream, and naive signal fusion consistently destroys both contributions. The benefit is task-dependent: pupil ranking improves activity recognition, while gaze-only selection already dominates for scene recognition, confirming that the two signals serve genuinely different roles. Our method requires no model inference and operates at capture time, offering a path toward efficient, always-on egocentric data curation.</div>
+      
+      
+      <div class="compact-reason">안와 추적 데이터를 활용한 효율적인 프레임 선택 방식으로 스포츠 하이라이트 자동 추출에 직접 적용 가능</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.04098v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#7</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.03985v1">RIVER: A Real-Time Interaction Benchmark for Video LLMs</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 96.0%;"></div>
+        </div>
+        <span class="score-detail">96.0</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.CV</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">The rapid advancement of multimodal large language models has demonstrated impressive capabilities, yet nearly all operate in an offline paradigm, hindering real-time interactivity. Addressing this gap, we introduce the Real-tIme Video intERaction Bench (RIVER Bench), designed for evaluating online video comprehension. RIVER Bench introduces a novel framework comprising Retrospective Memory, Live-Perception, and Proactive Anticipation tasks, closely mimicking interactive dialogues rather than responding to entire videos at once. We conducted detailed annotations using videos from diverse sources and varying lengths, and precisely defined the real-time interactive format. Evaluations across various model categories reveal that while offline models perform well in single question-answering tasks, they struggle with real-time processing. Addressing the limitations of existing models in online video interaction, especially their deficiencies in long-term memory and future perception, we proposed a general improvement method that enables models to interact with users more flexibly in real time. We believe this work will significantly advance the development of real-time interactive video understanding models and inspire future research in this emerging field. Datasets and code are publicly available at https://github.com/OpenGVLab/RIVER.</div>
+      
+      
+      <div class="compact-reason">실시간 비디오 이해 및 상호작용 기술로 스포츠 경기 분석에 적용 가능</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.03985v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#8</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.04008v1">Lambdas at the Far Edge: a Tale of Flying Lambdas and Lambdas on Wheels</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 94.4%;"></div>
+        </div>
+        <span class="score-detail">94.4</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.DC</span>
+        
+        <span class="cat-tag">cs.PL</span>
+        
+        <span class="cat-tag">cs.RO</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">Aggregate Programming (AP) is a paradigm for programming the collective behaviour of sets of distributed devices, possibly situated at the network far edge, by relying on asynchronous proximity-based interactions. The eXchange Calculus (XC), a recently proposed foundational model for AP, is essentially a typed lambda calculus extended with an operator (the exchange operator) providing an implicit communication mechanism between neighbour devices. This paper provides a gentle introduction to XC and to its implementation as a C++ library, called FCPP. The FCPP library and toolchain has been mainly developed at the Department of Computer Science of the University of Turin, where Stefano Berardi spent most of his academic career conducting outstanding research about logical foundation of computer science and transmitting his passion for research to students and young researchers, often exploiting typed lambda calculi. An FCCP program is essentially a typed lambda term, and FCPP has been used to write code that has been deployed on devices at the far edge of the network, including rovers and (soon) Uncrewed Aerial Vehicles (UAVs); hence the title of the paper.</div>
+      
+      
+      <div class="compact-reason">엣지 컴퓨팅 프레임워크가 AI 카메라 엣지 디바이스 배포에 직접적으로 관련</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.04008v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#9</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.03879v1">Yolo-Key-6D: Single Stage Monocular 6D Pose Estimation with Keypoint Enhancements</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 93.6%;"></div>
+        </div>
+        <span class="score-detail">93.6</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.CV</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">Estimating the 6D pose of objects from a single RGB image is a critical task for robotics and extended reality applications. However, state-of-the-art multi stage methods often suffer from high latency, making them unsuitable for real time use. In this paper, we present Yolo-Key-6D, a novel single stage, end-to-end framework for monocular 6D pose estimation designed for both speed and accuracy. Our approach enhances a YOLO based architecture by integrating an auxiliary head that regresses the 2D projections of an object&#39;s 3D bounding box corners. This keypoint detection task significantly improves the network&#39;s understanding of 3D geometry. For stable end-to-end training, we directly regress rotation using a continuous 9D representation projected to SO(3) via singular value decomposition. On the LINEMOD and LINEMOD-Occluded benchmarks, YOLO-Key-6D achieves competitive accuracy scores of 96.24% and 69.41%, respectively, with the ADD(-S) 0.1d metric, while proving itself to operate in real time. Our results demonstrate that a carefully designed single stage method can provide a practical and effective balance of performance and efficiency for real world deployment.</div>
+      
+      
+      <div class="compact-reason">6D 포즈 추정 기술이 스포츠 선수 자세 분석에 적용 가능하며 실시간 처리 가능</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.03879v1">PDF</a>
+      </div>
+    </div>
+    
+    <div class="paper-card">
+      <div class="rank-title">
+        <span class="rank">#10</span>
+        <span class="paper-title">
+          <a href="http://arxiv.org/abs/2603.05172v1">Trainable Bitwise Soft Quantization for Input Feature Compression</a>
+        </span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 93.6%;"></div>
+        </div>
+        <span class="score-detail">93.6</span>
+        <span style="font-size: 0.75rem; color: var(--muted);">cappic-ai</span>
+        
+      </div>
+      
+      
+      <div class="categories">
+        
+        <span class="cat-tag">cs.LG</span>
+        
+      </div>
+      
+      
+      <div class="abstract-section">The growing demand for machine learning applications in the context of the Internet of Things calls for new approaches to optimize the use of limited compute and memory resources. Despite significant progress that has been made w.r.t. reducing model sizes and improving efficiency, many applications still require remote servers to provide the required resources. However, such approaches rely on transmitting data from edge devices to remote servers, which may not always be feasible due to bandwidth, latency, or energy constraints. We propose a task-specific, trainable feature quantization layer that compresses the input features of a neural network. This can significantly reduce the amount of data that needs to be transferred from the device to a remote server. In particular, the layer allows each input feature to be quantized to a user-defined number of bits, enabling a simple on-device compression at the time of data collection. The layer is designed to approximate step functions with sigmoids, enabling trainable quantization thresholds. By concatenating outputs from multiple sigmoids, introduced as bitwise soft quantization, it achieves trainable quantized values when integrated with a neural network. We compare our method to full-precision inference as well as to several quantization baselines. Experiments show that our approach outperforms standard quantization methods, while maintaining accuracy levels close to those of full-precision models. In particular, depending on the dataset, compression factors of $5\times$ to $16\times$ can be achieved compared to $32$-bit input without significant performance loss.</div>
+      
+      
+      <div class="compact-reason">RK3588 엣지 장치에서 데이터 전송량을 최대 16배 줄여 실시간 처리와 배터리 효율성을 크게 향상시킬 수 있습니다.</div>
+      
+      <div class="paper-links">
+        <a href="http://arxiv.org/pdf/2603.05172v1">PDF</a>
+      </div>
+    </div>
+    
+    
+
+    
+    
+    <div class="tier-divider">Graduated (2x recommended)</div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.21778v1">From Statics to Dynamics: Physics-Aware Image Editing with Latent Transition Priors</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-02</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.21810v1">GeoMotion: Rethinking Motion Segmentation via Latent 4D Geometry</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-02</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22520v1">TEFL: Prediction-Residual-Guided Rolling Forecasting for Multi-Horizon Time Series</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22607v1">LoR-LUT: Learning Compact 3D Lookup Tables via Low-Rank Residuals</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22691v1">U-Net-Based Generative Joint Source-Channel Coding for Wireless Image Transmission</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22707v1">SCOPE: Skeleton Graph-Based Computation-Efficient Framework for Autonomous UAV Exploration</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22759v1">Beyond Detection: Multi-Scale Hidden-Code for Natural Image Deepfake Recovery and Factual Retrieval</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22794v1">Doubly Adaptive Channel and Spatial Attention for Semantic Image Communication by IoT Devices</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22800v1">GSTurb: Gaussian Splatting for Atmospheric Turbulence Mitigation</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22941v1">Velocity and stroke rate reconstruction of canoe sprint team boats based on panned and zoomed video recordings</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.22960v1">UCM: Unifying Camera Control and Memory with Time-aware Positional Encoding Warping for World Models</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23040v1">PackUV: Packed Gaussian UV Maps for 4D Volumetric Video</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23069v1">Align then Adapt: Rethinking Parameter-Efficient Transfer Learning in 4D Perception</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23101v1">Locally Adaptive Decay Surfaces for High-Speed Face and Landmark Detection with Event Cameras</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23115v1">FLIGHT: Fibonacci Lattice-based Inference for Geometric Heading in real-Time</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23141v1">No Labels, No Look-Ahead: Unsupervised Online Video Stabilization with Classical Priors</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23169v1">Learning Continuous Wasserstein Barycenter Space for Generalized All-in-One Image Restoration</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23188v1">Efficient Real-Time Adaptation of ROMs for Unsteady Flows Using Data Assimilation</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23224v1">UniScale: Unified Scale-Aware 3D Reconstruction for Multi-View Understanding via Prior Injection for Robotic Perception</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23228v1">MovieTeller: Tool-augmented Movie Synopsis with ID Consistent Progressive Abstraction</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23288v1">BRIDGE: Borderless Reconfiguration for Inclusive and Diverse Gameplay Experience via Embodiment Transformation</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23294v1">Towards Long-Form Spatio-Temporal Video Grounding</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2602.23353v1">SOTAlign: Semi-Supervised Alignment of Unimodal Vision and Language Models via Optimal Transport</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-03</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01400v1">Token Reduction via Local and Global Contexts Optimization for Efficient Video Large Language Models</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01431v1">SeaVIS: Sound-Enhanced Association for Online Audio-Visual Instance Segmentation</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01475v1">WildCross: A Cross-Modal Large Scale Benchmark for Place Recognition and Metric Depth Estimation in Natural Environments</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01528v1">Boosting AI Reliability with an FSM-Driven Streaming Inference Pipeline: An Industrial Case</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01586v1">InterCoG: Towards Spatially Precise Image Editing with Interleaved Chain-of-Grounding Reasoning</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01593v1">PPEDCRF: Privacy-Preserving Enhanced Dynamic CRF for Location-Privacy Protection for Sequence Videos with Minimal Detection Degradation</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01640v1">MSP-ReID: Hairstyle-Robust Cloth-Changing Person Re-Identification</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01706v1">Search Multilayer Perceptron-Based Fusion for Efficient and Accurate Siamese Tracking</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.01767v1">Downstream Task Inspired Underwater Image Enhancement: A Perception-Aware Study from Dataset Construction to Network Design</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02049v1">WorldStereo: Bridging Camera-Guided Video Generation and Scene Reconstruction via 3D Geometric Memories</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02109v1">Orchestrating Multimodal DNN Workloads in Wireless Neural Processing</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02130v1">Stereo-Inertial Poser: Towards Metric-Accurate Shape-Aware Motion Capture Using Sparse IMUs and a Single Stereo Camera</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02134v1">OnlineX: Unified Online 3D Reconstruction and Understanding with Active-to-Stable State Evolution</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02137v1">NextAds: Towards Next-generation Personalized Video Advertising</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02139v1">Rethinking Camera Choice: An Empirical Study on Fisheye Camera Properties in Robotic Manipulation</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02175v1">Kiwi-Edit: Versatile Video Editing via Instruction and Reference Guidance</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-04</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02499v1">Biomechanically Accurate Gait Analysis: A 3d Human Reconstruction Framework for Markerless Estimation of Gait Parameters</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-05</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.02936v1">Self-supervised Domain Adaptation for Visual 3D Pose Estimation of Nano-drone Racing Gates by Enforcing Geometric Consistency</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-05</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="compact-card compact-card--remind">
+      <div class="rank-title">
+        <span class="paper-title"><a href="http://arxiv.org/abs/2603.03060v1">DLIOS: An LLM-Augmented Real-Time Multi-Modal Interactive Enhancement Overlay System for Douyin Live Streaming</a></span>
+        <span class="compact-meta">
+          <span class="score-detail">None</span>
+          <span class="recommend-count">2026-03-05</span>
+        </span>
+      </div>
+    </div>
+    
+    
+
+    
+    
+    
+    <div class="tier-divider">Notable Authors</div>
+    <div class="intel-card">
+      <div class="intel-author-grid">
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">F</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Feng Gao</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">4 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 78.3</span>
+            </div>
+            
+            <div class="intel-author-papers">
+              
+              <a href="http://arxiv.org/abs/2603.01767v1" class="intel-author-paper-link">Downstream Task Inspired Underwater Image Enhancem...</a>
+              
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">Y</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Yen-Yu Lin</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">3 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 84.8</span>
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">H</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Hao Li</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">3 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 82.8</span>
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">H</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Hao Liu</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">3 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 80.8</span>
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">H</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Hao Yang</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">3 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 76.8</span>
+            </div>
+            
+            <div class="intel-author-papers">
+              
+              <a href="http://arxiv.org/abs/2603.01650v1" class="intel-author-paper-link">PromptStereo: Zero-Shot Stereo Matching via Struct...</a>
+              
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">L</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Lei Zhang</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">3 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 73.6</span>
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">Q</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Qing Li</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">3 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 69.5</span>
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">L</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Liming Liu</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">2 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 93.2</span>
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">J</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Jiangkai Wu</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">2 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 93.2</span>
+            </div>
+            
+          </div>
+        </div>
+        
+        <div class="intel-author-card">
+          <div class="intel-author-avatar">X</div>
+          <div class="intel-author-info">
+            <div class="intel-author-name">Xinggong Zhang</div>
+            <div class="intel-author-stats">
+              <span title="Papers in 4 weeks">2 papers</span>
+              <span class="intel-author-sep">|</span>
+              <span title="Average score">avg 93.2</span>
+            </div>
+            
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+
+    
+    
+    
+  </div>
+
+  
+  
+  
+  <div class="tab-content intel-panel-trends">
+    <div class="intel-section-desc">
+      Daily average score trends and visualization charts.
+    </div>
+
+    
+    
+    
+    <div class="intel-card">
+      <div class="intel-card-header">
+        <span>cappic-ai</span>
+        <span class="intel-card-sub">Daily average scores</span>
+      </div>
+      <table class="intel-score-table">
+        <thead>
+          <tr><th>Date</th><th>Avg Score</th></tr>
+        </thead>
+        <tbody>
+          
+          <tr><td>2026-02-09</td><td>73.12</td></tr>
+          
+          <tr><td>2026-02-10</td><td>75.09</td></tr>
+          
+          <tr><td>2026-02-11</td><td>72.47</td></tr>
+          
+          <tr><td>2026-02-11</td><td>67.83</td></tr>
+          
+          <tr><td>2026-02-16</td><td>78.09</td></tr>
+          
+          <tr><td>2026-02-17</td><td>72.39</td></tr>
+          
+          <tr><td>2026-02-18</td><td>74.52</td></tr>
+          
+          <tr><td>2026-02-18</td><td>75.53</td></tr>
+          
+          <tr><td>2026-02-19</td><td>62.97</td></tr>
+          
+          <tr><td>2026-02-23</td><td>75.83</td></tr>
+          
+          <tr><td>2026-02-24</td><td>85.2</td></tr>
+          
+          <tr><td>2026-02-25</td><td>68.0</td></tr>
+          
+          <tr><td>2026-02-26</td><td>76.58</td></tr>
+          
+          <tr><td>2026-03-02</td><td>76.66</td></tr>
+          
+          <tr><td>2026-03-03</td><td>79.6</td></tr>
+          
+          <tr><td>2026-03-04</td><td>75.8</td></tr>
+          
+          <tr><td>2026-03-05</td><td>77.33</td></tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+    
+
+    
+    
+    <div class="intel-card">
+      <div class="intel-card-header">Score Distribution Charts</div>
+      
+      <div style="margin-bottom: 1rem;">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcoAAANwCAYAAAAfi1lkAAAAOnRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjEwLjgsIGh0dHBzOi8vbWF0cGxvdGxpYi5vcmcvwVt1zgAAAAlwSFlzAAAXEgAAFxIBZ5/SUgAAlX9JREFUeJzs3XeYVdX5P+xnGIahylAFQYqiiA0VJSoWVEqw1ySWCNhi1ChqEhIVIRKjiUYl0fg1ibGXxF5iCSp2IBGwoaAiiiBK7zAMw37/8IWfwzkDM8wZBtn3fV1zXZy111772acN8znrrJ2XJEkSAAAAAACQUrVqugAAAAAAAKhJgnIAAAAAAFJNUA4AAAAAQKoJygEAAAAASDVBOQAAAAAAqSYoBwAAAAAg1QTlAAAAAACkmqAcAAAAAIBUE5QDAAAAAJBqgnIAAAAAAFJNUA4AAAAAQKoJygEAAAAASDVBOQAAAAAAqSYoBwAAAAAg1QTlAEAqdejQIfLy8sr8vPzyyzVdVk589tlnGeeWl5eXtW+2fp999tmmLbiaDBs2LOPcBgwYUNNlsYUZMGBAxvNs2LBhNV3WRps8eXL87Gc/i9133z222mqrqFWrVplzu/POO2u6RACAalG7pgsAgM3FJ598EnfffXe89tprMWnSpFiwYEGsWrUq6tWrFy1atIg2bdrELrvsEl27dl37U79+/Zoue4vVoUOH+PzzzzPa8/Pzo6CgIOrWrRtNmjSJrbfeOrbbbrvo1q1bHHnkkbHjjjvWQLWw5Tr44IPj1VdfLdN29dVXx2WXXZa1/x//+Mf4+c9/XqYtLy8vZs+eHc2aNcu6zw477BCffPJJmbb7778/Tj755CpUTmU99thjcfLJJ0dxcXFOx50/f36MGjUqxowZE++88058+umnMWvWrFi6dGnUrVs3mjVrFrvvvnv07t07TjvttGjatGmFx540aVLcc8898Z///CemTZsW8+fPjyZNmsS2224bffr0iR//+MfRpUuX9Y6xatWqGDt2bLz55pvx1ltvxccffxxffPFFLF68OJIkicaNG0enTp1iv/32i9NOOy323HPPSp1/aWlpPPHEE/HMM8/E6NGjY9asWbFw4cJo0qRJtGjRIjp06BAHHnhgHHzwwbHvvvtWauyKePHFF+Ohhx6KV199Nb766qtYtmxZNG/ePDp37hyHH354DBgwoNzX5hqffPJJvPHGG/HWW2/F22+/HbNmzYp58+bFggULoqCgILbaaqvo2LFjdO3aNY444og44ogjolat6pmXV1JSEg8++GA8+eSTMW7cuJg1a1ZERLRs2TL22muvOOaYY+JHP/pRFBQUVGi8sWPHxr/+9a/473//G5988kksXLgwVq5cGQ0aNIhWrVrFzjvvHL17946TTz45mjRpUi3nBMBmIgGAlFu1alVy6aWXJvn5+UlEVPjnmmuuqenSt2jt27ev1OMREUleXl7Su3fv5OWXX96o8UeNGlVt55Ot3qlTp1bLsaZOnZr1eDVdV1VsTJ1Dhw7N2Kd///6bpN4tyeWXX55xP/bt27fc/sccc0zWx+vxxx/P2v/LL7/M2n/69OnVdUo51b9//4zahw4dWtNlVdqCBQuSoqKiDb7P3nHHHZUa94477qjU79fGjRsnf/vb3zY4bklJSXLRRRcltWvXXu94tWvXTgYNGpSUlJRkHWfx4sVJ48aNK/W75uSTT04WLFhQofN//vnnk5122qnCYy9fvrxS9+/6zJw5M+nTp88Gj9mkSZPkH//4x3rH6tu3b6Xuoy5duiRvv/12zs5ljdGjRyedO3fe4PE7d+6cjB49er1jzZ8/PznqqKMq9dy86667cn5OAGw+zCgHIPXOOussXyXfQiRJEiNHjowXX3wxLr/88hg6dGjk5+dn7du/f/+YO3dumbY2bdpsijKr3VZbbRXnn39+TZdR47p3755xP1THbM0t3UEHHRRXX311mbY333wzSktLM15fSZLE66+/nnWc1157LY455pis7evq2LHjFvN6/K54/vnnY8GCBRnthx56aOy4445rH+sNzc5e14IFC6K0tLTC/RcuXBhnn312LF68OC6++OKsfUpLS+OEE06IJ598coPjrVq1Km666aaYOnVqPPLIIxnP2VWrVsXChQsrXF9ExAMPPBBTpkyJV199NQoLC8vtd8stt8RFF11UqfPPlS+//DJ69uwZH3/88Qb7zp8/P84444yYO3duxrdBNtaHH34YPXv2jHfeeSfatWuXkzFffvnlOPLII2Pp0qUb7Dt58uTo1atXPP3009GzZ8+M7aWlpXHkkUfGG2+8UeHjL1y4MPr37x+NGjWK4447rjKlA/AdISgHINVeeumlrCH51ltvHfvvv3+0bNkySkpKYvbs2TFx4sSYOnVqJEmy6QslIiJ22mmnOOywwyJJkliwYEF89tln8dZbb8XKlSvL9Fu9enUMHz48Zs6cGX/729+yjvWb3/xmU5RcI5o2bRo333xzTZdR4w4//PA4/PDDa7qM77z9998/8vPzy4R9ixcvjrfffju6detWpu+HH36Y8QHUGtkC8YjIWNYlIuLAAw+sQsVsjKlTp2a0HXLIIfHiiy/m9DjNmzeP/fbbL1q2bBnTp0+PN954I5YsWZLR79e//nUcc8wxsd1222Vs+/3vf581JN9///1j5513jg8//DAjAH3iiSfiuuuui1/96lfrra+goCC+973vxfbbbx/Lly+Pt956Kz799NOMfv/973/j+uuvj8svvzzrOE888URccMEF5Y7fqVOnqFOnTsyaNSvefffdrMeoioEDB2aE5AUFBdG3b99o2bJlvPbaaxnbBw8eHPvvv3/sv//+5Y7buHHj2HXXXaNDhw7RsGHDWLBgQbz33nvxwQcfZPRdsGBBXH/99fGnP/2pyuczb968OPnkkzNC8iZNmkS/fv0iLy8vnn322Zg3b97abUuXLo1TTjklJk6cmLFkyr///e+sIXnjxo2jd+/e0bBhwxg3bly89957GX2GDBkiKAfYUtXshHYAqFkDBgzI+GrtKaecUu5XtGfOnJncfvvtSc+ePZPf//73m7jadMm2NEq2ZTMWLVqUXHPNNUndunWzflX6lltu2fTFZ5Gtts1hiZPNta51fVfq3FLtvffeGff/jTfemNHv//7v/9a7BMaSJUsy9tl9990z+lZk6Y3NxZay9Ep1LVV04403JhGRHH300cmLL76YlJaWltk+ffr0pEePHlmfM8OHD88Y76uvvkoKCwsz+q77O/kPf/hDRp/CwsLk66+/LtNv/vz5SUQknTp1Sm6++eZk4cKFZbavWrUq+e1vf5u1vu233z7rOc+dOzdp2rRpRv8TTjgh+fLLL7PuM3Xq1OTaa69NVq5cucH7dEMef/zxjGMXFBQkr7/++to+JSUlWZdJ2nPPPbOO+eCDDyZvvfVWxuO3xpNPPpn193C3bt2qfD5JkiSDBg3KGLtjx47JzJkz1/b56quvko4dO2b0u/jiizPGu/TSSzP6tW/fPpk1a1aZfj/72c+yPvaLFi3KyXkBsHkRlAOQanvttVfGHz/jx4+v0L4V+WN2wYIFyc0335yccMIJyfbbb580btw4KSgoSFq1apV07do1GThwYHLfffdl/GH+bUuWLEluvfXW5IQTTkg6duyYNGrUKCkoKEhatGiR7L333slFF12UjB07dr11jBo1KusfhEmSJLNnz06uuOKKpGvXrmvXab3ooouyjvPGG28kF154YbL33nsnLVq0SAoKCpLGjRsnXbp0Sc4555wKrQ1eURUNytcYO3ZsUq9evYx9mjZtmvX+rcwa5VOmTEmGDBmSHHTQQck222yT1KtXLykoKEhatmyZdOnSJTnssMOSiy66KHnggQfK/NGeLXja0M+31/9dX3D17rvvJuecc06y/fbbrz3vxx57LEmS3K1R/uCDDyZ9+/ZNtt5666ROnTrJtttum5x++unJuHHjyn0c7rjjjozxDj744Kx9NxTMVef9V545c+Yk119/fXLEEUck2267bdKgQYOksLAwadWqVdKjR49k8ODByQcffLDeMdZ3H8yZMycZMmRI0rVr16RRo0ZJ/fr1k5133jn51a9+lcydO3e949akiy++OOOcjjvuuIx+p556apk+++23X5nbL7zwQpn+8+fPT2rVqpUx9qRJk7LWsWrVquShhx5K+vfvn3Tp0iVp0qRJUlBQkDRv3jzp3r17Mnjw4OSTTz6p8HktXLgw+fOf/5wce+yxSYcOHZKGDRsmderUSVq3bp306tUrue666za4FnVFg/L//e9/WdcA79evX7Js2bIK17yu0tLS5PHHH08GDhyY7LzzzknTpk2T2rVrJ02aNEm6dOmSDBgwIHn00UfLDTgr+xqrrOeff36Da0VPnz4961rjJ5xwQkbfa6+9NqNfx44dk9WrV5fpt3r16qyh6bqB+pIlS5IRI0aU+wH5Gt///vez3h+LFy/O6Dt8+PCMfn379i33Mci1bLUOGDAgo9+nn36a5OXlZfTd0P8pynP44YdnjLXbbrtV9XSS5cuXJ02aNMkY+84778zom+39t2nTphlrv59//vkZ/QYNGpQx3oQJE7I+7vPmzavyeQGw+RGUA5BqO+ywQ8YfP3//+9+rPG5paWny+9//PmnQoEGFgoc1Aee67r777gpdXC0iku9///tlQtpvKy8of+ONN5IWLVpkbFs3KP/888+TQw45pEJ19O3bN2NG1saobFCeJEkyYsSIrDVlm/la0aD8xhtv3ODF4soLdqor6L3llluSgoKCcp9HVQ3KJ06cmDXwWPOTn59f7jcqvqtB+erVq5M//OEPWT9sWfcnLy8vOe2008r9gKu8++DZZ59NmjVrVu647du332xnyT/22GMZ9bZo0SKjX7t27dZuLyoqSu65554y+6wbID/55JMZ47Zs2TJrDa+88krW4DPb8/PSSy/dYPD5l7/8JWnUqNEGx2vcuHFy9913lztORYLyt956K+t7+UknnVSlGcT/+9//KnyhyB133DFrAFrZ11h12XXXXTOO1a9fv4x+6374EhHJeeedl3XM8847L6Pv/vvvv1H1XX/99Vnvj3VnqCdJ2dfBmp/quLBlNkuXLs168dR//etfWfvvvPPOGX0vu+yySh939erVSbdu3bI+x6vq+eefz3rfZ/u/xtdff52173/+858y/f785z9n9PnRj36UMd6zzz6b0a9NmzZVPicANk+1AgBSbOutt85oO/fcc+O0006Lf/7zn1nXbN2Q1atXxw9/+MMYPHhwhS44VZ7f/OY3cfrpp2e9uFo2zz33XOy9997xxRdfVKj//Pnz48gjj4zZs2evt9+kSZNir732ilGjRlVo3Oeffz6+973vbXDc6nD22WdH48aNM9qfeeaZjRrvtddei4svvjhWrVpV1dJy5qWXXooLLrggSkpKqu0Yp5xyynrvs9LS0hg8eHDcdttt1VbDpnbmmWfGL3/5y1i+fPkG+yZJEvfee2/06NGjwhcBfP/99+Poo48ud/3uiIjPP/88zjjjjArXvCkdcMABkZeXV6Zt9uzZ8eGHH669PW3atJg2bdra2z169Mi4iN6665RnW7f8gAMOyGj75z//GYccckiF3pNLS0vjj3/8Y5xwwgmxevXqrH0uuOCCOO+882Lx4sUbHG/hwoVx+umnx/XXX7/BvtmMGzcuevfunfFePnDgwHjggQeioKBgo8YdOXJk9OjRIyZNmlSh/h999FEccMAB8fzzz2/U8apbtseqQ4cOZW6vWrUq3n777Yx+u+yyS9Yxs7W//fbbG3VxzWz11atXL1q2bFmm7bPPPivzOoiI2HbbbaNZs2Zx2WWXxZ577hmNGjWKunXrxrbbbhvHHXdcPPjggzm74OeECROyjlWZ++itt96q0LGS//96Ia+99lr84Ac/iHHjxmX0ufDCCys01vr873//y2hr0aJFtGjRIqO9ZcuWWdvXPadTTjklmjZtWqbtX//6V9x4440xa9asWLZsWbz88stZ6//1r39d2VMA4DvCxTwBSLVevXrF66+/XqZt1apVcd9998V9990XEd9cKKpbt25x4IEHxuGHHx577733esf8zW9+Ew8//HDWbXvvvXfsuuuukZ+fH1OnTo0xY8bEsmXLMvr9+9//jmHDhmW0N2rUKPr06RNNmjSJCRMmZPxROmPGjDjhhBNi7NixGaHWuhYtWrT237vvvnvsvffesXz58nj33XfXthcXF8eRRx6ZEe7Vrl07DjnkkGjXrl3MmjUrXnjhhTIB49SpU+OUU06JkSNHrreGXKtXr1706NEjI+R98803N2q8u+++O6OtZcuWcdBBB0WzZs1i+fLl8eWXX8bEiRNj5syZGX27d+8e559/fkRE3HLLLRnbTz/99GjUqFGZti5duqy3pjUfhOTn58dBBx0U22+/fcybNy9Gjx5d4fPakHfeeSdq1aoVhx56aHTs2DGmTJkSo0aNyriQ7SWXXBJHHXVUbLPNNjk79rdVx/2XzV/+8pe44447MtqbN28evXv3jnr16sWbb76ZEUi+//77ceaZZ5b7ev+2Na+hRo0aRb9+/aJu3brx5JNPZoSno0aNinfffTd23333Sp9HdWrevHl06dIl44J9r7766tr7fN3Q+8ADD4y2bdtGhw4d4rPPPouIiDFjxkRJScnacDjbhTwPOuigMrc/+OCDOP300zOCyqKioujZs2c0a9YsPvnkk3jllVfKbH/yySfjmmuuybjY4u233571+dSxY8fo3r17FBYWxrhx42LixIlltg8ePDi6d++eUd/6rAnJ58+fX6b9wgsvjJtuummD79Pl+eqrr+LEE0/MuJBxfn5+HHroodGhQ4f4/PPP48UXXywTmpaUlMRJJ50UkydPjtatW0dErH2N/fe//80IJNdcQLm6TZ48ucyHLmusezHeL774IuuHWWvOZV2tWrXKaFu2bFl88cUXGSH8hjz22GMbrC8ie8i8dOnS2GmnnTI+PJ8+fXpMnz49Hn/88bjuuuvioYceynrx0sr46KOPsrZX5j6aPHnyeo9RkedtQUFBjBgxIusHX5WV7ZzKO5+Ib85p3Q/r1z2npk2bxiOPPBInnnji2vfn1atXxyWXXBKXXHJJ1nHz8vJiyJAhcd5551X2FAD4rqjhGe0AUKPmzJmTtGrVqlJfO99ll12Sxx9/POt4X331VdalG9q2bZuMGTMmo/+iRYuSG264IWPJj9122y1jjM6dO2csrbLmImnr/jz88MNl+mVbeiXim4t73XfffRl1rVlSIttSJp06dUo+/fTTMv2nT5+ebLfddhl9R44cucHHoDwbs/RKkpR/4a2lS5ducPx1H4fevXtnPI7lXcBrypQpyV/+8pdylyTJVtOGltkob+mRbbbZJuNr/KtWrVp7ocSqLr1SUFCQvPTSS2X6PfPMM1m/zn/55ZeX6ZfLpVeq4/5bd/zly5dnXX7ogAMOKPNYl5aWZl2nOyKS//3vfxu8D9a8dmbMmLG236RJk7Kuu3vTTTet97xqyk9+8pOMWk899dRyt7/xxhtJkiTJ6aefXqZ9zXvh0qVLsy4htO4a+Mcdd1xGn2OOOSbjwqCjRo3KuMhjo0aNyqz9vmLFiqR169YZ41199dVl1o9evXp11rWwe/TokXG/lLf0yrhx47I+vldccUWVH4sLLrggY9x69eqtvc/XeOONN7L+Trrgggsyxqyui3luyMqVK5ODDjoo49i77rprxpre48ePz/raev7557OO/dxzz2XtX9llUG677baMMWrVqpX19/ott9yS9ZgV+WnXrl25F/usqBtuuCHr2MXFxVn7/+pXv8roW1RUtN5jbOg8fvSjH1XqWgEbcvTRR2ccY7/99iu3/7777pvR/9hjj83ad+bMmcnll1+e9QKx3/456KCDNnh9CgC++yy9AkCqNWvWLJ577rlo3759hfeZOHFiHHvssXHllVdmbHvyySczZrvl5eXF448/Ht/73vcy+jdq1CguvvjiMssTTJo0Kd57772Mvtdcc03GzK9BgwbFHnvskdG3IjNcIyIuvfTSOOWUUzLat9pqq4iIePDBBzO23XjjjdGxY8cybW3atIlf/vKXGX0feOCBCtWRS2tqX1dFl7D5tnWXcVm5cmW5S2dst9128dOf/jTr/ZBr//jHP6Jr165l2vLz86NBgwY5Gf+0006LQw45pExbv3794vTTT8/o+/TTT+fkmDXl5ZdfzrpM0IgRI8rMVq9Vq1b87ne/yzr78pFHHqnQsa699toys+87d+4c/fr1y+i3MUs+bQrZZlJ/exb5t/9dt27dtd++WXe/Nf1Gjx6dsYRQo0aNyjy3lyxZEv/+97/L9KlTp07cfvvtGc/3nj17xnHHHVembfHixWX2f+WVVzK+/dGtW7e47LLLolat//enUV5eXgwePDjj8X7jjTcqtLzV22+/Hb169cqYSX7dddfF8OHDN7j/+iRJkvU9/uyzz47999+/TNv+++8f55xzTkbfij5nq9vKlSvjRz/6UcY3C7baaqt44IEHyjwmEVHucmblLV9TXvuSJUsqXOM///nPrDOIhw4dmvX3+vp+19StWzcOP/zwOP3002OnnXbK2D5t2rS4+OKLK1xbNrm4jypz/2Tz4IMPxllnnRXvv/9+lcZZI9s5rW/Jooqe08qVK+OOO+6Iv//971FcXLzeGl599dX4wQ9+EC+++GIFKgbgu8rSKwCkXteuXeODDz6Im2++Of7+97/Hxx9/XKH9hg8fHr17944DDzxwbVu2JT7233//6NatW4XrGTt2bEZbQUFBHHPMMVn7n3TSSRlrto4ZM6ZCxzr77LPL3VZaWhr//e9/M9qPOuqoCo0dERnL2mwK5a0ZXVRUVOmx+vTpUyaQmjVrVmy//fax0047RefOnWO77baLnXbaKfbee+/YfffdM0Kd6tCuXbvo27dvtR7j+OOPz9p+9NFHZyxR8t5778WqVauidu3v5n8rs73ett9++9hrr70y2uvWrRtHHXVU/O1vfyvTXpHXW6NGjTJC3IjIumzNt5dFqoyxY8fGPffcs94+hx9+eNblIiri2+91a0ybNi0+//zzaNiwYZmlM773ve9FnTp1su732muvxc9//vOs65Pvv//+kZ+fv/b2uHHjMpYXWblyZTRv3rzCdb/++uvx4x//OCIi6xJF48aNq9QSKK+//nqcfPLJ6+3zxBNPlLldq1atuPXWW7OG1pU1bdq0+OqrrzLaTzrppKz9f/CDH8SIESPKtM2cOTM+//zzSn1InGsLFy6M4447LuP6F/Xr148nnngidt1114x9yvswsLxrNpTXXtEPFW+66aa49NJLM5b9Of/887N+WB5RfoBbr169GDNmzNpllUpLS+OMM87IWOLrX//6V/zpT39au/Z5ZV/X67uP1rwm121f14bunzXL9ZSWlsa8efNiwoQJGf93evnll2O//faLF154IeMDhXvvvXeD75sXXXRR7LDDDuXWs77rdFTknJYuXRp9+vTJ+H9by5Yto0ePHrHVVlvF+++/X2aJu/fffz/69u0b//znP+OEE05Yb/0AfDd9N/+iAYAcq1+/fvzyl7+MX/7yl/Hxxx/Ha6+9FmPHjo0xY8bEe++9l7E28xq33357mRBo1qxZGX3Ku4BWeb7++uuMtrZt25YbwmYLOrLVsa6tttpqvWuhzp07t8oXF8sW5lS3Tz75JKOtYcOGUb9+/UqPNWDAgLj//vvj5ZdfXtu2evXq+OCDDzLWam7evHn0798/LrvssowLhOVStm8Q5Fq7du2ytm+77bYZbatXr4558+ZlXNDuuyLb662884/Y+Ndbu3btsr6G69atm9FW3gUoN+TDDz/Muvb2tzVv3nyjg/Jtt922zHrja7z66qux1VZblXmf/Pb74o477hitWrVa+37w+uuvR5IkWdcnXzdUz/b4VNa334dyPV5F9ejRI84666wqHzui/HMo73lbXhg+a9asGgvKp0+fHv369cuYcdy4ceN46qmnsn4oE1H+B57lzYAur31DH5wmSRKXXnpp3HjjjRnbLrnkkvjjH/9Y7r7ljX3aaaeVufZAfn5+XHPNNRlBeZIk8frrr6/9wLKyr+v13UfZfjdlu482dP/cfPPNGW0vv/xy/OhHPyrz/FyyZEkMGDAgPvjggzIfRr3wwgtx1113rfcYJ5544tqgPFs965v1XpFzuvLKKzNC8l69esWjjz5a5ttE//jHP+LMM89ce7u0tDTOPvvs6Nu3bzRs2HC95wDAd4+lVwBgHTvssEOcccYZcdttt8U777wTM2fOjOHDh5eZ5bjGujO5q0u2MK0i29ZnQ38Ib+xF5r5tY2fGbqxly5ZlndW/3377bdR4BQUFMXLkyLj11luje/fu650xPmfOnPjjH/8Y+++/fyxevHijjlcRGzMzvqaVF/xmW/Jkc1Adr7fyZkBne1/ZnGULMF999dWM2eHrLrfy7f3mzZsXb7/9dtYZpeuOn+v3oZp6X3vttdfinHPOKfdD11wo77m5sc/Z6vLee+/FfvvtlxGSt2nTJl577bVyQ/KIbz6sqVevXkZ7tospR2T/UKNevXpZP/Rbo7i4OH70ox9lhOR5eXlx/fXXrzckj4hyLxKa7UPzbbbZJut7elU+0Nlxxx2ztlfmPipvjPXp2bNnxjcXIr5ZTi7bBU4rI1s95Z1PxIbPafXq1Vkv4PzHP/4x4wLRZ5xxRsY3jObPnx/PPvvsBusG4LvHjHIA2ICtt946rrjiipgxY0b83//9X5lt665HvvXWW2fsP3HixEofb11ffPFFJEmSNeT5/PPPM9oqMrt3Q4FRs2bNIj8/P2NWef/+/TfbWVS33XZb1hAr2zrQFVW7du0499xz49xzz41FixbFe++9F5988klMnTo13n///XjuuefKrJ86efLk+L//+7/4xS9+sdHHXJ9cBH0bMm3atDIzH9fItjZzrVq1ysxSzPZhwrqvkzXWnZlcE7K93rK9pta37bs6m35jHHTQQRnLQLz22mtl1vPPz8/P+HDqwAMPjIceemjt7RtvvDHjeVFYWBjdu3cv05btvt1qq63WLqVSEWtmpZY3XpcuXeLQQw+t8Hj77LPPBvt069YtJkyYUOZDottvvz0KCws3ODt4Q7I9ZyO+eW5mO7/yns818bx96aWX4vjjj89YImv33XePf//739G2bdv17l+7du3YY489MpbQKe/3bLb2Pffcs9wPqObPnx/HHntsxrcd6tatG3fffXe5y9t825q1+auiKr9j15zfur+7J06cmDWsz3YfVeQ5nk1533iaMmXKRo9ZXj1z5syJWbNmZTyPZ82aFXPmzFnvGLNmzcq4fkBERKdOnbIef/vtt4/x48eXaZsyZUqFagfgu0VQDkCq3XHHHfG9730vdt555w32zRYqNGvWrMzt/fbbL2OW0ptvvhnjx4/PuuZxNvvuu29G25IlS2LUqFFZw5x118Itb4zKqlWrVuyzzz4Zsz4PO+ywCodUVV26pTLGjBkTl19+eUZ7kyZN4owzzsjJMbbaaqvo0aNH9OjRY23byJEjo0+fPmX6ZZvVXqtWrYyZ1Zvy/qmMRx99NI488siM9mwX7txtt93KrE++7my8iOwB+5dffhkvvPBChWuqrvsv22vlww8/jClTpsT222+fcbx1LyxZ3hg1YcCAATFgwIBqPUa22b6TJ08uEzzuueeeGUHfujPMs13od5999smY/dytW7coKCgos+bw4sWL4xe/+EWFlg1Zd/38bI9VSUlJ/OlPf6rQNQYquh7/kUceGWeeeWbGRSD/8pe/RGFhYdxwww0bHKM87du3j9atW2fMqH3qqaeyBorZfke0bt16ky+7cv/998fAgQMz1pzv27dvPPTQQ1nfO7I5+uijM4Ly5557LuPD5CRJ4rnnnsu6fzbTpk2Lfv36ZV1W64knnsi4UGp5mjRpEvvuu2/G785sgfSMGTOyXvzz2x/uVPZ1Xb9+/ejVq1c8//zzZdqfffbZ+MEPflCmberUqTFp0qSMMda9jyr6vH/nnXfKrenb7rzzzrjzzjs3ON4aBx54YDRp0iQj3H722Wejf//+ZdqeeeaZjP2bNGlS5r2rvHXkP/nkk6wfEmcLxTe3b2oAkBuWXgEg1dZcMOz73/9+3HPPPVn/YI345qvDt99+e0b7uqHEMccck/EHYZIkcdxxx8X//ve/jP2XL18et956a7zyyitr2zp37hy77bZbRt8LL7ww4+vYt9xyS9Z1fisy660i1v2jOuKbC2yte/G1b5s0aVJcf/31sfvuu2e9WF+uLVq0KK699to45JBDss5c/s1vflNmtmtl/PWvf40rrrgiJkyYUO6SCdOnT89oKy4uzmjLFgJV9tsGm8q9996b8Rg///zzWdeUXTdQz7bu/ddff10mGC0uLo6f/exnGYHZ+lTX/XfwwQdnfAiWJEmcddZZZda5TZIkLrvssvj0008zxjjxxBOrXMd3RefOnbN+aPjtDy2yhem77bZbmSUmVq1aldEn234NGzbM+EbImvfUqVOnZq2xtLQ03nzzzfjlL3+ZscRGtsf7k08+iTPOOKPcCwEvXbo0nn766ejfv3+5F1XO5qc//WlcffXVGe033nhjXHbZZRUeJ5tsz7kbb7wxI5wdO3Zs1lB+Uz9n//CHP8Rpp52W8Zo/++yz4+mnn65wSB4RMXDgwCgsLCzTNnXq1LjuuuvKtF133XUZz5HCwsIYOHBgxpjvvPNO7LfffhkheadOnWL06NEVDsnXOPfcczPa7r333nj33XfX3i4tLY1f//rXGf1atWqV8c2Kysp2/Pvuuy/eeOONtbdXrVoVgwYNyvjdtscee2RcfPP888+P/v37x4svvpj1tRsR8cYbb8SgQYOybst2YdbKqFevXpx++ukZ7b/5zW/K/L/o66+/jquuuiqjX//+/csE202bNs2Y6BAR8ctf/jJjffM77rgjYzZ5xDfvhQBsecwoByD1kiSJ559/Pp5//vnIy8uLnXbaKXbaaado1qxZFBcXx6effhqjR4/Ous7yqaeeWuZ2y5Yt4xe/+EX85je/KdM+bdq06N69e3Tv3j122WWXyM/Pj2nTpsXo0aNj8eLF8dhjj5Xpf+2118YRRxxRpm3ixImx4447Rp8+faJJkyYxYcKErOt+7rPPPnHcccdt7N1Rxk9/+tP405/+VGaJjPnz58ehhx4aO+20U+yyyy7RvHnzWLZsWcyYMSMmTpyYk4vllWfs2LFxwQUXRJIksWjRopg6dWq89dZbWYPpiG9m4v3sZz/b6ON9+eWXcfXVV8fVV18dRUVFscsuu0S7du1iq622iuLi4vjoo4+yrrO80047ZbTtuOOOGR+W/PjHP45+/fpFs2bNIi8vL+rXrx9/+MMfNrreXCkpKYlevXrFYYcdFh07dowpU6bESy+9lBGo1K9fP2PG7K677hotWrTIWH/8xz/+cTz00ENRVFQUL7300nqXN8mmuu6/unXrxtChQ+P8888v0/7yyy/HdtttF71794569erFm2++GR9++GHG/ieeeGJ069atUsf8rjvwwAPjkUceWe/2ddWqVSt69OiRdUb++vaLiLj66qvj2WefLTOrfMKECbH99tvHvvvuGx07doxGjRqtfU+YOHFiudcJqFu3blx11VUZQeJdd90V//rXv+KAAw6INm3aRO3atWP+/Pnx0UcfxaRJk9Ye++CDDy63/mwuu+yymD9/flx//fVl2q+55pooLCyMoUOHVmq8b4971113lVlqasmSJXHAAQfEYYcdFh06dIjPP/88XnjhhYxvXjRq1ChrQFtd/vrXv8bgwYMz2lu0aBF16tQpN1yN+OZbW+v+Pt16663jyiuvzPgG0eDBg+OJJ56InXfeOT788MMyofAaQ4cOzfigZM6cOXHQQQdlXbarW7ducdNNN63n7L758PjbM8Ajvrlw5y233FLmPWv58uXxve99Lw477LBo1qxZ/Pe//806m3vIkCEV+nbD+hx77LHRp0+f+M9//rO2raSkJA455JD4/ve/Hy1atIjXXnstPv744zL71apVK+uFOouLi+Puu++Ou+++Oxo1ahR77LFHdOjQIRo0aBCLFi2Kd955p9wPLnv16rXeC4dX1JVXXhkPPvhgmf9jTJ06Nbp06bL2QqbPPvtszJs3r8x+rVq1iiuvvLJMW15eXvzgBz+IW2+9tUz7888/H9tvv30ceOCB0ahRo3j//fez/j+rZcuWlVquCYDvkAQAUuyYY45JImKjfs4///ysY5aWliYnnHBCpcZ67LHHMsYZNmxYpWtq06ZNMm3atIyxRo0aldG3ffv2FbqP3n///aRJkyYbdR+NGjWqEo9GWe3bt9/ox6ZWrVrJZZddlpSUlFRq/HXrHTp0aKWPXbdu3eTDDz/MON7w4cM3uG/jxo03ePz+/ftv8L6bOnVq1vGzydavY8eOFTrXW2+9NeuYFTnXiEhatGhR4fOr7vtvwIABlX6sd91112TBggUZY91xxx0ZfQ8++OCsx93Yx7gmjRgxYr33y6xZs7Lu9/vf/369r9ls9+Ua9957b5KXl7dR7wfZnHPOORs1VrbHsX///hn9hg4dWqbPmWeemXW83//+9xW+39f1n//8J6lTp06l6i8oKEiee+65rONV13NxY95H1/yU93uqpKQkOfrooys11tFHH52sWrUqY6zy3i8r+lPe77mPPvoo2WabbSo11imnnJKsXr26yvd5kiTJjBkzkk6dOlXq+H/4wx+yjpXtOV6RnzZt2iSfffZZTs4nSb75v0z9+vUrfPwGDRqU+/jMmjUradOmTaXPqVatWslDDz2Us3MCYPNi6RUAUm2PPfao9EWzCgoK4rLLLos//elPWbfXqlUr/vWvf8W1116bsQxLZQwdOjTuuuuuMssVrE/fvn3jf//7X8ZSA1W1yy67xPjx4ys9e2qPPfaINm3a5LSWDcnLy4vevXvHqFGj4uqrr67QmqrrU9lZfU2aNImHH34464zyiy66qEJr4W8OHnnkkTjggAPK3V6rVq249tprs369P+KbmZ19+/Ytd//8/Py48sorM2ajr09133//+Mc/4g9/+EPUq1dvg33z8vLi1FNPjTfeeGOjl/X5Litv5nfEN9+maNGiRaX323333dd7X5566qnx0ksvVWpman5+fsb1A9a47bbb4uabb46tttqqwuM1atQoY631irrtttuyLncyePDgGDFixEaN2bt373j99dcrvATEDjvsEK+99tp6X5vfFbVr145HHnkkLrzwwnIvzLlGfn5+XHjhhfHII49ssG8u7bDDDvH6669XaNmW2rVrx5AhQ+Kuu+7K2QWbt9lmm3jttdfKfQ18W1FRUdx+++3lXoS6sjXl5eXFSSedFG+99VZO18Lv2bNnvPDCC7HjjjtusO+OO+4YL7zwQvTs2TPr9hYtWsTrr7++3t9169p6663jX//6V6qW2wJIG0uvAJBqw4YNi8suuyzeeOONGDNmTEyYMCGmTJkS06dPj8WLF0dxcXE0aNAgmjZtGjvvvHMcfPDBcfLJJ0e7du3WO26tWrVi8ODB8ZOf/GTtes8TJkyIuXPnxvLly6Np06bRqlWr2HPPPaNXr17lhtCnn356HH/88XHvvffGyJEjY/z48TFnzpxYsWJFFBUVRYcOHWL//fePU089tcprmq5Phw4d4sUXX4y33norHnjggRgzZkxMmTIlFixYEKtXr45GjRpFu3btYqeddooDDjggevfuXaE/ZDdGrVq1oqCgIOrVqxdNmjSJVq1axXbbbRfdunWLo446Kjp16pSzY11++eXRp0+fePXVV2P8+PExefLkmD59eixatChKS0ujfv360apVq9h5552jT58+cdppp5UbvDVq1CjGjBkTN910Uzz55JPx0UcfxeLFi8td+7wmNWnSJF555ZW4++67166ru3DhwmjZsmUccsghMWjQoPVenLagoCCefvrp+Pvf/x733HNPvP/++1FcXBzbbLNNHHrooXHhhRfG7rvvHsOGDatwTdV9/+Xl5cUvfvGLOOOMM+LOO++Ml156Kd57772YO3durFq1Kpo0aRLbb799HHDAATFgwIDo0qVLTo77XdS1a9do3Lhx1jW91xeG77333lG/fv1YtmxZpfZbo2fPnvHRRx/Fv//973jyySfjf//7X8yYMSMWLlwYtWvXjqKioujYsWPsuuuucfDBB0efPn3KDe0j/t+6y/fff3+88MILMWHChJg9e3YsWbIk6tatG82aNYsddtgh9txzzzjkkEPikEMOqdAHKdnk5+fHfffdF4sWLSqzHEZExKBBg6KwsLDcD57WZ5999okPPvggnnrqqXj88cdj7Nix8dVXX8XixYujYcOG0apVq/je974XRx99dBx77LFVXtJjc1K7du0YMWJEnHvuuXH33XfHyJEjY9q0abFgwYJo3LhxtGvXLnr37h39+/evsddrx44d44033oinn346Hn744XjzzTfj66+/Xvs7vHPnznHooYfGWWedFW3bts358Vu1ahXPP/98vPjii/HPf/4zXnvttZg5c2YsX748mjdvHjvuuGMcccQRMXDgwKxrdq9x8803xwknnBCvv/56vP322/Hpp5/GV199FcuWLYv8/Pxo0KBBtGrVKjp37hz7779/HHfccTn9Xfxt++23X7z//vvx4IMPxuOPPx7jx4+PWbNmRcQ3S6Lsueeeceyxx8bJJ59c7kU71+jQoUO89tpr8fLL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OuusGDBgwCasFgAAAACAzckWsfRK//7947bbbisTkkdEtG7dOm655ZaIiHj00Udj5cqVNVEeAAAAAACbsS0iKF+frl27RkREcXFxzJ07t4arAQAAAABgc7NFLL2yPp9++mlEfLM8S9OmTTO2v/TSS/H222/HihUrom3bttGvXz/rkwMAAAAApMgWH5SPGDEiIiK+//3vR2FhYcb2e+65p8ztIUOGxAknnBB33nlnNGzYcJPUCAAAAABAzdmig/Jnnnkmbr/99igoKIjhw4eX2dapU6e4/vrro1+/ftG+ffuYP39+vPrqq/HLX/4yHnnkkSgtLY3HHnusQsfZZZddsrZPmTIlOnToEHPmzKnyuQAAAFSHlStXRuvWrWNpfqNoXlAS+Vv0X4lERJTUWRU779Q58hu1iBZ1SqJ27S1+VVbC455GpVESnTpsG61bNox58+ZFnTp1arokqFalpaWRn5+/0ftvsf8FmjRpUpx22mmRJElcd911a9cqX+O0004rc7tBgwZxyimnxCGHHBK77bZbPP744zFmzJjYd999N2XZAAAAAABsYltkUD5jxoz4/ve/H/Pnz49LLrkkLrroogrv27p16xg4cGBcf/318dxzz1UoKJ84cWLW9jUzzZs3b17h4wMAAGxKK1asiJkzZ8YnXyyIbUsKonZkLlnJlqV4ZXF8MGlyFDRZEp1XFkSdPI95Gnjc02dVScQnn30RDUqLomnTplG3bt2aLgmqVVVmk0dEbHHfs5k3b1706dMnPv/887WBd2XtsMMOERExc+bMXJcHAAAAAMBmZosKypcsWRL9+vWLDz74II4//vj429/+Fnl5eZUeZ/78+RHxzXIsAAAAAABs2baYoLy4uDiOOeaY+O9//xt9+/aNBx54YKOm2ydJsvYinnvttVeuywQAAAAAYDOzRQTlpaWlcfLJJ8dLL70UBx54YDz66KPrvZLv7Nmz45ZbbonFixeXaV+yZEn89Kc/jbFjx0arVq3i+OOPr+7SAQAAAACoYVvExTxvvvnmtbPAmzdvHuedd17Wftdff300b948li5dGhdccEH86le/in322Sdat24ds2fPjvHjx8fcuXOjqKgoHn744ahfv/6mPA0AAAAAAGrAFhGUr1lTPCLWBubZDBs2LJo3bx7NmjWLwYMHx5gxY+Kjjz6KN998M/Lz86Njx44xYMCAuPjii6NNmzabonQAAAAAAGrYFhGUDxs2LIYNG1bh/o0aNYprr722+goCAAAAAOA7Y4tYoxwAAAAAADaWoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGqCcgAAAAAAUk1QDgAAAABAqgnKAQAAAABINUE5AAAAAACpJigHAAAAACDVBOUAAAAAAKSaoBwAAAAAgFQTlAMAAAAAkGq1a7oAAAAAACC3kiSJZPXqKC0tjRUrVtR0OWxihYWFkZeXV9NlfKcIygEAAABgC7N61cqY8/mHMe7rgjj11FOjVi0LS6TJQw89FHXr1q3pMr5TBOUAAAAAsIVaXq9lvDtjYeSF2cVp0XXbopou4TtJUA4AAAAAW7ADz/pNFBQW1nQZVLPVJSXxyl+vrOkyvrME5QAAAACwBcsvKIjaBYLyLd2qmi7gO87iRAAAAAAApJqgHAAAAACAVMtpUH733XfHQw89VOH+jz76aNx99925LAEAAAAAAColp0H5gAEDYtCgQRXuf+mll8YZZ5yRyxIAAAAAAKBScr70SpIk1dofAAAAAAByqUbXKF+0aFHUqVOnJksAAAAAACDlaiwoHz16dMyfPz/atGlTUyUAAAAAAEDUrsrOd911V9x1111l2ubNmxeHHnpoufskSRILFiyIiRMnRl5eXhx22GFVKQEAAAAAAKqkSkH5Z599Fi+//HKZtpUrV2a0ladz584xbNiwqpQAAAAAAABVUqWgvGfPnmVu/+Y3v4mGDRvGpZdeWu4+tWrViq222ip23XXX6NmzZ+Tn51elBAAAAAAAqJIqBeUHH3xwHHzwwWtvrwnKhw4dWuXCAAAAAABgU8jpxTynTp0a//3vf3M5ZIUsW7YsHn/88TjzzDOjc+fOUbdu3WjQoEF07do1rrrqqliyZEm5+955553RvXv3aNiwYTRt2jQOP/zwePPNNzdh9QAAAAAA1KScBuXt27ePtm3b5nLICrn//vvjuOOOi3/84x+Rn58fRx99dBx44IExderUGDp0aOyzzz4xa9asjP0GDRoUAwcOjPfffz969eoV3bt3j5EjR8ZBBx0Ujz/++CY/DwAAAAAANr0qLb2yIStWrIj58+dHSUnJevu1a9euSscpKCiIc845JwYNGhRdunRZ2z5z5sw44ogjYsKECTFo0KC4//7712574YUXYsSIEdGsWbMYPXp07LDDDhERMXr06OjZs2cMHDgwevbsGUVFRVWqDQAAAACAzVtOZ5RHfLMMyrBhw6Jz587RoEGDaNu2bXTs2LHcn+22267Kx+zfv3/cdtttZULyiIjWrVvHLbfcEhERjz76aKxcuXLtthtuuCEiIq644oq1IXlExH777RfnnntuLFiwIG6//fYq1wYAAAAAwOYtp0H5ggULYt99943hw4fHxx9/HEmSbPBn9erVuSwhQ9euXSMiori4OObOnRsREcuXL4+XXnopIiJOPPHEjH3WtD311FPVWhsAAAAAADUvp0uvDB8+PN5///0oKCiIn/3sZ3HMMcfENttsE7VrV+sKL+v16aefRsQ3y7M0bdo0IiImT54cxcXF0aJFi6xrqu+1114REfHuu+9uukIBAAAAAKgROU2wH3/88cjLy4ubbropfvrTn+Zy6I02YsSIiIj4/ve/H4WFhRERMW3atIiIci882qBBgygq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FStWxHnnnRd5eXnRq1evXJYAAAAAAACVktOg/Be/+EUUFhbG66+/Hl27do3bb789PvvssygpKYmSkpKYOnVq/P3vf4+uXbvG66+/HnXq1Imf//znuSwBAAAAAAAqpXYuB9tuu+3irrvuih//+Mfx8ccfxznnnJO1X5IkUVBQEHfddVdst912uSwBAAAAAAAqJaczyiMifvCDH8To0aOjb9++EfFNKP7tn7y8vOjXr1+MGTMmfvCDH+T68AAAAAAAUCk5nVG+xl577RXPPvtsLFy4MMaPHx+zZs2KiIiWLVvGXnvtFY0bN66OwwIAAAAAQKVVS1C+RuPGjeOQQw6pzkMAAAAAAECV5HzpFQAAAAAA+C6pclB+wQUXRNOmTePoo4+uUP8kSeKYY46Jpk2bxs9//vOqHh4AAAAAAKqkSkH5Z599FrfddlusWLEi/vKXv1Ron7y8vLjllltixYoV8ec//zlmzJhRlRIAAAAAAKBKqhSU33fffVFaWhpnnXVWtG3btsL7tW3bNs4555xYtWpV3HvvvVUpAQAAAAAAqqRKQfmoUaMiLy8vfvjDH1Z63x/+8IeRJEm8+OKLVSkBAAAAAACqpEpB+QcffBB5eXmx7777VnrfffbZJ/Ly8uL999+vSgkAAAAAAFAlVQrK582bF40bN478/PxK71u7du0oKiqK+fPnV6UEAAAAAACokioF5XXq1Inly5dv9P7Lly+PgoKCqpQAAAAAAABVUqWgvEWLFlFcXBwzZsyo9L4zZsyIFStWRIsWLapSAgAAAAAAVEmVgvJu3bpFRMTTTz9d6X2ffPLJiIjYa6+9qlICAAAAAABUSZWC8n79+kWSJHHNNdfE4sWLK7zfokWL4ve//33k5eVFv379qlICAAAAAABUSZWC8lNPPTVat24dX3zxRRxzzDExb968De4zb968OOaYY2LatGnRunXrOO2006pSAgAAAAAAVEmVL+Z52223RV5eXrzyyiuxyy67xDXXXBMffvhhRt8PP/wwfve738Wuu+4ar776atSqVStuvfXWqFOnTlVKAAAAAACAKqld1QGOPPLIuOWWW+JnP/tZfP3113HFFVfEFVdcEYWFhVFUVBQREQsWLIji4uKIiEiSJPLz82PEiBFx1FFHVfXwAAAAAABQJVWaUb7GT37ykxg1alR07949kiSJJElixYoV8dVXX8VXX30VK1asWNvevXv3GDVqVJx33nm5ODQAAAAAAFRJlWeUr9GjR48YM2ZMvPXWW/Hiiy/GxIkTY+7cuRER0axZs9hll13isMMOi7333jtXhwQAAAAAgCrLWVC+xt577y0MBwAAAADgOyMnS68AAAAAAMB3laAcAAAAAIBUE5QDAAAAAJBqgnIAAAAAAFJNUA4AAAAAQKoJygEAAAAASDVBOQAAAAAAqSYoBwAAAAAg1XIalB966KFx2GGHxZQpU3I5LAAAAAAAVJvauRzs9ddfj4KCgth+++1zOSwAAAAAAFSbnM4o33rrraNOnTq5HBIAAAAAAKpVToPygw46KBYtWhQff/xxLocFAAAAAIBqk9Og/Oc//3nUrl07Lr300kiSJJdDAwAAAABAtchpUL7nnnvGAw88EC+//HL06NEjHnvssfj666+F5gAAAAAAbLZyejHP/Pz8tf8eO3ZsnHjiiRvcJy8vL1atWpXLMgAAAAAAoMJyGpSbOQ4AAAAAwHdNToPyUaNG5XI4AAAAAACodjkNyg8++OBcDgcAAAAAANUupxfzBAAAAACA75pqDcqTJIk5c+bEtGnTqvMwAAAAAACw0aolKB8/fnwcf/zx0bhx49h6661ju+22K7N9/vz58ZOf/CTOPffcWL58eXWUAAAAAAAAFZLTNcojIu65554466yzoqSkpNw+TZo0iSlTpsSoUaOiZ8+e8aMf/SjXZQAAAAAAQIXkdEb5Bx98EGeffXaUlJTEhRdeGG+99VY0b948a9/+/ftHkiTx7LPP5rIEAAAAAAColJzOKL/hhhti5cqVcf7558dNN90UERH5+flZ+x522GERETFu3LhclgAAAAAAAJWS0xnlo0aNiry8vBg8ePAG+26zzTZRr169+OKLL3JZAgAAAAAAVEpOg/Ivv/wyGjRoEG3btq1Q//r167uYJwAAAAAANSqnQXlhYWGsXLkykiTZYN/i4uJYsGBBFBUV5bIEAAAAAAColJwG5dttt12UlJTERx99tMG+zz//fJSWlsYuu+ySyxIAAAAAAKBSchqUH3744ZEkydoLeZZn8eLF8atf/Sry8vLi6KOPzmUJAAAAAABQKTkNygcNGhSNGzeOv/71rzFkyJBYsGBBme3Lly+PRx99NLp37x6TJk2KVq1axTnnnJPLEgAAAAAAoFJyGpQ3b948Hnrooahbt2787ne/i6233jrmzJkTERHbbLNNNG7cOE466aSYPHlyNGzYMB5++OFo0KBBLksAAAAAAIBKyWlQHhHRq1evGDNmTPTs2TNKSkqitLQ0kiSJr776KlatWhVJkkTPnj1j9OjRsd9+++X68AAAAAAAUCm1q2PQ3XbbLV588cX4/PPP44033ogvv/wySktLo1WrVtGjR4/o1KlTdRwWAAAAAAAqrVqC8jXat28f7du3r85DAAAAAABAleR86RUAAAAAAPguqbYZ5V999VU88sgj8dZbb8WsWbMiIqJly5ax9957xwknnBCtWrWqrkMDAAAAAECF5TwoLykpiV//+tfx5z//OVatWhUREUmSREREXl5e3H333XHJJZfEBRdcENdcc03UqVMn1yUAAAAAAECF5TQoX716dRxzzDHx/PPPR5IkUa9evejWrVu0adMmIiJmzJgR48aNi+XLl8dNN90UEydOjGeffTby8vJyWQYAAAAAAFRYTtcov/XWW+O5556LiIgrrrgivvrqq3j11VfjgQceiAceeCBeffXV+Prrr+PKK6+MiIiRI0fGX/7yl1yWAAAAAAAAlZLToPyOO+6IvLy8GD58eFx11VXRqFGjjD4NGzaMYcOGxfDhwyNJkvjHP/6RyxIAAAAAAKBSchqUT5o0KWrVqhUXXnjhBvteeOGFkZ+fH5MnT85lCQAAAAAAUCk5XaO8sLAw6tatGw0bNtxg34YNG8ZWW22Vy8MDAAAAAECl5XRG+a677hoLFiyIuXPnbrDv3LlzY8GCBbHbbrvlsgQAAAAAAKiUnAbl559/fqxevTqGDx++wb5r1ig///zzc3LscePGxbXXXhvHH398tG3bNvLy8iIvL6/c/sOGDVvbJ9vPr371q5zUBQAAAADA5i2nS6/84Ac/iPHjx8d1110XCxcujCFDhsR2221Xps/UqVNj+PDhcdddd8XgwYPjpJNOysmxhw8fHk888USl9+vRo0d06tQpo71bt265KAsAAAAAgM1cToPyQw89NCIittpqq7j77rvj7rvvjm233TbatGkTEREzZsyIL774IiIiGjduHGPHjl27z7fl5eXFiy++WKlj77fffrH77rvHPvvsE/vss0906NAhiouLN7jfWWedFQMGDKjUsQAAAAAA2HLkNCh/+eWXM9qmTZsW06ZNy2hfsGBB1v4Rsd4lU8ozePDgSu8DAAAAAAA5DcqHDh2ay+EAAAAAAKDapT4of+mll+Ltt9+OFStWRNu2baNfv37WJwcAAAAASJGcBuXfRffcc0+Z20OGDIkTTjgh7rzzzmjYsGENVQUAAAAAwKaS2qC8U6dOcf3110e/fv2iffv2MX/+/Hj11Vfjl7/8ZTzyyCNRWloajz32WIXG2mWXXbK2T5kyJTp06BBz5szJZekAAAA5s3LlymjdunUszW8UzQtKIj+1fyWmR0mdVbHzTp0jv1GLaFGnJGrXrlXTJbEJeNzTx2OePqVREp06bButWzaMefPmRZ06dWq6pE2qtLQ08vPzN3r/1P4X6LTTTitzu0GDBnHKKafEIYccErvttls8/vjjMWbMmNh3331rqEIAAAAAADaFagnK33nnnbjlllvi9ddfj+nTp8fSpUvL7ZuXlxerVq2qjjI2SuvWrWPgwIFx/fXXx3PPPVehoHzixIlZ29fMNG/evHlOawQAAMiVFStWxMyZM+OTLxbEtiUFUTsKa7okqlnxyuL4YNLkKGiyJDqvLIg6eR7zNPC4p4/HPH1WlUR88tkX0aC0KJo2bRp169at6ZI2qarMJo+ohqD85ptvjksuuSRKS0sjSZJcD79J7LDDDhERMXPmzBquBAAAAACA6pbTxYnGjh0bF110UZSWlsZ5550XzzzzTERENG3aNF544YW49957Y8CAAVGnTp1o3rx53H///fHSSy/lsoScmD9/fkR8sxwLAAAAAABbtpzOKP/Tn/4USZLEoEGD4oYbbljbXqdOnTj00EMjIuKUU06JCy+8MPr27RtDhgyJ8ePH57KEKkuSZO1FPPfaa68argYAAAAAgOqW0xnlb7zxRuTl5cVFF11Upn3dJVj22GOP+POf/xxTpkyJ6667LpclVMjs2bPjlltuicWLF5dpX7JkSfz0pz+NsWPHRqtWreL444/f5LUBAAAAALBp5XRG+ddffx2FhYXRvn37tW21atWKFStWZPQ97rjjoqCgIB599NG46qqrqnzsf//73zF8+PC1t1euXBkRUeZinEOGDIkjjjgili5dGhdccEH86le/in322Sdat24ds2fPjvHjx8fcuXOjqKgoHn744ahfv36V6wIAAAAAYPOW06C8fv36kZeXV6atUaNGsWjRoiguLo7Cwv93dd2CgoKoX79+fP755zk59uzZ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zZgxw/ZzQECADh8+rNdff11r167Vgw8+WOzzLlmyREOHDlVmZqYkyd3dXVWqVNGxY8d07NgxLVy4UNHR0erWrVuxjwMAAIC7G1eUAwAAoFJr1aqVnJycJMm2Pvnv9cEHH+iNN95QXl6ennzySe3du1fp6elKSEhQcnKy1q9fr6efflpVqvx6ep2bm6unnnpKBw8elL+/vz7//HOlpKQoKSlJJ0+e1BNPPKG8vDyNGjVK//znP4t87rfeeks3b97UqlWrlJKSosTERJ07d06hoaGSpEmTJmnu3LkKDQ3VvHnzbDWlp6dr8+bNioyM1LFjx9S7d2+7V7zfqX/961+278PCwgr116hRQ5MmTdKuXbuUlpam69evKz09XadOndKoUaMkSWPHjtXevXuLfI79+/frjTfe0BtvvKErV64oMTFRSUlJmjhxoiRp8+bN+vTTTwttt2zZMltI/uyzz+r8+fNKTExUcnKyPv74Y/3444/64IMPinzeDRs2aODAgcrNzdVrr72m+Ph4paenKzU1VUePHlXfvn2VnJysvn37cmU5AABARWcAAACASm748OFGkpFknJycTGRkpHnxxRfNggULzE8//WTy8vKK3Pb69evG19fXSDL9+/cvduxvLVu2zPac69atK9SfnZ1t2rRpYySZJk2aFOqvU6eOkWScnZ3Nnj177D5HfHy8cXZ2Np6enmbfvn12x9y8edPUqlXLSDKrVq26rdrzLVy40LYP8fHxBfquXLli/vKXv9j6mzdv/rseO9/IkSONJDN06NBCfZMmTbI9/qRJk+xu37t3byPJdOnSpUB7Xl6eiYiIMJJM165d7R633+5fx44dC/Tl5uaaevXqGUnmo48+KrL+J5980kgyo0aNuuW+AgAA4O7FFeUAAACo9ObPn68JEybI29tbxhjt3btX8+fP19ChQ9W0aVNVq1ZNY8eO1eXLlwttGx0dreTkZLm6umrmzJm2q9NvZfny5ZKktm3b2l2Ww8XFRZMmTZIkHTx4UD/99JPdx4mKilJkZKTdvkWLFik3N1dRUVFq3ry53TG+vr7q2bOnJGndunW3Vbs9rVq1UrVq1VStWjX5+fkpNDRU7777riSpWrVqWrJkSYket3v37pKkH374ocgx7u7uGjdunN2+/HXnDxw4UKB93759OnHihCRp/Pjxdo/boEGDVLt2bbuPu3XrVh0/flzBwcEaNmxYkbUNHDhQ0p29tgAAAHA81igHAABApefi4qLJkyfrlVde0Zo1a7Rlyxbt3LlTR44cUVZWlq5cuaJZs2Zp8eLFWrt2rVq3bm3bNiYmRpLUsmVLVa9e/bafc9euXZKkLl26FDnm4YcflrOzs3Jzc7Vr1y41bdq00Jj27dsXuf22bdskSevXr1e1atWKHJd/M88zZ87cVu32XLt2zW57165dFR0dbVt73J5Tp05p/vz52rx5s06ePKnk5ORCy8CcP3++yO3zb6JpT40aNSRJ169fL9C+Z88eSb+sC9+uXTu72zo5Oaljx45avHhxob781/bGjRu257AnKytL0p29tgAAAHA8gnIAAABYhr+/vwYMGKABAwZIkjIyMvTDDz9o7ty5WrNmja5du6annnpKx48fl4eHhyTp0qVLkvS7b4R55coVSVLNmjWLHOPh4aHg4GBdvnzZNv4/5a9Fbs/FixclSampqUpNTb1lTWlpabccU5T4+HjVrVtX0i/7tmnTJr322mvasGGDxo8fr/fff9/udqtWrdIzzzxjuxmmJPn5+cnDw0NOTk7KyspSYmJisfX7+voW2efi8stHmpycnALtV69elSQFBQXJzc2tyO2LOj75r212drbd/zT4T+np6bccAwAAgLsXS68AAADAsjw8PNSlSxetXr1agwYNkvTLlc2/vUHl7S61UlacnZ2L7MvNzZUkvf766zLG3PLr+++/L5WaQkND9cwzz2jDhg3y9PTUvHnztGjRokLjEhISNHjwYGVmZqpz5876/vvvlZaWphs3bujy5cu6dOmSvvzyy1KpqSglPX75r22bNm1u67U1xpRm2QAAAChnBOUAAACApBEjRti+P3bsmO37/CVNfu/SGvlXghe3pEhGRoYSEhIKjP89Slpbabnvvvv06quvSpJee+013bx5s0D/t99+q5s3byowMFBr1qxRx44d5enpWWBM/hX7pS0kJETSL0vG5C+PYs+FCxfstjv6tQUAAED5IigHAAAApAJrYLu7u9u+z1/feteuXfr5559v+/EeeOABSdKmTZuKHPP999/blgxp1arV76pX+nX98o0bNyojI+N3b18axo4dK39/f129elXTp08v0Hfu3DlJUoMGDeTl5WV3+40bN5ZJXS1atJD0y9Ip+evM/ydjjLZu3Wq3L/+1vXTpkm29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" style="max-width:100%;height:auto;margin:10px 0;" alt="chart_score_dist.png">
+      </div>
+      
+    </div>
+    
+  </div>
+</div>
+
+
+
+
+<style>
+  /* Tab switching */
+  #intel-tab-briefing:checked ~ .tab-labels label[for="intel-tab-briefing"],
+  #intel-tab-papers:checked ~ .tab-labels label[for="intel-tab-papers"],
+  #intel-tab-trends:checked ~ .tab-labels label[for="intel-tab-trends"] {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  #intel-tab-briefing:checked ~ .intel-panel-briefing { display: block; }
+  #intel-tab-papers:checked ~ .intel-panel-papers { display: block; }
+  #intel-tab-trends:checked ~ .intel-panel-trends { display: block; }
+
+  /* Section description */
+  .intel-section-desc {
+    font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;
+    padding: 0.6rem 0.8rem; background: var(--card-bg); border-radius: 6px;
+    border-left: 3px solid var(--accent); line-height: 1.5;
+  }
+
+  /* AI Briefing */
+  .intel-briefing {
+    display: flex; gap: 0.6rem; align-items: flex-start;
+    padding: 0.8rem; background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; margin-bottom: 1rem;
+  }
+  .intel-briefing-icon {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: white; font-size: 0.7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intel-briefing-text { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
+
+  /* KPI Grid */
+  .intel-kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.5rem; margin-bottom: 1rem;
+  }
+  .intel-kpi-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 0.8rem; text-align: center;
+  }
+  .intel-kpi-value { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+  .intel-kpi-label { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+  .intel-kpi-wow { font-size: 0.7rem; margin-top: 0.25rem; font-weight: 600; }
+
+  /* WoW colors */
+  .wow-up { color: #22c55e; }
+  .wow-down { color: #ef4444; }
+  .wow-na { color: var(--muted); font-size: 0.7rem; }
+
+  /* Generic card */
+  .intel-card {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 8px; padding: 1rem; margin-bottom: 0.8rem;
+  }
+  .intel-card-header {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    font-weight: 700; font-size: 0.95rem; margin-bottom: 0.8rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--card-border);
+  }
+  .intel-card-sub { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+
+  /* 4-Week Trend Chart */
+  .intel-trend-chart { display: flex; flex-direction: column; gap: 0.4rem; }
+  .intel-trend-row { display: flex; align-items: center; gap: 0.5rem; }
+  .intel-trend-label { width: 50px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-align: right; }
+  .intel-this-week {
+    font-size: 0.6rem; background: var(--accent); color: white;
+    padding: 0 4px; border-radius: 3px; vertical-align: middle;
+  }
+  .intel-trend-bars { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .intel-bar-group { height: 16px; }
+  .intel-bar {
+    height: 100%; border-radius: 3px; min-width: 2px;
+    display: flex; align-items: center; transition: width 0.3s;
+  }
+  .intel-bar span { font-size: 0.7rem; font-weight: 600; padding-left: 6px; color: white; white-space: nowrap; }
+  .intel-bar-papers { background: var(--accent); }
+  .intel-bar-cv { background: #3b82f6; }
+  .intel-trend-score {
+    width: 40px; text-align: right; font-size: 0.8rem;
+    font-weight: 600; color: var(--fg);
+  }
+  .intel-trend-legend {
+    display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;
+    font-size: 0.75rem; color: var(--muted);
+  }
+  .intel-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  .intel-legend-score { margin-left: auto; }
+  .intel-trend-badge {
+    font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+  }
+  .trend-up { background: #22c55e20; color: #22c55e; }
+  .trend-down { background: #ef444420; color: #ef4444; }
+  .trend-stable { background: #6b728020; color: #6b7280; }
+
+  /* Category bars */
+  .intel-cat-list { display: flex; flex-direction: column; gap: 0.35rem; }
+  .intel-cat-row { display: flex; align-items: center; gap: 0.5rem; }
+  .intel-cat-name { width: 70px; }
+  .intel-cat-bar-wrap { flex: 1; height: 18px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .intel-cat-bar { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; opacity: 0.7; }
+  .intel-cat-count { width: 35px; text-align: right; font-size: 0.85rem; font-weight: 600; }
+  .intel-cat-wow { width: 55px; text-align: right; font-size: 0.75rem; font-weight: 600; }
+
+  /* Remind bar */
+  .intel-remind-bar {
+    display: flex; gap: 1.5rem; margin-top: 0.8rem; margin-bottom: 1rem; padding: 0.5rem 0.8rem;
+    background: var(--card-bg); border-radius: 6px; font-size: 0.85rem;
+  }
+  .intel-remind-item { display: flex; align-items: center; gap: 0.4rem; }
+  .intel-remind-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Muted text */
+  .intel-muted { color: var(--muted); font-size: 0.8rem; }
+
+  /* TF-IDF tags */
+  .intel-tfidf-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+  .intel-tfidf-tag {
+    display: inline-flex; flex-direction: column; align-items: center;
+    padding: 0.4rem 0.7rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500;
+  }
+  .intel-tfidf-label { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.8; }
+  .intel-tfidf-name { margin-top: 1px; }
+  .intel-tfidf-new { background: #22c55e18; border: 1px solid #22c55e; color: #16a34a; }
+  .intel-tfidf-rising { background: #3b82f618; border: 1px solid #3b82f6; color: #2563eb; }
+  .intel-tfidf-stable { background: #6b728018; border: 1px solid #9ca3af; color: #6b7280; }
+  .intel-tfidf-falling { background: #ef444418; border: 1px solid #ef4444; color: #dc2626; }
+  .intel-tfidf-disappeared { background: #6b728010; border: 1px dashed #9ca3af; color: #9ca3af; text-decoration: line-through; }
+  .intel-tfidf-legend {
+    display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.7rem; color: var(--muted);
+    margin-top: 0.4rem;
+  }
+  .intel-tfidf-tag-sm {
+    display: inline-block; padding: 1px 5px; border-radius: 3px;
+    font-size: 0.6rem; font-weight: 700; vertical-align: middle;
+  }
+
+  /* Keyword tracking rows */
+  .intel-kw-list { display: flex; flex-direction: column; gap: 0.3rem; }
+  .intel-kw-row {
+    display: grid; grid-template-columns: 160px 80px 60px 1fr;
+    align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+  }
+  .intel-kw-row:hover { background: var(--bg); }
+  .intel-kw-name { font-weight: 600; font-size: 0.88rem; }
+  .intel-kw-count { font-size: 0.85rem; }
+  .intel-kw-spark { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+  .intel-spark-bar {
+    width: 10px; background: var(--accent); border-radius: 2px 2px 0 0;
+    min-height: 2px; opacity: 0.6; transition: opacity 0.2s;
+  }
+  .intel-spark-bar:last-child { opacity: 1; }
+  .intel-kw-papers { display: flex; flex-direction: column; gap: 2px; }
+  .intel-kw-paper-link {
+    font-size: 0.78rem; color: var(--fg); text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .intel-kw-paper-link:hover { color: var(--accent); }
+  .intel-kw-paper-score {
+    font-size: 0.7rem; font-weight: 600; color: var(--accent);
+    margin-left: 4px;
+  }
+
+  /* Co-occurrence */
+  .intel-co-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .intel-co-row { display: flex; align-items: center; gap: 0.5rem; }
+  .intel-co-pair { display: flex; align-items: center; gap: 0.3rem; min-width: 250px; }
+  .intel-co-kw {
+    background: var(--bg); padding: 0.2rem 0.5rem; border-radius: 4px;
+    font-size: 0.8rem; font-weight: 500;
+  }
+  .intel-co-plus { font-size: 0.7rem; color: var(--muted); }
+  .intel-co-bar-wrap { flex: 1; height: 14px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .intel-co-bar { height: 100%; background: #8b5cf6; border-radius: 3px; opacity: 0.6; }
+  .intel-co-count { width: 30px; text-align: right; font-size: 0.85rem; font-weight: 600; }
+
+  /* Score Trends Table */
+  .intel-score-table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; }
+  .intel-score-table th, .intel-score-table td {
+    border: 1px solid var(--card-border); padding: 0.4rem 0.6rem;
+    text-align: left; font-size: 0.85rem;
+  }
+  .intel-score-table th { background: var(--accent); color: white; font-weight: 600; }
+  .intel-score-table tr:nth-child(even) { background: var(--bg); }
+
+  /* Author Cards */
+  .intel-author-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+  .intel-author-card { display: flex; gap: 0.8rem; padding: 0.6rem; border-radius: 6px; }
+  .intel-author-card:hover { background: var(--bg); }
+  .intel-author-avatar {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+    background: var(--accent); color: white; font-weight: 700; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intel-author-info { flex: 1; min-width: 0; }
+  .intel-author-name { font-weight: 700; font-size: 0.95rem; }
+  .intel-author-stats { font-size: 0.8rem; color: var(--muted); margin-top: 0.1rem; }
+  .intel-author-sep { margin: 0 0.2rem; }
+  .intel-author-papers { margin-top: 0.3rem; display: flex; flex-direction: column; gap: 2px; }
+  .intel-author-paper-link {
+    font-size: 0.8rem; color: var(--fg); text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  }
+  .intel-author-paper-link:hover { color: var(--accent); }
+
+  /* Conference badges */
+  .intel-conf-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .intel-conf-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0; }
+  .intel-conf-badge {
+    flex-shrink: 0; background: var(--accent); color: white;
+    padding: 0.25rem 0.6rem; border-radius: 4px;
+    font-size: 0.8rem; font-weight: 700; min-width: 80px; text-align: center;
+  }
+  .intel-conf-paper { flex: 1; min-width: 0; }
+  .intel-conf-paper a {
+    font-size: 0.88rem; color: var(--fg); text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  }
+  .intel-conf-paper a:hover { color: var(--accent); }
+  .intel-conf-score { font-size: 0.85rem; font-weight: 600; color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .intel-kw-row { grid-template-columns: 1fr; gap: 0.2rem; }
+    .intel-co-pair { min-width: auto; flex-wrap: wrap; }
+  }
+</style>
+
+<footer>
+  <p>Generated by Paper Scout Weekly Paper Report</p>
+</footer>
+
+</body>
+</html>
