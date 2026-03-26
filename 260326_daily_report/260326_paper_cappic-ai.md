@@ -1,0 +1,638 @@
+# CAPP!C_AI 논문 리포트 (2026-03-26)
+
+> 수집 57 | 필터 51 | 폐기 1 | 평가 35 | 출력 23 | 기준 50점
+
+검색 윈도우: 2026-03-25T00:00:00+00:00 ~ 2026-03-26T00:30:00+00:00 | 임베딩: en_synthetic | run_id: 50
+
+---
+
+## 검색 키워드
+
+autonomous cinematography, active camera, camera control, highlight detection, action recognition, sports tracking, video stabilization, computational photography, image enhancement, pose estimation, sports analytics, biomechanics, edge computing, embedded systems, real-time processing, multimedia sharing, user-generated content, content dissemination, edge computing, multi-object tracking, real-time processing
+
+---
+
+## 1위: Bridging Biological Hearing and Neuromorphic Computing: End-to-End Time-Domain Audio Signal Processing with Reservoir Computing
+
+- arXiv: http://arxiv.org/abs/2603.24283v1
+- PDF: https://arxiv.org/pdf/2603.24283v1
+- 발행일: 2026-03-25
+- 카테고리: cs.SD, cs.AI
+- 점수: final 93.6 (llm_adjusted:92 = base:82 + bonus:+10)
+- 플래그: 엣지, 실시간
+
+**개요**
+Despite the advancements in cutting-edge technologies, audio signal processing continues to pose challenges and lacks the precision of a human speech processing system. To address these challenges, we propose a novel approach to simplify audio signal processing by leveraging time-domain techniques and reservoir computing. Through our research, we have developed a real-time audio signal processing system by simplifying audio signal processing through the utilization of reservoir computers, which are significantly easier to train.   Feature extraction is a fundamental step in speech signal processing, with Mel Frequency Cepstral Coefficients (MFCCs) being a dominant choice due to their perceptual relevance to human hearing. However, conventional MFCC extraction relies on computationally intensive time-frequency transformations, limiting efficiency in real-time applications. To address this, we propose a novel approach that leverages reservoir computing to streamline MFCC extraction. By replacing traditional frequency-domain conversions with convolution operations, we eliminate the need for complex transformations while maintaining feature discriminability. We present an end-to-end audio processing framework that integrates this method, demonstrating its potential for efficient and real-time speech analysis. Our results contribute to the advancement of energy-efficient audio processing technologies, enabling seamless deployment in embedded systems and voice-driven applications. This work bridges the gap between biologically inspired feature extraction and modern neuromorphic computing, offering a scalable solution for next-generation speech recognition systems.
+
+**선정 근거**
+실시간 오디오 처리 기술이 엣지 디바이스에 적용 가능
+
+## 2위: Towards Safe Learning-Based Non-Linear Model Predictive Control through Recurrent Neural Network Modeling
+
+- arXiv: http://arxiv.org/abs/2603.24503v1
+- PDF: https://arxiv.org/pdf/2603.24503v1
+- 발행일: 2026-03-25
+- 카테고리: cs.LG, cs.RO, eess.SY
+- 점수: final 92.0 (llm_adjusted:90 = base:80 + bonus:+10)
+- 플래그: 엣지, 실시간
+
+**개요**
+The practical deployment of nonlinear model predictive control (NMPC) is often limited by online computation: solving a nonlinear program at high control rates can be expensive on embedded hardware, especially when models are complex or horizons are long. Learning-based NMPC approximations shift this computation offline but typically demand large expert datasets and costly training. We propose Sequential-AMPC, a sequential neural policy that generates MPC candidate control sequences by sharing parameters across the prediction horizon. For deployment, we wrap the policy in a safety-augmented online evaluation and fallback mechanism, yielding Safe Sequential-AMPC. Compared to a naive feedforward policy baseline across several benchmarks, Sequential-AMPC requires substantially fewer expert MPC rollouts and yields candidate sequences with higher feasibility rates and improved closed-loop safety. On high-dimensional systems, it also exhibits better learning dynamics and performance in fewer epochs while maintaining stable validation improvement where the feedforward baseline can stagnate.
+
+**선정 근거**
+실시간 제어 시스템이 스포츠 카메라 작동에 필수적이며, 안정적인 추적을 보장합니다.
+
+**활용 인사이트**
+Sequential-AMPC 기술을 적용하면 빠르게 움직이는 선수들을 정확하게 추적하고 다양한 경기 상황에 대응할 수 있는 카메라 시스템을 구축할 수 있습니다.
+
+## 3위: Mixed-signal implementation of feedback-control optimizer for single-layer Spiking Neural Networks
+
+- arXiv: http://arxiv.org/abs/2603.24113v1
+- PDF: https://arxiv.org/pdf/2603.24113v1
+- 발행일: 2026-03-25
+- 카테고리: cs.LG
+- 점수: final 92.0 (llm_adjusted:90 = base:80 + bonus:+10)
+- 플래그: 엣지, 실시간
+
+**개요**
+On-chip learning is key to scalable and adaptive neuromorphic systems, yet existing training methods are either difficult to implement in hardware or overly restrictive. However, recent studies show that feedback-control optimizers can enable expressive, on-chip training of neuromorphic devices. In this work, we present a proof-of-concept implementation of such feedback-control optimizers on a mixed-signal neuromorphic processor. We assess the proposed approach in an In-The-Loop(ITL) training setup on both a binary classification task and the nonlinear Yin-Yang problem, demonstrating on-chip training that matches the performance of numerical simulations and gradient-based baselines. Our results highlight the feasibility of feedback-driven, online learning under realistic mixed-signal constraints, and represent a co-design approach toward embedding such rules directly in silicon for autonomous and adaptive neuromorphic computing.
+
+**선정 근거**
+뉴로모픽 컴퓨팅은 에지 디바이스의 효율성을 높여 실시간 처리를 가능하게 합니다.
+
+**활용 인사이트**
+혼합 신경망 프로세서를 활용하면 저전력으로 고성능 영상 처리를 수행하며, 실시간으로 학습하고 적응하는 카메라 시스템을 구현할 수 있습니다.
+
+## 4위: Short-Term Turbulence Prediction for Seeing Using Machine Learning
+
+- arXiv: http://arxiv.org/abs/2603.24466v1
+- PDF: https://arxiv.org/pdf/2603.24466v1
+- 발행일: 2026-03-25
+- 카테고리: astro-ph.IM, physics.data-an
+- 점수: final 92.0 (llm_adjusted:90 = base:80 + bonus:+10)
+- 플래그: 엣지, 실시간
+
+**개요**
+Optical turbulence, driven by fluctuations of the atmospheric refractive index, poses a significant challenge to ground-based optical systems, as it distorts the propagation of light. This degradation affects both astronomical observations and free-space optical communications. While adaptive optics systems correct turbulence effects in real-time, their reactive nature limits their effectiveness under rapidly changing conditions, underscoring the need for predictive solutions. In this study, we address the problem of short-term turbulence forecasting by leveraging machine learning models to predict the atmospheric seeing parameter up to two hours in advance. We compare statistical and deep learning approaches, with a particular focus on probabilistic models that not only produce accurate forecasts but also quantify predictive uncertainty, crucial for robust decision-making in dynamic environments. Our evaluation includes Gaussian processes (GP) for statistical modeling, recurrent neural networks (RNNs) and long short-term memory networks (LSTMs) as deterministic baselines, and our novel implementation of a normalizing flow for time series (FloTS) as a flexible probabilistic deep learning method. All models are trained exclusively on historical seeing data, allowing for a fair performance comparison. We show that FloTS achieves the best overall balance between predictive accuracy and well-calibrated uncertainty.
+
+**선정 근거**
+카메라 안정화 및 이미지 향상 기술은 스포츠 촬영의 품질을 결정하는 중요 요소입니다.
+
+**활용 인사이트**
+기상 조건 변화를 예측하여 최적의 촬영 환경을 유지하고, 흔들림 없는 선명한 영상을 생성하여 시청자 경험을 향상시킬 수 있습니다.
+
+## 5위: RS-SSM: Refining Forgotten Specifics in State Space Model for Video Semantic Segmentation
+
+- arXiv: http://arxiv.org/abs/2603.24295v1
+- PDF: https://arxiv.org/pdf/2603.24295v1
+- 코드: https://github.com/zhoujiahuan1991/CVPR2026-RS-SSM
+- 발행일: 2026-03-25
+- 카테고리: cs.CV
+- 점수: final 90.4 (llm_adjusted:88 = base:85 + bonus:+3)
+- 플래그: 코드 공개
+
+**개요**
+Recently, state space models have demonstrated efficient video segmentation through linear-complexity state space compression. However, Video Semantic Segmentation (VSS) requires pixel-level spatiotemporal modeling capabilities to maintain temporal consistency in segmentation of semantic objects. While state space models can preserve common semantic information during state space compression, the fixed-size state space inevitably forgets specific information, which limits the models' capability for pixel-level segmentation. To tackle the above issue, we proposed a Refining Specifics State Space Model approach (RS-SSM) for video semantic segmentation, which performs complementary refining of forgotten spatiotemporal specifics. Specifically, a Channel-wise Amplitude Perceptron (CwAP) is designed to extract and align the distribution characteristics of specific information in the state space. Besides, a Forgetting Gate Information Refiner (FGIR) is proposed to adaptively invert and refine the forgetting gate matrix in the state space model based on the specific information distribution. Consequently, our RS-SSM leverages the inverted forgetting gate to complementarily refine the specific information forgotten during state space compression, thereby enhancing the model's capability for spatiotemporal pixel-level segmentation. Extensive experiments on four VSS benchmarks demonstrate that our RS-SSM achieves state-of-the-art performance while maintaining high computational efficiency. The code is available at https://github.com/zhoujiahuan1991/CVPR2026-RS-SSM.
+
+**선정 근거**
+비디오 의미 분할 기술이 스포츠 촬영, 하이라이트 추출, 전략 분석에 직접적으로 적용 가능합니다.
+
+**활용 인사이트**
+RS-SSM 모델을 사용하면 실시간으로 선수들과 경기 장면을 분석하여 자동으로 하이라이트 장면을 추출하고 전략 분석을 수행할 수 있습니다.
+
+## 6위: B-MoE: A Body-Part-Aware Mixture-of-Experts "All Parts Matter" Approach to Micro-Action Recognition
+
+- arXiv: http://arxiv.org/abs/2603.24245v1
+- PDF: https://arxiv.org/pdf/2603.24245v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CV
+- 점수: final 86.4 (llm_adjusted:83 = base:78 + bonus:+5)
+- 플래그: 엣지
+
+**개요**
+Micro-actions, fleeting and low-amplitude motions, such as glances, nods, or minor posture shifts, carry rich social meaning but remain difficult for current action recognition models to recognize due to their subtlety, short duration, and high inter-class ambiguity. In this paper, we introduce B-MoE, a Body-part-aware Mixture-of-Experts framework designed to explicitly model the structured nature of human motion. In B-MoE, each expert specializes in a distinct body region (head, body, upper limbs, lower limbs), and is based on the lightweight Macro-Micro Motion Encoder (M3E) that captures long-range contextual structure and fine-grained local motion. A cross-attention routing mechanism learns inter-region relationships and dynamically selects the most informative regions for each micro-action. B-MoE uses a dual-stream encoder that fuses these region-specific semantic cues with global motion features to jointly capture spatially localized cues and temporally subtle variations that characterize micro-actions. Experiments on three challenging benchmarks (MA-52, SocialGesture, and MPII-GroupInteraction) show consistent state-of-theart gains, with improvements in ambiguous, underrepresented, and low amplitude classes.
+
+**선정 근거**
+신체 부위별 전문가 모델을 활용한 미세 동작 인식은 스포츠 자세 분석과 하이라이트 장면 자동 추출에 적용 가능하나 스포츠 특화 연구는 아님
+
+**활용 인사이트**
+B-MoE의 신체 부위별 전문가 접근법을 활용해 선수별 동작 패턴을 분석하고, 크로스 어텐션 라우팅으로 중요한 순간을 자동으로 식별하여 하이라이트 영상을 생성할 수 있음
+
+## 7위: How Vulnerable Are Edge LLMs?
+
+- arXiv: http://arxiv.org/abs/2603.23822v1
+- PDF: https://arxiv.org/pdf/2603.23822v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CR, cs.CL, cs.LG
+- 점수: final 86.4 (llm_adjusted:83 = base:78 + bonus:+5)
+- 플래그: 엣지
+
+**개요**
+Large language models (LLMs) are increasingly deployed on edge devices under strict computation and quantization constraints, yet their security implications remain unclear. We study query-based knowledge extraction from quantized edge-deployed LLMs under realistic query budgets and show that, although quantization introduces noise, it does not remove the underlying semantic knowledge, allowing substantial behavioral recovery through carefully designed queries. To systematically analyze this risk, we propose \textbf{CLIQ} (\textbf{Cl}ustered \textbf{I}nstruction \textbf{Q}uerying), a structured query construction framework that improves semantic coverage while reducing redundancy. Experiments on quantized Qwen models (INT8/INT4) demonstrate that CLIQ consistently outperforms original queries across BERTScore, BLEU, and ROUGE, enabling more efficient extraction under limited budgets. These results indicate that quantization alone does not provide effective protection against query-based extraction, highlighting a previously underexplored security risk in edge-deployed LLMs.
+
+**선정 근거**
+Directly addresses edge device deployment challenges and capabilities, relevant to the project's edge device focus.
+
+## 8위: ViHOI: Human-Object Interaction Synthesis with Visual Priors
+
+- arXiv: http://arxiv.org/abs/2603.24383v1
+- PDF: https://arxiv.org/pdf/2603.24383v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CV
+- 점수: final 80.0 (llm_adjusted:75 = base:75 + bonus:+0)
+
+**개요**
+Generating realistic and physically plausible 3D Human-Object Interactions (HOI) remains a key challenge in motion generation. One primary reason is that describing these physical constraints with words alone is difficult. To address this limitation, we propose a new paradigm: extracting rich interaction priors from easily accessible 2D images. Specifically, we introduce ViHOI, a novel framework that enables diffusion-based generative models to leverage rich, task-specific priors from 2D images to enhance generation quality. We utilize a large Vision-Language Model (VLM) as a powerful prior-extraction engine and adopt a layer-decoupled strategy to obtain visual and textual priors. Concurrently, we design a Q-Former-based adapter that compresses the VLM's high-dimensional features into compact prior tokens, which significantly facilitates the conditional training of our diffusion model. Our framework is trained on motion-rendered images from the dataset to ensure strict semantic alignment between visual inputs and motion sequences. During inference, it leverages reference images synthesized by a text-to-image generation model to improve generalization to unseen objects and interaction categories. Experimental results demonstrate that ViHOI achieves state-of-the-art performance, outperforming existing methods across multiple benchmarks and demonstrating superior generalization.
+
+**선정 근거**
+인간-물체 상호작용 생성에 초점을 맞춰 스포츠 동작 분석 및 하이라이트 영상 생성에 직접적으로 적용 가능
+
+**활용 인사이트**
+2D 영상에서 시각적 선호도를 추출해 스포츠 동작의 물리적 제약을 모델링하고, 확산 모델을 사용해 실제적인 경기 장면을 생성
+
+## 9위: Enhancing Efficiency and Performance in Deepfake Audio Detection through Neuron-level dropin & Neuroplasticity Mechanisms
+
+- arXiv: http://arxiv.org/abs/2603.24343v1
+- PDF: https://arxiv.org/pdf/2603.24343v1
+- 발행일: 2026-03-25
+- 카테고리: cs.SD, cs.AI
+- 점수: final 78.4 (llm_adjusted:73 = base:65 + bonus:+8)
+- 플래그: 엣지, 코드 공개
+
+**개요**
+Current audio deepfake detection has achieved remarkable performance using diverse deep learning architectures such as ResNet, and has seen further improvements with the introduction of large models (LMs) like Wav2Vec. The success of large language models (LLMs) further demonstrates the benefits of scaling model parameters, but also highlights one bottleneck where performance gains are constrained by parameter counts. Simply stacking additional layers, as done in current LLMs, is computationally expensive and requires full retraining. Furthermore, existing low-rank adaptation methods are primarily applied to attention-based architectures, which limits their scope. Inspired by the neuronal plasticity observed in mammalian brains, we propose novel algorithms, dropin and further plasticity, that dynamically adjust the number of neurons in certain layers to flexibly modulate model parameters. We evaluate these algorithms on multiple architectures, including ResNet, Gated Recurrent Neural Networks, and Wav2Vec. Experimental results using the widely recognised ASVSpoof2019 LA, PA, and FakeorReal dataset demonstrate consistent improvements in computational efficiency with the dropin approach and a maximum of around 39% and 66% relative reduction in Equal Error Rate with the dropin and plasticity approach among these dataset, respectively. The code and supplementary material are available at Github link.
+
+**선정 근거**
+Efficiency techniques for neural networks on edge devices could be applicable to sports video processing, though focused on audio detection.
+
+## 10위: Toward a Multi-Layer ML-Based Security Framework for Industrial IoT
+
+- arXiv: http://arxiv.org/abs/2603.24111v1
+- PDF: https://arxiv.org/pdf/2603.24111v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CR, cs.LG
+- 점수: final 76.0 (llm_adjusted:70 = base:60 + bonus:+10)
+- 플래그: 엣지, 실시간
+
+**개요**
+The Industrial Internet of Things (IIoT) introduces significant security challenges as resource-constrained devices become increasingly integrated into critical industrial processes. Existing security approaches typically address threats at a single network layer, often relying on expensive hardware and remaining confined to simulation environments. In this paper, we present the research framework and contributions of our doctoral thesis, which aims to develop a lightweight, Machine Learning (ML)-based security framework for IIoT environments. We first describe our adoption of the Tm-IIoT trust model and the Hybrid IIoT (H-IIoT) architecture as foundational baselines, then introduce the Trust Convergence Acceleration (TCA) approach, our primary contribution that integrates ML to predict and mitigate the impact of degraded network conditions on trust convergence, achieving up to a 28.6% reduction in convergence time while maintaining robustness against adversarial behaviors. We then propose a real-world deployment architecture based on affordable, open-source hardware, designed to implement and extend the security framework. Finally, we outline our ongoing research toward multi-layer attack detection, including physical-layer threat identification and considerations for robustness against adversarial ML attacks.
+
+**선정 근거**
+IoT 장치를 위한 경량 ML 프레임워크로 실제 저비용 오픈소스 하드웨어에 배포되는 접근 방식이 엣지 디바이스 구현과 관련 있음
+
+## 11위: Video-Only ToM: Enhancing Theory of Mind in Multimodal Large Language Models
+
+- arXiv: http://arxiv.org/abs/2603.24484v1
+- PDF: https://arxiv.org/pdf/2603.24484v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CV
+- 점수: final 72.0 (llm_adjusted:65 = base:65 + bonus:+0)
+
+**개요**
+As large language models (LLMs) continue to advance, there is increasing interest in their ability to infer human mental states and demonstrate a human-like Theory of Mind (ToM). Most existing ToM evaluations, however, are centered on text-based inputs, while scenarios relying solely on visual information receive far less attention. This leaves a gap, since real-world human-AI interaction typically requires multimodal understanding. In addition, many current methods regard the model as a black box and rarely probe how its internal attention behaves in multiple-choice question answering (QA). The impact of LLM hallucinations on such tasks is also underexplored from an interpretability perspective. To address these issues, we introduce VisionToM, a vision-oriented intervention framework designed to strengthen task-aware reasoning. The core idea is to compute intervention vectors that align visual representations with the correct semantic targets, thereby steering the model's attention through different layers of visual features. This guidance reduces the model's reliance on spurious linguistic priors, leading to more reliable multimodal language model (MLLM) outputs and better QA performance. Experiments on the EgoToM benchmark-an egocentric, real-world video dataset for ToM with three multiple-choice QA settings-demonstrate that our method substantially improves the ToM abilities of MLLMs. Furthermore, results on an additional open-ended generation task show that VisionToM enables MLLMs to produce free-form explanations that more accurately capture agents' mental states, pushing machine-human collaboration toward greater alignment.
+
+**선정 근거**
+비디오 기반 정신 상태 추론 기술이 스포츠 전략 분석에 부분적으로 적용 가능. 선수들의 의도와 행동 패턴을 분석하여 게임 전략을 예측하고 개인별 하이라이트를 생성하는 데 활용 가능.
+
+**활용 인사이트**
+VisionToM 프레임워크를 스포츠 영상 분석에 적용하여 선수들의 시각적 정보를 정신 상태와 연결. 다중 선택 QA 방식을 게임 상황 분석에 변형 적용, 경기 전략 예측 정확도 향상.
+
+## 12위: Symbolic--KAN: Kolmogorov-Arnold Networks with Discrete Symbolic Structure for Interpretable Learning
+
+- arXiv: http://arxiv.org/abs/2603.23854v1
+- PDF: https://arxiv.org/pdf/2603.23854v1
+- 발행일: 2026-03-25
+- 카테고리: cs.LG, cs.CE, math.AP, math.DS
+- 점수: final 72.0 (llm_adjusted:65 = base:65 + bonus:+0)
+
+**개요**
+Symbolic discovery of governing equations is a long-standing goal in scientific machine learning, yet a fundamental trade-off persists between interpretability and scalable learning. Classical symbolic regression methods yield explicit analytic expressions but rely on combinatorial search, whereas neural networks scale efficiently with data and dimensionality but produce opaque representations. In this work, we introduce Symbolic Kolmogorov-Arnold Networks (Symbolic-KANs), a neural architecture that bridges this gap by embedding discrete symbolic structure directly within a trainable deep network. Symbolic-KANs represent multivariate functions as compositions of learned univariate primitives applied to learned scalar projections, guided by a library of analytic primitives, hierarchical gating, and symbolic regularization that progressively sharpens continuous mixtures into one-hot selections. After gated training and discretization, each active unit selects a single primitive and projection direction, yielding compact closed-form expressions without post-hoc symbolic fitting. Symbolic-KANs further act as scalable primitive discovery mechanisms, identifying the most relevant analytic components that can subsequently inform candidate libraries for sparse equation-learning methods. We demonstrate that Symbolic-KAN reliably recovers correct primitive terms and governing structures in data-driven regression and inverse dynamical systems. Moreover, the framework extends to forward and inverse physics-informed learning of partial differential equations, producing accurate solutions directly from governing constraints while constructing compact symbolic representations whose selected primitives reflect the true analytical structure of the underlying equations. These results position Symbolic-KAN as a step toward scalable, interpretable, and mechanistically grounded learning of governing laws.
+
+**선정 근거**
+수학적 모델링 접근법이 스포츠 동작 분석에 잠재적으로 적용 가능
+
+## 13위: JSSAnet: Theory-Guided Subchannel Partitioning and Joint Spatial Attention for Near-Field Channel Estimation
+
+- arXiv: http://arxiv.org/abs/2603.24505v1
+- PDF: https://arxiv.org/pdf/2603.24505v1
+- 발행일: 2026-03-25
+- 카테고리: eess.SP
+- 점수: final 72.0 (llm_adjusted:65 = base:65 + bonus:+0)
+
+**개요**
+The deployment of extremely large-scale antenna array (ELAA) in sixth-generation (6G) communication systems introduces unique challenges for efficient near-field channel estimation. To tackle these issues, this paper presents a theory-guided approach that incorporates angular information into an attention-based estimation framework. A piecewise Fourier representation is proposed to implicitly encode the near-field channel's inherent nonlinearity, enabling the entire channel to be segmented into multiple subchannels, each mapped to the angular domain via the discrete Fourier transform (DFT). Then, we develop a joint subchannel-spatial-attention network (JSSAnet) to extract the spatial features of both intra- and inter-subchannels. To guide theoretically the design of the joint attention mechanism, we derive upper and lower bounds based on approximation criteria and DFT quantization loss mitigation, respectively. Following by both bounds, a JSSA layer of an attention block is constructed to assign independent and adaptive spatial attention weights to each subchannel in parallel. Subsequently, a feed-forward network (FFN) of an attention block further captures and refines the residual nonlinear dependencies across subchannels. Moreover, the proposed JSSA map is linearly computed via element-wise product combining large-kernel convolutions (DLKC), maintaining strong contextual learning capability. Numerical results verify the effectiveness of embedding sparsity information into the attention network and demonstrate JSSAnet achieves superior estimation performance compared with existing methods.
+
+**선정 근거**
+주의 메커니즘을 활용한 비디오 처리 기술이 스포츠 경기 촬영 및 하이라이트 편집에 직접적으로 적용 가능
+
+**활용 인사이트**
+공간 주의 메커니즘을 이용해 경기장 내 선수들의 움직임과 상호작용을 실시간으로 분석하며 중요한 순간을 자동으로 감지
+
+## 14위: Cost-Sensitive Neighborhood Aggregation for Heterophilous Graphs: When Does Per-Edge Routing Help?
+
+- arXiv: http://arxiv.org/abs/2603.24291v1
+- PDF: https://arxiv.org/pdf/2603.24291v1
+- 코드: https://github.com/eyal-weiss/CSNA-public
+- 발행일: 2026-03-25
+- 카테고리: cs.LG, cs.AI
+- 점수: final 70.4 (llm_adjusted:63 = base:55 + bonus:+8)
+- 플래그: 엣지, 코드 공개
+
+**개요**
+Recent work distinguishes two heterophily regimes: adversarial, where cross-class edges dilute class signal and harm classification, and informative, where the heterophilous structure itself carries useful signal. We ask: when does per-edge message routing help, and when is a uniform spectral channel sufficient? To operationalize this question we introduce Cost-Sensitive Neighborhood Aggregation (CSNA), a GNN layer that computes pairwise distance in a learned projection and uses it to soft-route each message through concordant and discordant channels with independent transformations. Under a contextual stochastic block model we show that cost-sensitive weighting preserves class-discriminative signal where mean aggregation provably attenuates it, provided $w_+/w_- > q/p$. On six benchmarks with uniform tuning, CSNA is competitive with state-of-the-art methods on adversarial-heterophily datasets (Texas, Wisconsin, Cornell, Actor) but underperforms on informative-heterophily datasets (Chameleon, Squirrel) -- precisely the regime where per-edge routing has no useful decomposition to exploit. The pattern is itself the finding: the cost function's ability to separate edge types serves as a diagnostic for the heterophily regime, revealing when fine-grained routing adds value over uniform channels and when it does not. Code is available at https://github.com/eyal-weiss/CSNA-public .
+
+**선정 근거**
+이용 가능한 코드를 가진 그래프 신경망 접근 방식이 스포츠 데이터 분석에 적용 가능하지만 직접적인 관련은 없음
+
+## 15위: LATS: Large Language Model Assisted Teacher-Student Framework for Multi-Agent Reinforcement Learning in Traffic Signal Control
+
+- arXiv: http://arxiv.org/abs/2603.24361v1
+- PDF: https://arxiv.org/pdf/2603.24361v1
+- 발행일: 2026-03-25
+- 카테고리: cs.RO
+- 점수: final 68.0 (llm_adjusted:60 = base:55 + bonus:+5)
+- 플래그: 실시간
+
+**개요**
+Adaptive Traffic Signal Control (ATSC) aims to optimize traffic flow and minimize delays by adjusting traffic lights in real time. Recent advances in Multi-agent Reinforcement Learning (MARL) have shown promise for ATSC, yet existing approaches still suffer from limited representational capacity, often leading to suboptimal performance and poor generalization in complex and dynamic traffic environments. On the other hand, Large Language Models (LLMs) excel at semantic representation, reasoning, and analysis, yet their propensity for hallucination and slow inference speeds often hinder their direct application to decision-making tasks. To address these challenges, we propose a novel learning paradigm named LATS that integrates LLMs and MARL, leveraging the former's strong prior knowledge and inductive abilities to enhance the latter's decision-making process. Specifically, we introduce a plug-and-play teacher-student learning module, where a trained embedding LLM serves as a teacher to generate rich semantic features that capture each intersection's topology structures and traffic dynamics. A much simpler (student) neural network then learns to emulate these features through knowledge distillation in the latent space, enabling the final model to operate independently from the LLM for downstream use in the RL decision-making process. This integration significantly enhances the overall model's representational capacity across diverse traffic scenarios, thus leading to more efficient and generalizable control strategies. Extensive experiments across diverse traffic datasets empirically demonstrate that our method enhances the representation learning capability of RL models, thereby leading to improved overall performance and generalization over both traditional RL and LLM-only approaches. [...]
+
+**선정 근거**
+Indirectly related to multi-agent systems which could apply to team sports analysis
+
+## 16위: Towards Energy-aware Requirements Dependency Classification: Knowledge-Graph vs. Vector-Retrieval Augmented Inference with SLMs
+
+- arXiv: http://arxiv.org/abs/2603.23954v1
+- PDF: https://arxiv.org/pdf/2603.23954v1
+- 발행일: 2026-03-25
+- 카테고리: cs.SE
+- 점수: final 68.0 (llm_adjusted:60 = base:55 + bonus:+5)
+- 플래그: 엣지
+
+**개요**
+The continuous evolution of system specifications necessitates frequent evaluation of conflicting requirements, a process that is traditionally labour intensive. Although large language models (LLMs) have demonstrated significant potential for automating this detection, their massive computational requirements often result in excessive energy waste. Consequently, there is a growing need to transition toward Small Language Models (SLMs) and energy aware architectures for sustainable Requirements Engineering. This study proposes and empirically evaluates an energy aware framework that compares Knowledge Graph-based Retrieval (KGR) with Vector-based Semantic Retrieval (VSR) to enhance SLM-based inference at the 7B to 8B parameter scale. By leveraging structured graph traversal and high dimensional semantic mapping, we extract candidate requirements, which are then classified as conflicting or neutral by an inference engine. We evaluate these retrieval enhanced strategies across Zero-Shot, Few-Shot, and Chain of Thoughts prompting methods. Using a three-pillar sustainability framework measuring energy consumption (Wh), latency (s), and carbon emissions (gCO2eq) alongside standard accuracy metrics (F1 Score), this research provides a first systematic empirical evaluation and trade off analysis between predictive performance and environmental impact. Our findings highlight the effectiveness of structured versus semantic retrieval in detecting requirement conflicts, offering a reproducible, sustainability aware architecture for energy efficient requirement engineering.
+
+**선정 근거**
+에너지 효율적인 AI 접근 방식을 사용하지만 요구사항 분류에 초점을 맞추어 스포츠 영상 분석과 직접적인 관련이 없음
+
+## 17위: Learning Response-Statistic Shifts and Parametric Roll Episodes from Wave--Vessel Time Series via LSTM Functional Models
+
+- arXiv: http://arxiv.org/abs/2603.24431v1
+- PDF: https://arxiv.org/pdf/2603.24431v1
+- 발행일: 2026-03-25
+- 카테고리: cs.LG, physics.comp-ph, physics.data-an, physics.flu-dyn
+- 점수: final 67.2 (llm_adjusted:59 = base:59 + bonus:+0)
+
+**개요**
+Parametric roll is a rare but high-consequence instability that can trigger abrupt regime changes in ship response, including pronounced shifts in roll statistics and tail risk. This paper develops a data-driven surrogate that learns the nonlinear, causal functional mapping from incident wave--motion time series to vessel motions, and demonstrates that the surrogate reproduces both (i) parametric roll episodes and (ii) the associated statistical shifts in the response. Crucially, the learning framework is data-source agnostic: the paired wave--motion time series can be obtained from controlled experiments (e.g., towing-tank or basin tests with wave probes and motion tracking) when a hull exists, or from high-fidelity simulations during design when experiments are not yet available. To provide a controlled severe-sea demonstration, we generate training data with a URANS numerical wave tank, using long-crested irregular seas synthesized from a modified Pierson--Moskowitz spectrum. The demonstration dataset comprises 49 random-phase realizations for each of three sea states, simulated at a fixed forward speed selected to yield encounter conditions under which parametric-roll episodes can occur. A stacked LSTM surrogate is trained on wave-elevation time series and evaluated on held-out realizations using time-domain accuracy and distributional fidelity metrics. In the most severe case, the model tracks the onset and growth of large-amplitude roll consistent with parametric excitation, and captures the corresponding changes in roll probability density functions (PDFs). We further compare loss-function choices (MSE, relative-entropy-based objectives, and amplitude-weighted variants) and show how they trade average error for improved tail fidelity relevant to operability and risk assessment.
+
+**선정 근거**
+LSTM 시계열 분석 방법론은 스포츠 동작 패턴 인식에 적용 가능하며, 실시간 분석을 위한 저지연 처리가 가능함.
+
+**활용 인사이트**
+스포츠 선수의 동작을 시계열 데이터로 변환하여 LSTM 모델로 학습시켜 개인별 기술 패턴과 실수를 자동으로 감지하고 분석할 수 있음.
+
+## 18위: Towards Training-Free Scene Text Editing
+
+- arXiv: http://arxiv.org/abs/2603.24571v1
+- PDF: https://arxiv.org/pdf/2603.24571v1
+- 코드: https://github.com/lyb18758/TextFlow
+- 발행일: 2026-03-25
+- 카테고리: cs.CV
+- 점수: final 66.4 (llm_adjusted:58 = base:55 + bonus:+3)
+- 플래그: 코드 공개
+
+**개요**
+Scene text editing seeks to modify textual content in natural images while maintaining visual realism and semantic consistency. Existing methods often require task-specific training or paired data, limiting their scalability and adaptability. In this paper, we propose TextFlow, a training-free scene text editing framework that integrates the strengths of Attention Boost (AttnBoost) and Flow Manifold Steering (FMS) to enable flexible, high-fidelity text manipulation without additional training. Specifically, FMS preserves the structural and style consistency by modeling the visual flow of characters and background regions, while AttnBoost enhances the rendering of textual content through attention-based guidance. By jointly leveraging these complementary modules, our approach performs end-to-end text editing through semantic alignment and spatial refinement in a plug-and-play manner. Extensive experiments demonstrate that our framework achieves visual quality and text accuracy comparable to or superior to those of training-based counterparts, generalizing well across diverse scenes and languages. This study advances scene text editing toward a more efficient, generalizable, and training-free paradigm. Code is available at https://github.com/lyb18758/TextFlow
+
+**선정 근거**
+이미지 텍스트 편집 기술은 스포츠 영상에 점수, 선수 정보, 통계 등의 텍스트 오버레이를 추가하는 데 활용 가능하며, 훈련 없이 작동하는 방식은 edge 디바이스 배포에 유리합니다.
+
+**활용 인사이트**
+TextFlow의 Attention Boost와 Flow Manifold Steering 모듈을 스포츠 영상에 적용하여 선수 이름, 실시간 통계, 경기 정보 등을 자연스럽게 삽입하고 시각적 일관성을 유지할 수 있습니다.
+
+## 19위: Language-Guided Structure-Aware Network for Camouflaged Object Detection
+
+- arXiv: http://arxiv.org/abs/2603.24355v1
+- PDF: https://arxiv.org/pdf/2603.24355v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CV, cs.AI
+- 점수: final 64.0 (llm_adjusted:55 = base:55 + bonus:+0)
+
+**개요**
+Camouflaged Object Detection (COD) aims to segment objects that are highly integrated with the background in terms of color, texture, and structure, making it a highly challenging task in computer vision. Although existing methods introduce multi-scale fusion and attention mechanisms to alleviate the above issues, they generally lack the guidance of textual semantic priors, which limits the model's ability to focus on camouflaged regions in complex scenes. To address this issue, this paper proposes a Language-Guided Structure-Aware Network (LGSAN). Specifically, based on the visual backbone PVT-v2, we introduce CLIP to generate masks from text prompts and RGB images, thereby guiding the multi-scale features extracted by PVT-v2 to focus on potential target regions. On this foundation, we further design a Fourier Edge Enhancement Module (FEEM), which integrates multi-scale features with high-frequency information in the frequency domain to extract edge enhancement features. Furthermore, we propose a Structure-Aware Attention Module (SAAM) to effectively enhance the model's perception of object structures and boundaries. Finally, we introduce a Coarse-Guided Local Refinement Module (CGLRM) to enhance fine-grained reconstruction and boundary integrity of camouflaged object regions. Extensive experiments demonstrate that our method consistently achieves highly competitive performance across multiple COD datasets, validating its effectiveness and robustness.
+
+**선정 근거**
+객체 탐지 기술은 관련 있으나 위장물체 탐지는 스포츠 분석에 직접 적용 어렵다.
+
+## 20위: Willful Disobedience: Automatically Detecting Failures in Agentic Traces
+
+- arXiv: http://arxiv.org/abs/2603.23806v1
+- PDF: https://arxiv.org/pdf/2603.23806v1
+- 발행일: 2026-03-25
+- 카테고리: cs.SE, cs.AI
+- 점수: final 64.0 (llm_adjusted:55 = base:55 + bonus:+0)
+
+**개요**
+AI agents are increasingly embedded in real software systems, where they execute multi-step workflows through multi-turn dialogue, tool invocations, and intermediate decisions. These long execution histories, called agentic traces, make validation difficult. Outcome-only benchmarks can miss critical procedural failures, such as incorrect workflow routing, unsafe tool usage, or violations of prompt-specified rules. This paper presents AgentPex, an AI-powered tool designed to systematically evaluate agentic traces. AgentPex extracts behavioral rules from agent prompts and system instructions, then uses these specifications to automatically evaluate traces for compliance. We evaluate AgentPex on 424 traces from τ2-bench across models in telecom, retail, and airline customer service. Our results show that AgentPex distinguishes agent behavior across models and surfaces specification violations that are not captured by outcome-only scoring. It also provides fine-grained analysis by domain and metric, enabling developers to understand agent strengths and weaknesses at scale.
+
+**선정 근거**
+AI 에이전트 평가 방법론이 스포츠 분석 AI에 적용 가능하지만 스포츠 영상 처리와 직접적인 관련이 없음
+
+## 21위: Joint Source-Channel-Check Coding with HARQ for Reliable Semantic Communications
+
+- arXiv: http://arxiv.org/abs/2603.23869v1
+- PDF: https://arxiv.org/pdf/2603.23869v1
+- 발행일: 2026-03-25
+- 카테고리: eess.IV, cs.IT
+- 점수: final 64.0 (llm_adjusted:55 = base:55 + bonus:+0)
+
+**개요**
+Semantic communication has emerged as a promising paradigm for improving transmission efficiency and task-level reliability, yet most existing reliability-enhancement approaches rely on retransmission strategies driven by semantic fidelity checking that require additional check codewords solely for retransmission triggering, thereby incurring substantial communication overhead. In this paper, we propose S3CHARQ, a Joint Source-Channel-Check Coding framework with hybrid automatic repeat request that fundamentally rethinks the role of check codewords in semantic communications. By integrating the check codeword into the JSCC process, S3CHARQ enables JS3C, allowing the check codeword to simultaneously support semantic fidelity verification and reconstruction enhancement. At the transmitter, a semantic fidelity-aware check encoder embeds auxiliary reconstruction information into the check codeword. At the receiver, the JSCC and check codewords are jointly decoded by a JS3C decoder, while the check codeword is additionally exploited for perceptual quality estimation. Moreover, because retransmission decisions are necessarily based on imperfect semantic quality estimation in the absence of ground-truth reconstruction, estimation errors are unavoidable and fundamentally limit the effectiveness of rule-based decision schemes. To overcome this limitation, we develop a reinforcement learning-based retransmission decision module that enables adaptive, sample-level retransmission decisions, effectively balancing recovery and refinement information under dynamic channel conditions. Experimental results demonstrate that compared with existing HARQ-based semantic communication systems, the proposed S3CHARQ framework achieves a 2.36 dB improvement in the 97th percentile PSNR, as well as a 37.45% reduction in outage probability.
+
+**선정 근거**
+의미 기반 통신 프레임워크가 효율적인 영상 전송에 관련 있을 수 있지만 스포츠 분석과 직접적인 관련은 없음
+
+## 22위: RefReward-SR: LR-Conditioned Reward Modeling for Preference-Aligned Super-Resolution
+
+- arXiv: http://arxiv.org/abs/2603.24198v1
+- PDF: https://arxiv.org/pdf/2603.24198v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CV
+- 점수: final 62.4 (llm_adjusted:53 = base:50 + bonus:+3)
+- 플래그: 코드 공개
+
+**개요**
+Recent advances in generative super-resolution (SR) have greatly improved visual realism, yet existing evaluation and optimization frameworks remain misaligned with human perception. Full-Reference and No-Reference metrics often fail to reflect perceptual preference, either penalizing semantically plausible details due to pixel misalignment or favoring visually sharp but inconsistent artifacts. Moreover, most SR methods rely on ground-truth (GT)-dependent distribution matching, which does not necessarily correspond to human judgments. In this work, we propose RefReward-SR, a low-resolution (LR) reference-aware reward model for preference-aligned SR. Instead of relying on GT supervision or NR evaluation, RefReward-SR assesses high-resolution (HR) reconstructions conditioned on their LR inputs, treating the LR image as a semantic anchor. Leveraging the visual-linguistic priors of a Multimodal Large Language Models (MLLM), it evaluates semantic consistency and plausibility in a reasoning-aware manner. To support this paradigm, we construct RefSR-18K, the first large-scale LR-conditioned preference dataset for SR, providing pairwise rankings based on LR-HR consistency and HR naturalness. We fine-tune the MLLM with Group Relative Policy Optimization (GRPO) using LR-conditioned ranking rewards, and further integrate GRPO into SR model training with RefReward-SR as the core reward signal for preference-aligned generation. Extensive experiments show that our framework achieves substantially better alignment with human judgments, producing reconstructions that preserve semantic consistency while enhancing perceptual plausibility and visual naturalness. Code, models, and datasets will be released upon paper acceptance.
+
+**선정 근거**
+이미지 스타일 전송 기술이 스포츠 콘텐츠의 이미지 보정에 간접적으로 적용 가능
+
+**활용 인사이트**
+HAM 기술을 활용하면 스포츠 영상의 품질을 향상시키고 콘텐츠의 정체성을 유지하며 SNS 플랫폼에 최적화된 이미지 생성 가능
+
+## 23위: HAM: A Training-Free Style Transfer Approach via Heterogeneous Attention Modulation for Diffusion Models
+
+- arXiv: http://arxiv.org/abs/2603.24043v1
+- PDF: https://arxiv.org/pdf/2603.24043v1
+- 발행일: 2026-03-25
+- 카테고리: cs.CV
+- 점수: final 60.0 (llm_adjusted:50 = base:50 + bonus:+0)
+
+**개요**
+Diffusion models have demonstrated remarkable performance in image generation, particularly within the domain of style transfer. Prevailing style transfer approaches typically leverage pre-trained diffusion models' robust feature extraction capabilities alongside external modular control pathways to explicitly impose style guidance signals. However, these methods often fail to capture complex style reference or retain the identity of user-provided content images, thus falling into the trap of style-content balance. Thus, we propose a training-free style transfer approach via $\textbf{h}$eterogeneous $\textbf{a}$ttention $\textbf{m}$odulation ($\textbf{HAM}$) to protect identity information during image/text-guided style reference transfer, thereby addressing the style-content trade-off challenge. Specifically, we first introduces style noise initialization to initialize latent noise for diffusion. Then, during the diffusion process, it innovatively employs HAM for different attention mechanisms, including Global Attention Regulation (GAR) and Local Attention Transplantation (LAT), which better preserving the details of the content image while capturing complex style references. Our approach is validated through a series of qualitative and quantitative experiments, achieving state-of-the-art performance on multiple quantitative metrics.
+
+**선정 근거**
+이미지 스타일 전송 기술이 스포츠 콘텐츠의 이미지 보정에 간접적으로 적용 가능
+
+---
+
+## 다시 보기
+
+### TRINE: A Token-Aware, Runtime-Adaptive FPGA Inference Engine for Multimodal AI (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22867v1
+- 점수: final 100.0
+
+Multimodal stacks that mix ViTs, CNNs, GNNs, and transformer NLP strain embedded platforms because their compute/memory patterns diverge and hard real-time targets leave little slack. TRINE is a single-bitstream FPGA accelerator and compiler that executes end-to-end multimodal inference without reconfiguration. Layers are unified as DDMM/SDDMM/SpMM and mapped to a mode-switchable engine that toggles at runtime among weight/output-stationary systolic, 1xCS SIMD, and a routable adder tree (RADT) on a shared PE array. A width-matched, two-stage top-k unit enables in-stream token pruning, while dependency-aware layer offloading (DALO) overlaps independent kernels across reconfigurable processing units to sustain utilization. Evaluated on Alveo U50 and ZCU104, TRINE reduces latency by up to 22.57x vs. RTX 4090 and 6.86x vs. Jetson Orin Nano at 20-21 W; token pruning alone yields up to 7.8x on ViT-heavy pipelines, and DALO contributes up to 79% throughput improvement. With int8 quantization, accuracy drops remain <2.5% across representative tasks, delivering state-of-the-art latency and energy efficiency for unified vision, language, and graph workloads-in one bitstream.
+
+-> TRINE은 다중 모달 AI 가속을 위한 FPGA 엔진으로, rk3588 기반의 에지 디바이스에서 스포츠 촬영 및 분석을 위한 여러 AI 모델을 효율적으로 실행할 수 있게 해줍니다.
+
+### Convolutions Predictable Offloading to an Accelerator: Formalization and Optimization (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21792v1
+- 점수: final 98.4
+
+Convolutional neural networks (CNNs) require a large number of multiply-accumulate (MAC) operations. To meet real-time constraints, they often need to be executed on specialized accelerators composed of an on-chip memory and a processing unit. However, the on-chip memory is often insufficient to store all the data required to compute a CNN layer. Thus, the computation must be performed in several offloading steps. We formalise such sequences of steps and apply our formalism to a state of the art decomposition of convolutions. In order to find optimal strategies in terms of duration, we encode the problem with a set of constraints. A Python-based simulator allows to analyse in-depth computed strategies.
+
+-> rk3588 엣지 디바이스에서 AI 모델 실행 최적화에 직접적으로 관련된 연구로 실시간 스포츠 촬영 및 분석 성능 향상에 필수적임
+
+### Rateless DeepJSCC for Broadcast Channels: a Rate-Distortion-Complexity Tradeoff (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21616v1
+- 점수: final 96.0
+
+In recent years, numerous data-intensive broadcasting applications have emerged at the wireless edge, calling for a flexible tradeoff between distortion, transmission rate, and processing complexity. While deep learning-based joint source-channel coding (DeepJSCC) has been identified as a potential solution to data-intensive communications, most of these schemes are confined to worst-case solutions, lack adaptive complexity, and are inefficient in broadcast settings. To overcome these limitations, this paper introduces nonlinear transform rateless source-channel coding (NTRSCC), a variable-length JSCC framework for broadcast channels based on rateless codes. In particular, we integrate learned source transformations with physical-layer LT codes, develop unequal protection schemes that exploit decoder side information, and devise approximations to enable end-to-end optimization of rateless parameters. Our framework enables heterogeneous receivers to adaptively adjust their received number of rateless symbols and decoding iterations in belief propagation, thereby achieving a controllable tradeoff between distortion, rate, and decoding complexity. Simulation results demonstrate that the proposed method enhances image broadcast quality under stringent communication and processing budgets over heterogeneous edge devices.
+
+-> Rateless DeepJSCC framework for broadcast channels could enable efficient streaming of sports content to heterogeneous edge devices.
+
+### No Dense Tensors Needed: Fully Sparse Object Detection on Event-Camera Voxel Grids (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21638v1
+- 점수: final 96.0
+
+Event cameras produce asynchronous, high-dynamic-range streams well suited for detecting small, fast-moving drones, yet most event-based detectors convert the sparse event stream into dense tensors, discarding the representational efficiency of neuromorphic sensing. We propose SparseVoxelDet, to our knowledge the first fully sparse object detector for event cameras, in which backbone feature extraction, feature pyramid fusion, and the detection head all operate exclusively on occupied voxel positions through 3D sparse convolutions; no dense feature tensor is instantiated at any stage of the pipeline. On the FRED benchmark (629,832 annotated frames), SparseVoxelDet achieves 83.38% mAP at 50 while processing only 14,900 active voxels per frame (0.23% of the T.H.W grid), compared to 409,600 pixels for the dense YOLOv11 baseline (87.68% mAP at 50). Relaxing the IoU threshold from 0.50 to 0.40 recovers mAP to 89.26%, indicating that the remaining accuracy gap is dominated by box regression precision rather than detection capability. The sparse representation yields 858 times GPU memory compression and 3,670 times storage reduction relative to the equivalent dense 3D voxel tensor, with data-structure size that scales with scene dynamics rather than sensor resolution. Error forensics across 119,459 test frames confirms that 71 percent of failures are localization near-misses rather than missed targets. These results demonstrate that native sparse processing is a viable paradigm for event-camera object detection, exploiting the structural sparsity of neuromorphic sensor data without requiring neuromorphic computing hardware, and providing a framework whose representation cost is governed by scene activity rather than pixel count, a property that becomes increasingly valuable as event cameras scale to higher resolutions.
+
+-> 이벤트 카메라를 이용한 효율적인 희소 객체 탐지 기술로 엣지 디바이스에 직접 적용 가능
+
+### ANCHOR: Adaptive Network based on Cascaded Harmonic Offset Routing (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21718v1
+- 점수: final 93.6
+
+Time series analysis plays a foundational role in a wide range of real-world applications, yet accurately modeling complex non-stationary signals remains a shared challenge across downstream tasks. Existing methods attempt to extract features directly from one-dimensional sequences, making it difficult to handle the widely observed dynamic phase drift and discrete quantization error. To address this issue, we decouple temporal evolution into macroscopic physical periods and microscopic phase perturbations, and inject frequency-domain priors derived from the Real Fast Fourier Transform (RFFT) into the underlying spatial sampling process. Based on this idea, we propose a Frequency-Guided Deformable Module (FGDM) to adaptively compensate for microscopic phase deviations. Built upon FGDM, we further develop an Adaptive Network based on Cascaded Harmonic Offset Routing (ANCHOR) as a general-purpose backbone for time-series modeling. Through orthogonal channel partitioning and a progressive residual architecture, ANCHOR efficiently decouples multi-scale harmonic features while substantially suppressing the computational redundancy of multi-branch networks. Extensive experiments demonstrate that ANCHOR achieves the best performance in most short-term forecasting sub-tasks and exhibits strong competitiveness on several specific sub-tasks in anomaly detection and time-series classification, validating its effectiveness as a universal time-series foundation backbone.
+
+-> 시계열 분석 기술로 스포츠 동작 분석에 적용 가능
+
+### TorR: Towards Brain-Inspired Task-Oriented Reasoning via Cache-Oriented Algorithm-Architecture Co-design (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22855v1
+- 점수: final 93.6
+
+Task-oriented object detection (TOOD) atop CLIP offers open-vocabulary, prompt-driven semantics, yet dense per-window computation and heavy memory traffic hinder real-time, power-limited edge deployment. We present \emph{TorR}, a brain-inspired \textbf{algorithm--architecture co-design} that \textbf{replaces CLIP-style dense alignment with a hyperdimensional (HDC) associative reasoner} and turns temporal coherence into reuse. On the \emph{algorithm} side, TorR reformulates alignment as HDC similarity and graph composition, introducing \emph{partial-similarity reuse} via (i) query caching with per-class score accumulation, (ii) exact $δ$-updates when only a small set of hypervector bits change, and (iii) similarity/load-gated bypass under high system load. On the \emph{architecture} side, TorR instantiates a lane-scalable, bit-sliced item memory with bank/precision gating and a lightweight controller that schedules bypass/$δ$/full paths to meet RT-30/RT-60 targets as object counts vary. Synthesized in a TSMC 28\,nm process and exercised with a cycle-accurate simulator, TorR sustains real-time throughput with millijoule-scale energy per window ($\approx$50\,mJ at 60\,FPS; $\approx$113\,mJ at 30\,FPS) and low latency jitter, while delivering competitive AP@0.5 across five task prompts (mean 44.27\%) within a bounded margin to strong VLM baselines, but at orders-of-magnitude lower energy. The design exposes deployment-time configurability (effective dimension $D'$, thresholds, precision) to trade accuracy, latency, and energy for edge budgets.
+
+-> TorR는 에지 디바이스에서 실시간 객체 탐지를 위한 뇀 영감 기술로, 스포츠 장면에서 선수 및 공 등의 실시간 추적과 분석에 적합합니다.
+
+### StreamingClaw Technical Report (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22120v1
+- 점수: final 92.0
+
+Applications such as embodied intelligence rely on a real-time perception-decision-action closed loop, posing stringent challenges for streaming video understanding. However, current agents suffer from fragmented capabilities, such as supporting only offline video understanding, lacking long-term multimodal memory mechanisms, or struggling to achieve real-time reasoning and proactive interaction under streaming inputs. These shortcomings have become a key bottleneck for preventing them from sustaining perception, making real-time decisions, and executing actions in real-world environments. To alleviate these issues, we propose StreamingClaw, a unified agent framework for streaming video understanding and embodied intelligence. It is also an OpenClaw-compatible framework that supports real-time, multimodal streaming interaction. StreamingClaw integrates five core capabilities: (1) It supports real-time streaming reasoning. (2) It supports reasoning about future events and proactive interaction under the online evolution of interaction objectives. (3) It supports multimodal long-term storage, hierarchical evolution, and efficient retrieval of shared memory across multiple agents. (4) It supports a closed-loop of perception-decision-action. In addition to conventional tools and skills, it also provides streaming tools and action-centric skills tailored for real-world physical environments. (5) It is compatible with the OpenClaw framework, allowing it to fully leverage the resources and support of the open-source community. With these designs, StreamingClaw integrates online real-time reasoning, multimodal long-term memory, and proactive interaction within a unified framework. Moreover, by translating decisions into executable actions, it enables direct control of the physical world, supporting practical deployment of embodied interaction.
+
+-> 실시간 영상 이해 및 의사결정-행동 루프 기술이 스포츠 자동 촬영에 적용 가능
+
+### Not All Layers Are Created Equal: Adaptive LoRA Ranks for Personalized Image Generation (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21884v1
+- 점수: final 92.0
+
+Low Rank Adaptation (LoRA) is the de facto fine-tuning strategy to generate personalized images from pre-trained diffusion models. Choosing a good rank is extremely critical, since it trades off performance and memory consumption, but today the decision is often left to the community's consensus, regardless of the personalized subject's complexity. The reason is evident: the cost of selecting a good rank for each LoRA component is combinatorial, so we opt for practical shortcuts such as fixing the same rank for all components. In this paper, we take a first step to overcome this challenge. Inspired by variational methods that learn an adaptive width of neural networks, we let the ranks of each layer freely adapt during fine-tuning on a subject. We achieve it by imposing an ordering of importance on the rank's positions, effectively encouraging the creation of higher ranks when strictly needed. Qualitatively and quantitatively, our approach, LoRA$^2$, achieves a competitive trade-off between DINO, CLIP-I, and CLIP-T across 29 subjects while requiring much less memory and lower rank than high rank LoRA versions. Code: https://github.com/donaldssh/NotAllLayersAreCreatedEqual.
+
+-> 개인화된 이미지 생성을 위한 적응형 LoRA 기술은 스포츠 영상을 맞춤형 하이라이트 시각물로 변환하는 데 사용될 수 있습니다.
+
+### Benchmarking Message Brokers for IoT Edge Computing: A Comprehensive Performance Study (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21600v1
+- 점수: final 92.0
+
+Asynchronous messaging is a cornerstone of modern distributed systems, enabling decoupled communication for scalable and resilient applications. Today's message queue (MQ) ecosystem spans a wide range of designs, from high-throughput streaming platforms to lightweight protocols tailored for edge and IoT environments. Despite this diversity, choosing an appropriate MQ system remains difficult. Existing evaluations largely focus on throughput and latency on fixed hardware, while overlooking CPU and memory footprint and the effects of resource constraints, factors that are critical for edge and IoT deployments. In this paper, we present a systematic performance study of eight prominent message brokers: Mosquitto, EMQX, HiveMQ, RabbitMQ, ActiveMQ Artemis, NATS Server, Redis (Pub/Sub), and Zenoh Router. We introduce mq-bench, a unified benchmarking framework to evaluate these systems under identical conditions, scaling up to 10,000 concurrent client pairs across three VM configurations representative of edge hardware. This study reveals several interesting and sometimes counter-intuitive insights. Lightweight native brokers achieve sub-millisecond latency, while feature-rich enterprise platforms incur 2-3X higher overhead. Under high connection loads, multi-threaded brokers like NATS and Zenoh scale efficiently, whereas the widely-deployed Mosquitto saturates earlier due to its single-threaded architecture. We also find that Java-based brokers consume significantly more memory than native implementations, which has important implications for memory-constrained edge deployments. Based on these findings, we provide practical deployment guidelines that map workload requirements and resource constraints to appropriate broker choices for telemetry, streaming analytics, and IoT use cases.
+
+-> IoT 엣지 컴퓨팅용 메시지 브로커 벤치마킹은 AI 카메라 디바이스의 내부 통신 시스템 설계에 중요합니다.
+
+### Short-Form Video Viewing Behavior Analysis and Multi-Step Viewing Time Prediction (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22663v1
+- 점수: final 92.0
+
+Short-form videos have become one of the most popular user-generated content formats nowadays. Popular short-video platforms use a simple streaming approach that preloads one or more videos in the recommendation list in advance. However, this approach results in significant data wastage, as a large portion of the downloaded video data is not used due to the user's early skip behavior. To address this problem, the chunk-based preloading approach has been proposed, where videos are divided into chunks, and preloading is performed in a chunk-based manner to reduce data wastage. To optimize chunk-based preloading, it is important to understand the user's viewing behavior in short-form video streaming. In this paper, we conduct a measurement study to construct a user behavior dataset that contains users' viewing times of one hundred short videos of various categories. Using the dataset, we evaluate the performance of standard time-series forecasting algorithms for predicting user viewing time in short-form video streaming. Our evaluation results show that Auto-ARIMA generally achieves the lowest and most stable forecasting errors across most experimental settings. The remaining methods, including AR, LR, SVR, and DTR, tend to produce higher errors and exhibit lower stability in many cases. The dataset is made publicly available at https://nvduc.github.io/shortvideodataset.
+
+-> 숏폼 영상 시청 행동 분석 연구는 스포츠 하이라이트 플랫폼의 콘텐츠 추천 알고리즘을 최적화하는 데 직접적으로 활용될 수 있습니다.
+
+### The Universal Normal Embedding (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21786v1
+- 점수: final 90.4
+
+Generative models and vision encoders have largely advanced on separate tracks, optimized for different goals and grounded in different mathematical principles. Yet, they share a fundamental property: latent space Gaussianity. Generative models map Gaussian noise to images, while encoders map images to semantic embeddings whose coordinates empirically behave as Gaussian. We hypothesize that both are views of a shared latent source, the Universal Normal Embedding (UNE): an approximately Gaussian latent space from which encoder embeddings and DDIM-inverted noise arise as noisy linear projections. To test our hypothesis, we introduce NoiseZoo, a dataset of per-image latents comprising DDIM-inverted diffusion noise and matching encoder representations (CLIP, DINO). On CelebA, linear probes in both spaces yield strong, aligned attribute predictions, indicating that generative noise encodes meaningful semantics along linear directions. These directions further enable faithful, controllable edits (e.g., smile, gender, age) without architectural changes, where simple orthogonalization mitigates spurious entanglements. Taken together, our results provide empirical support for the UNE hypothesis and reveal a shared Gaussian-like latent geometry that concretely links encoding and generation. Code and data are available https://rbetser.github.io/UNE/
+
+-> 유니버설 노말 임베딩 프레임워크는 스포츠 영상 처리 및 분석에 직접적으로 적용 가능하며, 생성 모델과 인코더 간의 잠재 공간 연결을 통해 영상 보정과 하이라이트 생성을 향상시킬 수 있습니다.
+
+### Feature Incremental Clustering with Generalization Bounds (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21590v1
+- 점수: final 89.6
+
+In many learning systems, such as activity recognition systems, as new data collection methods continue to emerge in various dynamic environmental applications, the attributes of instances accumulate incrementally, with data being stored in gradually expanding feature spaces. How to design theoretically guaranteed algorithms to effectively cluster this special type of data stream, commonly referred to as activity recognition, remains unexplored. Compared to traditional scenarios, we will face at least two fundamental questions in this feature incremental scenario. (i) How to design preliminary and effective algorithms to address the feature incremental clustering problem? (ii) How to analyze the generalization bounds for the proposed algorithms and under what conditions do these algorithms provide a strong generalization guarantee? To address these problems, by tailoring the most common clustering algorithm, i.e., $k$-means, as an example, we propose four types of Feature Incremental Clustering (FIC) algorithms corresponding to different situations of data access: Feature Tailoring (FT), Data Reconstruction (DR), Data Adaptation (DA), and Model Reuse (MR), abbreviated as FIC-FT, FIC-DR, FIC-DA, and FIC-MR. Subsequently, we offer a detailed analysis of the generalization error bounds for these four algorithms and highlight the critical factors influencing these bounds, such as the amounts of training data, the complexity of the hypothesis space, the quality of pre-trained models, and the discrepancy of the reconstruction feature distribution. The numerical experiments show the effectiveness of the proposed algorithms, particularly in their application to activity recognition clustering tasks.
+
+-> 특성 증분 클러스터링 알고리즘은 스포츠 동작 분석과 하이라이트 감지에 직접 적용 가능합니다.
+
+### Optimal Memory Encoding Through Fluctuation-Response Structure (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21666v1
+- 점수: final 89.6
+
+Physical reservoir computing exploits the intrinsic dynamics of physical systems for information processing, while keeping the internal dynamics fixed and training only linear readouts; yet the role of input encoding remains poorly understood. We show that optimal input encoding is a geometric problem governed by the system's fluctuation-response structure. By measuring steady-state fluctuations and linear response, we derive an analytical criterion for the input direction that maximizes task-specific linear memory under a fixed power constraint, termed Response-based Optimal Memory Encoding (ROME). Backpropagation-based encoder optimization is shown to be equivalent to ROME, revealing a trade-off between task-dependent feature mixing and intrinsic noise. We apply ROME to various reservoir platforms, including spin-wave waveguides and spiking neural networks, demonstrating effective encoder design across physical and neuromorphic reservoirs, even in non-differentiable systems.
+
+-> 물리적 리저버 컴퓨팅과 스파이킹 신경망은 엣지 디바이스의 영상 처리 효율성을 향상시키는 데 적용 가능합니다.
+
+### Predictive Photometric Uncertainty in Gaussian Splatting for Novel View Synthesis (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22786v1
+- 점수: final 89.6
+
+Recent advances in 3D Gaussian Splatting have enabled impressive photorealistic novel view synthesis. However, to transition from a pure rendering engine to a reliable spatial map for autonomous agents and safety-critical applications, knowing where the representation is uncertain is as important as the rendering fidelity itself. We bridge this critical gap by introducing a lightweight, plug-and-play framework for pixel-wise, view-dependent predictive uncertainty estimation. Our post-hoc method formulates uncertainty as a Bayesian-regularized linear least-squares optimization over reconstruction residuals. This architecture-agnostic approach extracts a per-primitive uncertainty channel without modifying the underlying scene representation or degrading baseline visual fidelity. Crucially, we demonstrate that providing this actionable reliability signal successfully translates 3D Gaussian splatting into a trustworthy spatial map, further improving state-of-the-art performance across three critical downstream perception tasks: active view selection, pose-agnostic scene change detection, and pose-agnostic anomaly detection.
+
+-> 3D 가우시안 스플래팅의 불확실성 예측 기술은 스포츠 장면의 3D 재구성 및 중요 순간 정확히 식별 가능
+
+### Toward Integrated Sensing, Communications, and Edge Intelligence Networks (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22958v1
+- 점수: final 88.0
+
+Wireless systems are expanding their purposes, from merely connecting humans and things to connecting intelligence and opportunistically sensing of the environment through radio-frequency signals. In this paper, we introduce the concept of triple-functional networks in which the same infrastructure and resources are shared for integrated sensing, communications, and (edge) Artificial Intelligence (AI) inference. This concept opens up several opportunities, such as devising non-orthogonal resource deployment and power consumption to concurrently update multiple services, but also challenges related to resource management and signaling cross-talk, among others. The core idea of this work is that computation-related aspects, including computing resources and AI models availability, should be explicitly considered when taking resource allocation decisions, to address the conflicting goals of the services coexistence. After showing the natural coupling between theoretical performance bounds of the three services, we formulate a service coexistence optimization problem that is solved optimally, and showcase the advantages against a disjoint allocation strategy.
+
+-> 통합 센싱, 통신, 에지 AI 네트워크로 스포츠 촬영 및 분석 시스템에 활용 가능
+
+### AdaEdit: Adaptive Temporal and Channel Modulation for Flow-Based Image Editing (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21615v1
+- 점수: final 86.4
+
+Inversion-based image editing in flow matching models has emerged as a powerful paradigm for training-free, text-guided image manipulation. A central challenge in this paradigm is the injection dilemma: injecting source features during denoising preserves the background of the original image but simultaneously suppresses the model's ability to synthesize edited content. Existing methods address this with fixed injection strategies -- binary on/off temporal schedules, uniform spatial mixing ratios, and channel-agnostic latent perturbation -- that ignore the inherently heterogeneous nature of injection demand across both the temporal and channel dimensions. In this paper, we present AdaEdit, a training-free adaptive editing framework that resolves this dilemma through two complementary innovations. First, we propose a Progressive Injection Schedule that replaces hard binary cutoffs with continuous decay functions (sigmoid, cosine, or linear), enabling a smooth transition from source-feature preservation to target-feature generation and eliminating feature discontinuity artifacts. Second, we introduce Channel-Selective Latent Perturbation, which estimates per-channel importance based on the distributional gap between the inverted and random latents and applies differentiated perturbation strengths accordingly -- strongly perturbing edit-relevant channels while preserving structure-encoding channels. Extensive experiments on the PIE-Bench benchmark (700 images, 10 editing types) demonstrate that AdaEdit achieves an 8.7% reduction in LPIPS, a 2.6% improvement in SSIM, and a 2.3% improvement in PSNR over strong baselines, while maintaining competitive CLIP similarity. AdaEdit is fully plug-and-play and compatible with multiple ODE solvers including Euler, RF-Solver, and FireFlow. Code is available at https://github.com/leeguandong/AdaEdit
+
+-> 스포츠 영상 하이라이트 제작에 직접 적용 가능한 이미지 편집 기술
+
+### Dual-Teacher Distillation with Subnetwork Rectification for Black-Box Domain Adaptation (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22908v1
+- 점수: final 85.6
+
+Assuming that neither source data nor the source model is accessible, black box domain adaptation represents a highly practical yet extremely challenging setting, as transferable information is restricted to the predictions of the black box source model, which can only be queried using target samples. Existing approaches attempt to extract transferable knowledge through pseudo label refinement or by leveraging external vision language models (ViLs), but they often suffer from noisy supervision or insufficient utilization of the semantic priors provided by ViLs, which ultimately hinder adaptation performance. To overcome these limitations, we propose a dual teacher distillation with subnetwork rectification (DDSR) model that jointly exploits the specific knowledge embedded in black box source models and the general semantic information of a ViL. DDSR adaptively integrates their complementary predictions to generate reliable pseudo labels for the target domain and introduces a subnetwork driven regularization strategy to mitigate overfitting caused by noisy supervision. Furthermore, the refined target predictions iteratively enhance both the pseudo labels and ViL prompts, enabling more accurate and semantically consistent adaptation. Finally, the target model is further optimized through self training with classwise prototypes. Extensive experiments on multiple benchmark datasets validate the effectiveness of our approach, demonstrating consistent improvements over state of the art methods, including those using source data or models.
+
+-> 도메인 적응 기술은 다양한 스포츠 환경에서 AI 모델을 효과적으로 적용시키는 데 필수적입니다.
+
+### In-network Attack Detection with Federated Deep Learning in IoT Networks: Real Implementation and Analysis (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21596v1
+- 점수: final 84.0
+
+The rapid expansion of the Internet of Things (IoT) and its integration with backbone networks have heightened the risk of security breaches. Traditional centralized approaches to anomaly detection, which require transferring large volumes of data to central servers, suffer from privacy, scalability, and latency limitations. This paper proposes a lightweight autoencoder-based anomaly detection framework designed for deployment on resource-constrained edge devices, enabling real-time detection while minimizing data transfer and preserving privacy. Federated learning is employed to train models collaboratively across distributed devices, where local training occurs on edge nodes and only model weights are aggregated at a central server. A real-world IoT testbed using Raspberry Pi sensor nodes was developed to collect normal and attack traffic data. The proposed federated anomaly detection system, implemented and evaluated on the testbed, demonstrates its effectiveness in accurately identifying network attacks. The communication overhead was reduced significantly while achieving comparable performance to the centralized method.
+
+-> Federated learning for IoT edge devices with real-time processing, applicable to edge computing aspects of the project
+
+### One Model, Two Markets: Bid-Aware Generative Recommendation (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22231v1
+- 점수: final 84.0
+
+Generative Recommender Systems using semantic ids, such as TIGER (Rajput et al., 2023), have emerged as a widely adopted competitive paradigm in sequential recommendation. However, existing architectures are designed solely for semantic retrieval and do not address concerns such as monetization via ad revenue and incorporation of bids for commercial retrieval. We propose GEM-Rec, a unified framework that integrates commercial relevance and monetization objectives directly into the generative sequence. We introduce control tokens to decouple the decision of whether to show an ad from which item to show. This allows the model to learn valid placement patterns directly from interaction logs, which inherently reflect past successful ad placements. Complementing this, we devise a Bid-Aware Decoding mechanism that handles real-time pricing, injecting bids directly into the inference process to steer the generation toward high-value items. We prove that this approach guarantees allocation monotonicity, ensuring that higher bids weakly increase an ad's likelihood of being shown without requiring model retraining. Experiments demonstrate that GEM-Rec allows platforms to dynamically optimize for semantic relevance and platform revenue.
+
+-> GEM-Rec 프레임워크는 광고 수익 모델을 통합하여 스포츠 콘텐츠 플랫폼의 수익화 전략에 직접 적용 가능
+
+### GTLR-GS: Geometry-Texture Aware LiDAR-Regularized 3D Gaussian Splatting for Realistic Scene Reconstruction (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.23192v1
+- 점수: final 84.0
+
+Recent advances in 3D Gaussian Splatting (3DGS) have enabled real-time, photorealistic scene reconstruction. However, conventional 3DGS frameworks typically rely on sparse point clouds derived from Structure-from-Motion (SfM), which inherently suffer from scale ambiguity, limited geometric consistency, and strong view dependency due to the lack of geometric priors. In this work, a LiDAR-centric 3D Gaussian Splatting framework is proposed that explicitly incorporates metric geometric priors into the entire Gaussian optimization process. Instead of treating LiDAR data as a passive initialization source, 3DGS optimization is reformulated as a geometry-conditioned allocation and refinement problem under a fixed representational budget. Specifically, this work introduces (i) a geometry-texture-aware allocation strategy that selectively assigns Gaussian primitives to regions with high structural or appearance complexity, (ii) a curvature-adaptive refinement mechanism that dynamically guides Gaussian splitting toward geometrically complex areas during training, and (iii) a confidence-aware metric depth regularization that anchors the reconstructed geometry to absolute scale using LiDAR measurements while maintaining optimization stability. Extensive experiments on the ScanNet++ dataset and a custom real-world dataset validate the proposed approach. The results demonstrate state-of-the-art performance in metric-scale reconstruction with high geometric fidelity.
+
+-> LiDAR 기반 3D 가우시안 스플래팅은 스포츠 장면의 실시간 3D 재구성을 통해 다각도 분석을 가능하게 합니다.
+
+### SHARP: Spectrum-aware Highly-dynamic Adaptation for Resolution Promotion in Remote Sensing Synthesis (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21783v1
+- 점수: final 82.4
+
+Text-to-image generation powered by Diffusion Transformers (DiTs) has made remarkable strides, yet remote sensing (RS) synthesis lags behind due to two barriers: the absence of a domain-specialized DiT prior and the prohibitive cost of training at the large resolutions that RS applications demand. Training-free resolution promotion via Rotary Position Embedding (RoPE) rescaling offers a practical remedy, but every existing method applies a static positional scaling rule throughout the denoising process. This uniform compression is particularly harmful for RS imagery, whose substantially denser medium- and high-frequency energy encodes the fine structures critical for aerial-scene realism, such as vehicles, building contours, and road markings. Addressing both challenges requires a domain-specialized generative prior coupled with a denoising-aware positional adaptation strategy. To this end, we fine-tune FLUX on over 100,000 curated RS images to build a strong domain prior (RS-FLUX), and propose Spectrum-aware Highly-dynamic Adaptation for Resolution Promotion (SHARP), a training-free method that introduces a rational fractional time schedule k_rs(t) into RoPE. SHARP applies strong positional promotion during the early layout-formation stage and progressively relaxes it during detail recovery, aligning extrapolation strength with the frequency-progressive nature of diffusion denoising. Its resolution-agnostic formulation further enables robust multi-scale generation from a single set of hyperparameters. Extensive experiments across six square and rectangular resolutions show that SHARP consistently outperforms all training-free baselines on CLIP Score, Aesthetic Score, and HPSv2, with widening margins at more aggressive extrapolation factors and negligible computational overhead. Code and weights are available at https://github.com/bxuanz/SHARP.
+
+-> 스포츠 영상 품질 향상을 위한 고해상도 기술 적용 가능
+
+### VQ-Jarvis: Retrieval-Augmented Video Restoration Agent with Sharp Vision and Fast Thought (1회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22998v1
+- 점수: final 82.4
+
+Video restoration in real-world scenarios is challenged by heterogeneous degradations, where static architectures and fixed inference pipelines often fail to generalize. Recent agent-based approaches offer dynamic decision making, yet existing video restoration agents remain limited by insufficient quality perception and inefficient search strategies. We propose VQ-Jarvis, a retrieval-augmented, all-in-one intelligent video restoration agent with sharper vision and faster thought. VQ-Jarvis is designed to accurately perceive degradations and subtle differences among paired restoration results, while efficiently discovering optimal restoration trajectories. To enable sharp vision, we construct VSR-Compare, the first large-scale video paired enhancement dataset with 20K comparison pairs covering 7 degradation types, 11 enhancement operators, and diverse content domains. Based on this dataset, we train a multiple operator judge model and a degradation perception model to guide agent decisions. To achieve fast thought, we introduce a hierarchical operator scheduling strategy that adapts to video difficulty: for easy cases, optimal restoration trajectories are retrieved in a one-step manner from a retrieval-augmented generation (RAG) library; for harder cases, a step-by-step greedy search is performed to balance efficiency and accuracy. Extensive experiments demonstrate that VQ-Jarvis consistently outperforms existing methods on complex degraded videos.
+
+-> VQ-Jarvis는 실시간 비디오 복원 기술로 스포츠 촬영 품질 향상에 직접 적용 가능하며, 다양한 품질 저하 상황에 대응할 수 있는 강력한 복원 능력을 제공합니다.
+
+### ALADIN:Attribute-Language Distillation Network for Person Re-Identification (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21482v1
+- 점수: final 80.0
+
+Recent vision-language models such as CLIP provide strong cross-modal alignment, but current CLIP-guided ReID pipelines rely on global features and fixed prompts. This limits their ability to capture fine-grained attribute cues and adapt to diverse appearances. We propose ALADIN, an attribute-language distillation network that distills knowledge from a frozen CLIP teacher to a lightweight ReID student. ALADIN introduces fine-grained attribute-local alignment to establish adaptive text-visual correspondence and robust representation learning. A Scene-Aware Prompt Generator produces image-specific soft prompts to facilitate adaptive alignment. Attribute-local distillation enforces consistency between textual attributes and local visual features, significantly enhancing robustness under occlusions. Furthermore, we employ cross-modal contrastive and relation distillation to preserve the inherent structural relationships among attributes. To provide precise supervision, we leverage Multimodal LLMs to generate structured attribute descriptions, which are then converted into localized attention maps via CLIP. At inference, only the student is used. Experiments on Market-1501, DukeMTMC-reID, and MSMT17 show improvements over CNN-, Transformer-, and CLIP-based methods, with better generalization and interpretability.
+
+-> 선수 추적 및 분석을 위한 인물 재식별 시스템 직접 적용 가능
+
+### DUO-VSR: Dual-Stream Distillation for One-Step Video Super-Resolution (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.22271v1
+- 점수: final 80.0
+
+Diffusion-based video super-resolution (VSR) has recently achieved remarkable fidelity but still suffers from prohibitive sampling costs. While distribution matching distillation (DMD) can accelerate diffusion models toward one-step generation, directly applying it to VSR often results in training instability alongside degraded and insufficient supervision. To address these issues, we propose DUO-VSR, a three-stage framework built upon a Dual-Stream Distillation strategy that unifies distribution matching and adversarial supervision for one-step VSR. Firstly, a Progressive Guided Distillation Initialization is employed to stabilize subsequent training through trajectory-preserving distillation. Next, the Dual-Stream Distillation jointly optimizes the DMD and Real-Fake Score Feature GAN (RFS-GAN) streams, with the latter providing complementary adversarial supervision leveraging discriminative features from both real and fake score models. Finally, a Preference-Guided Refinement stage further aligns the student with perceptual quality preferences. Extensive experiments demonstrate that DUO-VSR achieves superior visual quality and efficiency over previous one-step VSR approaches.
+
+-> 비디오 슈퍼-해상도를 위한 이중-스트림 증류 프레임워크로 스포츠 영상 보정 및 편집과 직접적인 관련성 있음
+
+### λ-GELU: Learning Gating Hardness for Controlled ReLU-ization in Deep Networks (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21991v1
+- 점수: final 80.0
+
+Gaussian Error Linear Unit (GELU) is a widely used smooth alternative to Rectifier Linear Unit (ReLU), yet many deployment, compression, and analysis toolchains are most naturally expressed for piecewise-linear (ReLU-type) networks. We study a hardness-parameterized formulation of GELU, f(x;λ)=xΦ(λ x), where Φ is the Gaussian CDF and λ \in [1, infty) controls gate sharpness, with the goal of turning smooth gated training into a controlled path toward ReLU-compatible models. Learning λ is non-trivial: naive updates yield unstable dynamics and effective gradient attenuation, so we introduce a constrained reparameterization and an optimizer-aware update scheme.   Empirically, across a diverse set of model--dataset pairs spanning MLPs, CNNs, and Transformers, we observe structured layerwise hardness profiles and assess their robustness under different initializations. We further study a deterministic ReLU-ization strategy in which the learned gates are progressively hardened toward a principled target, enabling a post-training substitution of λ-GELU by ReLU with reduced disruption. Overall, λ-GELU provides a minimal and interpretable knob to profile and control gating hardness, bridging smooth training with ReLU-centric downstream pipelines.
+
+-> 신경망 최적화 기술로 rk3588 같은 엣지 디바이스에서 효율적인 AI 모델 배포에 적용 가능
+
+### Mapping Travel Experience in Public Transport: Real-Time Evidence and Spatial Analysis in Hamburg (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21763v1
+- 점수: final 80.0
+
+Shifting travel from private cars to public transport is critical for meeting climate and related mobility goals, yet passengers will only choose transit if it offers a consistently positive experience. Previous studies of passenger satisfaction have largely relied on retrospective surveys, which overlook the dynamic and spatially differentiated nature of travel experience. This paper introduces a novel combination of real-time experience sampling and spatial hot spot analysis to capture and map where public transport users report consistently positive or negative experiences.   Data were collected from 239 participants in Hamburg between March and September 2025. Using a smartphone application, travelers reported their momentary journey experience every five minutes during everyday trips, yielding over 21,000 in-situ evaluations. These geo-referenced data were analyzed with the Getis-Ord $Gi^{*}$ statistic to detect significant clusters of positive and negative travel experience. The analysis identified distinct hot and cold spots of travel experience across the network. Cold spots were shaped by heterogeneous problems, ranging from predominantly delay-dominated to overcrowding or socially stressful locations. In contrast, hot spots emerged through different pathways, including comfort-oriented, time-efficient or context-driven environments.   The findings highlight three contributions. First, cold spots are not uniform but reflect specific local constellations of problems, requiring targeted interventions. Second, hot spots illustrate multiple success models that can serve as benchmarks for replication. Third, this study demonstrates the value of combining dynamic high-resolution sampling with spatial statistics to guide more effective and place-specific improvements in public transport.
+
+-> 실시간 데이터 수집 및 공간 분석 방법론이 스포츠 경기 데이터 수집과 분석에 직접적으로 적용 가능하며, 경험 매핑 기법을 통해 선수들의 움직임 패턴과 경기 전략 분석에 활용 가능
+
+### A Framework for Closed-Loop Robotic Assembly, Alignment and Self-Recovery of Precision Optical Systems (2회째 추천)
+
+- arXiv: http://arxiv.org/abs/2603.21496v1
+- 점수: final 80.0
+
+Robotic automation has transformed scientific workflows in domains such as chemistry and materials science, yet free-space optics, which is a high precision domain, remains largely manual. Optical systems impose strict spatial and angular tolerances, and their performance is governed by tightly coupled physical parameters, making generalizable automation particularly challenging. In this work, we present a robotics framework for the autonomous construction, alignment, and maintenance of precision optical systems. Our approach integrates hierarchical computer vision systems, optimization routines, and custom-built tools to achieve this functionality. As a representative demonstration, we perform the fully autonomous construction of a tabletop laser cavity from randomly distributed components. The system performs several tasks such as laser beam centering, spatial alignment of multiple beams, resonator alignment, laser mode selection, and self-recovery from induced misalignment and disturbances. By achieving closed-loop autonomy for highly sensitive optical systems, this work establishes a foundation for autonomous optical experiments for applications across technical domains.
+
+-> Computer vision and optimization methodologies relevant to video analysis but specifically for optical systems
+
+---
+
+이 리포트는 arXiv API를 사용하여 생성되었습니다.
+arXiv 논문의 저작권은 각 저자에게 있습니다.
+Thank you to arXiv for use of its open access interoperability.

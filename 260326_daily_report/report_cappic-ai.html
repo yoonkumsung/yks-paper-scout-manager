@@ -1,0 +1,3248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPP!C_AI 논문 리포트 (2026-03-26)</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a2e;
+      --card-bg: #f8f9fa;
+      --card-border: #e0e0e0;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --muted: #6b7280;
+      --divider: #e5e7eb;
+      --score-bg: #e5e7eb;
+      --score-fill: #2563eb;
+      --tier2-bg: #f3f4f6;
+      --tag-bg: #fef3c7;
+      --tag-fg: #92400e;
+      --flag-edge: #dbeafe;
+      --flag-realtime: #dcfce7;
+      --flag-code: #f3e8ff;
+      --remind-bg: #fffbeb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --fg: #e2e8f0;
+        --card-bg: #1e293b;
+        --card-border: #334155;
+        --accent: #60a5fa;
+        --accent-light: #1e3a5f;
+        --muted: #94a3b8;
+        --divider: #334155;
+        --score-bg: #334155;
+        --score-fill: #60a5fa;
+        --tier2-bg: #1e293b;
+        --tag-bg: #78350f;
+        --tag-fg: #fef3c7;
+        --flag-edge: #1e3a5f;
+        --flag-realtime: #14532d;
+        --flag-code: #3b0764;
+        --remind-bg: #451a03;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .header { margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .stats span { white-space: nowrap; }
+    .stats span::after { content: ""; }
+    .stats-arrow { color: var(--muted); font-size: 0.75rem; opacity: 0.6; }
+    .below-score { color: #f59e0b; }
+    .window-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.3rem;
+      line-height: 1.6;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .window-label {
+      font-weight: 600;
+      color: var(--fg);
+      margin-right: 0.2rem;
+    }
+    .window-range {
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--divider);
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+    }
+    .window-sep {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    details { margin-bottom: 1rem; }
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before {
+      content: '\25B6';
+      font-size: 0.6em;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    details[open] > summary::before { transform: rotate(90deg); }
+    details[open] summary { border-radius: 4px 4px 0 0; }
+    details .details-content {
+      padding: 0.75rem;
+      border: 1px solid var(--card-border);
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+    }
+
+    .tabs {
+      margin-bottom: 1rem;
+    }
+    .tabs input[type="radio"] { display: none; }
+    .tab-labels {
+      display: flex;
+      border-bottom: 2px solid var(--divider);
+      margin-bottom: 1rem;
+    }
+    .tab-labels label {
+      padding: 0.6rem 1rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-labels label:hover { color: var(--fg); }
+    .tab-content { display: none; }
+    #tab-today:checked ~ .tab-labels label[for="tab-today"],
+    #tab-remind:checked ~ .tab-labels label[for="tab-remind"],
+    #tab-below:checked ~ .tab-labels label[for="tab-below"],
+    #tab-excluded:checked ~ .tab-labels label[for="tab-excluded"] {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    #tab-today:checked ~ .tab-panel-today { display: block; }
+    #tab-remind:checked ~ .tab-panel-remind { display: block; }
+    #tab-below:checked ~ .tab-panel-below { display: block; }
+    #tab-excluded:checked ~ .tab-panel-excluded { display: block; }
+
+    .paper-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .paper-card--collapsed { display: none; }
+    .show-more-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .show-more-btn:hover { background: var(--accent-light); }
+    .paper-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .paper-card .rank {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .paper-card .paper-title {
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+    }
+    .paper-card .paper-title a {
+      color: var(--fg);
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .paper-card .paper-title a:hover { color: var(--accent); }
+
+    .score-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .score-bar {
+      flex: 1;
+      max-width: 200px;
+      height: 8px;
+      background: var(--score-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      max-width: 100%;
+      background: var(--score-fill);
+      border-radius: 4px;
+    }
+    .score-detail { color: var(--muted); font-size: 0.75rem; }
+
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .cat-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .flags {
+      display: flex;
+      gap: 0.3rem;
+      margin: 0.4rem 0;
+    }
+    .flag-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .flag-edge { background: var(--flag-edge); }
+    .flag-realtime { background: var(--flag-realtime); }
+    .flag-code { background: var(--flag-code); }
+
+    .lowered-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: var(--tag-bg);
+      color: var(--tag-fg);
+      font-weight: 600;
+    }
+
+    .paper-links {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    .paper-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .paper-links a:hover {
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .abstract-section {
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .abstract-section .abstract-full {
+      margin-top: 0.3rem;
+      margin-bottom: 0;
+    }
+    .abstract-section .abstract-full summary {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.2rem 0.4rem;
+      background: transparent;
+      border: 1px solid var(--card-border);
+      display: inline-flex;
+    }
+
+    .cluster-links {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .tier-divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      position: relative;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .tier-divider::before, .tier-divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 35%;
+      border-top: 1px solid var(--divider);
+    }
+    .tier-divider::before { left: 0; }
+    .tier-divider::after { right: 0; }
+
+    /* Unified compact card - used by Tier 2, remind, below-threshold, discarded */
+    .compact-card {
+      background: var(--tier2-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .compact-card .rank-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+    }
+    .compact-card .rank {
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 2.5em;
+      text-align: center;
+    }
+    .compact-card .paper-title {
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .compact-card .paper-title a {
+      color: var(--fg);
+    }
+    .compact-card .paper-title a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .compact-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .compact-link {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.3rem;
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+    }
+    .compact-body {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .compact-reason {
+      margin-top: 0.2rem;
+      margin-left: 0.4rem;
+      padding-left: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--accent);
+      line-height: 1.3;
+      border-left: 3px solid var(--accent);
+    }
+    .compact-card .categories {
+      margin-top: 0.3rem;
+      margin-left: 0.4rem;
+    }
+    .recommend-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    /* Modifier: remind */
+    .compact-card--remind { background: var(--remind-bg); }
+    /* Modifier: below threshold */
+    .compact-card--below { opacity: 0.75; }
+    .compact-card--below .score-detail { color: #f59e0b; font-weight: 600; }
+    /* Modifier: discarded */
+    .compact-card--discarded { opacity: 0.7; }
+
+    /* Read state - Gmail-style dimming */
+    .paper-read { opacity: 0.5; }
+    .paper-read .paper-title a { font-weight: 400; }
+
+    .empty-message {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--divider);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    footer p { margin-bottom: 0.3rem; }
+
+    .index-list { list-style: none; }
+    .index-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .index-list li:last-child { border-bottom: none; }
+
+    /* Paper checkbox - matches rank text height */
+    .paper-checkbox {
+      width: 1em;
+      height: 1em;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin: 0;
+    }
+    .compact-card .paper-links {
+      display: inline-flex;
+      gap: 0.4rem;
+      margin: 0;
+      font-size: 0.8rem;
+    }
+
+    /* Download toolbar */
+    .download-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      padding: 0.6rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    }
+    .download-toolbar.visible { display: flex; }
+    body.toolbar-active { padding-bottom: 3.5rem; }
+    .toolbar-selects {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .toolbar-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar-btn.primary:hover { opacity: 0.9; }
+    .toolbar-btn.primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  
+<div class="header">
+  <h1>CAPP!C_AI 논문 리포트 (2026-03-26)</h1>
+  <div class="stats">
+    <span title="arXiv에서 수집된 총 논문 수">수집 57편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="키워드 필터 통과">필터 51편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="LLM 평가 후 제외">제외 1편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="점수 50점 미만">미달 11편</span>
+    <span class="stats-arrow">&rarr;</span>
+    <span title="최종 선정된 논문">선정 23편</span>
+  </div>
+  <div class="window-info">
+    <span class="window-label">검색 윈도우</span>
+    <span class="window-range">UTC 2026-03-25 00:00 / KST 2026-03-25 09:00</span>
+    <span class="window-sep">~</span>
+    <span class="window-range">UTC 2026-03-26 00:30 / KST 2026-03-26 09:30</span>
+  </div>
+</div>
+
+
+<details>
+  <summary>검색 키워드</summary>
+  <div class="details-content">
+    autonomous cinematography, active camera, camera control, highlight detection, action recognition, sports tracking, video stabilization, computational photography, image enhancement, pose estimation, sports analytics, biomechanics, edge computing, embedded systems, real-time processing, multimedia sharing, user-generated content, content dissemination, edge computing, multi-object tracking, real-time processing
+  </div>
+</details>
+
+
+<div class="tabs">
+  <input type="radio" name="tabs" id="tab-today" checked>
+  <input type="radio" name="tabs" id="tab-remind">
+  <input type="radio" name="tabs" id="tab-below">
+  <input type="radio" name="tabs" id="tab-excluded">
+  <div class="tab-labels">
+    <label for="tab-today">오늘의 논문 (23)</label>
+    <label for="tab-remind">다시 보기 (27)</label>
+    <label for="tab-below">점수 미달 (0)</label>
+    <label for="tab-excluded">제외 (1)</label>
+  </div>
+
+  <div class="tab-content tab-panel-today">
+    
+      
+      
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2603.24283v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24283v1" onchange="updateToolbar()">
+          <span class="rank">1위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24283v1">Bridging Biological Hearing and Neuromorphic Computing: End-to-End Time-Domain Audio Signal Processing with Reservoir Computing</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>93.6</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 93.6%"></div>
+          </div>
+          <span class="score-detail">
+            base:82 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.SD</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Despite the advancements in cutting-edge technologies, audio signal processing continues to pose challenges and lacks the precision of a human speech processing system. To address these challenges, we propose a novel approach to simplify audio signal processing by leveraging time-domain techniques and reservoir computing.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Despite the advancements in cutting-edge technologies, audio signal processing continues to pose challenges and lacks the precision of a human speech processing system. To address these challenges, we propose a novel approach to simplify audio signal processing by leveraging time-domain techniques and reservoir computing. Through our research, we have developed a real-time audio signal processing system by simplifying audio signal processing through the utilization of reservoir computers, which are significantly easier to train.   Feature extraction is a fundamental step in speech signal processing, with Mel Frequency Cepstral Coefficients (MFCCs) being a dominant choice due to their perceptual relevance to human hearing. However, conventional MFCC extraction relies on computationally intensive time-frequency transformations, limiting efficiency in real-time applications. To address this, we propose a novel approach that leverages reservoir computing to streamline MFCC extraction. By replacing traditional frequency-domain conversions with convolution operations, we eliminate the need for complex transformations while maintaining feature discriminability. We present an end-to-end audio processing framework that integrates this method, demonstrating its potential for efficient and real-time speech analysis. Our results contribute to the advancement of energy-efficient audio processing technologies, enabling seamless deployment in embedded systems and voice-driven applications. This work bridges the gap between biologically inspired feature extraction and modern neuromorphic computing, offering a scalable solution for next-generation speech recognition systems.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 실시간 오디오 처리 기술이 엣지 디바이스에 적용 가능</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24283v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2603.24503v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24503v1" onchange="updateToolbar()">
+          <span class="rank">2위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24503v1">Towards Safe Learning-Based Non-Linear Model Predictive Control through Recurrent Neural Network Modeling</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>92.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 92.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:80 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.RO</span>
+          
+          <span class="cat-tag">eess.SY</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">The practical deployment of nonlinear model predictive control (NMPC) is often limited by online computation: solving a nonlinear program at high control rates can be expensive on embedded hardware, especially when models are complex or horizons are long. Learning-based NMPC approximations shift this computation offline but typically demand large expert datasets and costly training.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">The practical deployment of nonlinear model predictive control (NMPC) is often limited by online computation: solving a nonlinear program at high control rates can be expensive on embedded hardware, especially when models are complex or horizons are long. Learning-based NMPC approximations shift this computation offline but typically demand large expert datasets and costly training. We propose Sequential-AMPC, a sequential neural policy that generates MPC candidate control sequences by sharing parameters across the prediction horizon. For deployment, we wrap the policy in a safety-augmented online evaluation and fallback mechanism, yielding Safe Sequential-AMPC. Compared to a naive feedforward policy baseline across several benchmarks, Sequential-AMPC requires substantially fewer expert MPC rollouts and yields candidate sequences with higher feasibility rates and improved closed-loop safety. On high-dimensional systems, it also exhibits better learning dynamics and performance in fewer epochs while maintaining stable validation improvement where the feedforward baseline can stagnate.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 실시간 제어 시스템이 스포츠 카메라 작동에 필수적이며, 안정적인 추적을 보장합니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> Sequential-AMPC 기술을 적용하면 빠르게 움직이는 선수들을 정확하게 추적하고 다양한 경기 상황에 대응할 수 있는 카메라 시스템을 구축할 수 있습니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24503v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2603.24113v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24113v1" onchange="updateToolbar()">
+          <span class="rank">3위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24113v1">Mixed-signal implementation of feedback-control optimizer for single-layer Spiking Neural Networks</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>92.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 92.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:80 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">On-chip learning is key to scalable and adaptive neuromorphic systems, yet existing training methods are either difficult to implement in hardware or overly restrictive. However, recent studies show that feedback-control optimizers can enable expressive, on-chip training of neuromorphic devices.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">On-chip learning is key to scalable and adaptive neuromorphic systems, yet existing training methods are either difficult to implement in hardware or overly restrictive. However, recent studies show that feedback-control optimizers can enable expressive, on-chip training of neuromorphic devices. In this work, we present a proof-of-concept implementation of such feedback-control optimizers on a mixed-signal neuromorphic processor. We assess the proposed approach in an In-The-Loop(ITL) training setup on both a binary classification task and the nonlinear Yin-Yang problem, demonstrating on-chip training that matches the performance of numerical simulations and gradient-based baselines. Our results highlight the feasibility of feedback-driven, online learning under realistic mixed-signal constraints, and represent a co-design approach toward embedding such rules directly in silicon for autonomous and adaptive neuromorphic computing.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 뉴로모픽 컴퓨팅은 에지 디바이스의 효율성을 높여 실시간 처리를 가능하게 합니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 혼합 신경망 프로세서를 활용하면 저전력으로 고성능 영상 처리를 수행하며, 실시간으로 학습하고 적응하는 카메라 시스템을 구현할 수 있습니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24113v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2603.24466v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24466v1" onchange="updateToolbar()">
+          <span class="rank">4위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24466v1">Short-Term Turbulence Prediction for Seeing Using Machine Learning</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>92.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 92.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:80 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">astro-ph.IM</span>
+          
+          <span class="cat-tag">physics.data-an</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Optical turbulence, driven by fluctuations of the atmospheric refractive index, poses a significant challenge to ground-based optical systems, as it distorts the propagation of light. This degradation affects both astronomical observations and free-space optical communications.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Optical turbulence, driven by fluctuations of the atmospheric refractive index, poses a significant challenge to ground-based optical systems, as it distorts the propagation of light. This degradation affects both astronomical observations and free-space optical communications. While adaptive optics systems correct turbulence effects in real-time, their reactive nature limits their effectiveness under rapidly changing conditions, underscoring the need for predictive solutions. In this study, we address the problem of short-term turbulence forecasting by leveraging machine learning models to predict the atmospheric seeing parameter up to two hours in advance. We compare statistical and deep learning approaches, with a particular focus on probabilistic models that not only produce accurate forecasts but also quantify predictive uncertainty, crucial for robust decision-making in dynamic environments. Our evaluation includes Gaussian processes (GP) for statistical modeling, recurrent neural networks (RNNs) and long short-term memory networks (LSTMs) as deterministic baselines, and our novel implementation of a normalizing flow for time series (FloTS) as a flexible probabilistic deep learning method. All models are trained exclusively on historical seeing data, allowing for a fair performance comparison. We show that FloTS achieves the best overall balance between predictive accuracy and well-calibrated uncertainty.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 카메라 안정화 및 이미지 향상 기술은 스포츠 촬영의 품질을 결정하는 중요 요소입니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 기상 조건 변화를 예측하여 최적의 촬영 환경을 유지하고, 흔들림 없는 선명한 영상을 생성하여 시청자 경험을 향상시킬 수 있습니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24466v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card" data-paper-url="http://arxiv.org/abs/2603.24295v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24295v1" onchange="updateToolbar()">
+          <span class="rank">5위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24295v1">RS-SSM: Refining Forgotten Specifics in State Space Model for Video Semantic Segmentation</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>90.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 90.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:85 + bonus:+3
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Recently, state space models have demonstrated efficient video segmentation through linear-complexity state space compression. However, Video Semantic Segmentation (VSS) requires pixel-level spatiotemporal modeling capabilities to maintain temporal consistency in segmentation of semantic objects.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Recently, state space models have demonstrated efficient video segmentation through linear-complexity state space compression. However, Video Semantic Segmentation (VSS) requires pixel-level spatiotemporal modeling capabilities to maintain temporal consistency in segmentation of semantic objects. While state space models can preserve common semantic information during state space compression, the fixed-size state space inevitably forgets specific information, which limits the models&#39; capability for pixel-level segmentation. To tackle the above issue, we proposed a Refining Specifics State Space Model approach (RS-SSM) for video semantic segmentation, which performs complementary refining of forgotten spatiotemporal specifics. Specifically, a Channel-wise Amplitude Perceptron (CwAP) is designed to extract and align the distribution characteristics of specific information in the state space. Besides, a Forgetting Gate Information Refiner (FGIR) is proposed to adaptively invert and refine the forgetting gate matrix in the state space model based on the specific information distribution. Consequently, our RS-SSM leverages the inverted forgetting gate to complementarily refine the specific information forgotten during state space compression, thereby enhancing the model&#39;s capability for spatiotemporal pixel-level segmentation. Extensive experiments on four VSS benchmarks demonstrate that our RS-SSM achieves state-of-the-art performance while maintaining high computational efficiency. The code is available at https://github.com/zhoujiahuan1991/CVPR2026-RS-SSM.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 비디오 의미 분할 기술이 스포츠 촬영, 하이라이트 추출, 전략 분석에 직접적으로 적용 가능합니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> RS-SSM 모델을 사용하면 실시간으로 선수들과 경기 장면을 분석하여 자동으로 하이라이트 장면을 추출하고 전략 분석을 수행할 수 있습니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24295v1">PDF</a>
+          
+          
+          <a href="https://github.com/zhoujiahuan1991/CVPR2026-RS-SSM">Code</a>
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24245v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24245v1" onchange="updateToolbar()">
+          <span class="rank">6위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24245v1">B-MoE: A Body-Part-Aware Mixture-of-Experts &#34;All Parts Matter&#34; Approach to Micro-Action Recognition</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>86.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 86.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:78 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Micro-actions, fleeting and low-amplitude motions, such as glances, nods, or minor posture shifts, carry rich social meaning but remain difficult for current action recognition models to recognize due to their subtlety, short duration, and high inter-class ambiguity. In this paper, we introduce B-MoE, a Body-part-aware Mixture-of-Experts framework designed to explicitly model the structured nature of human motion.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Micro-actions, fleeting and low-amplitude motions, such as glances, nods, or minor posture shifts, carry rich social meaning but remain difficult for current action recognition models to recognize due to their subtlety, short duration, and high inter-class ambiguity. In this paper, we introduce B-MoE, a Body-part-aware Mixture-of-Experts framework designed to explicitly model the structured nature of human motion. In B-MoE, each expert specializes in a distinct body region (head, body, upper limbs, lower limbs), and is based on the lightweight Macro-Micro Motion Encoder (M3E) that captures long-range contextual structure and fine-grained local motion. A cross-attention routing mechanism learns inter-region relationships and dynamically selects the most informative regions for each micro-action. B-MoE uses a dual-stream encoder that fuses these region-specific semantic cues with global motion features to jointly capture spatially localized cues and temporally subtle variations that characterize micro-actions. Experiments on three challenging benchmarks (MA-52, SocialGesture, and MPII-GroupInteraction) show consistent state-of-theart gains, with improvements in ambiguous, underrepresented, and low amplitude classes.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 신체 부위별 전문가 모델을 활용한 미세 동작 인식은 스포츠 자세 분석과 하이라이트 장면 자동 추출에 적용 가능하나 스포츠 특화 연구는 아님</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> B-MoE의 신체 부위별 전문가 접근법을 활용해 선수별 동작 패턴을 분석하고, 크로스 어텐션 라우팅으로 중요한 순간을 자동으로 식별하여 하이라이트 영상을 생성할 수 있음</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24245v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.23822v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.23822v1" onchange="updateToolbar()">
+          <span class="rank">7위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.23822v1">How Vulnerable Are Edge LLMs?</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>86.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 86.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:78 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CR</span>
+          
+          <span class="cat-tag">cs.CL</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Large language models (LLMs) are increasingly deployed on edge devices under strict computation and quantization constraints, yet their security implications remain unclear. We study query-based knowledge extraction from quantized edge-deployed LLMs under realistic query budgets and show that, although quantization introduces noise, it does not remove the underlying semantic knowledge, allowing substantial behavioral recovery through carefully designed queries.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Large language models (LLMs) are increasingly deployed on edge devices under strict computation and quantization constraints, yet their security implications remain unclear. We study query-based knowledge extraction from quantized edge-deployed LLMs under realistic query budgets and show that, although quantization introduces noise, it does not remove the underlying semantic knowledge, allowing substantial behavioral recovery through carefully designed queries. To systematically analyze this risk, we propose \textbf{CLIQ} (\textbf{Cl}ustered \textbf{I}nstruction \textbf{Q}uerying), a structured query construction framework that improves semantic coverage while reducing redundancy. Experiments on quantized Qwen models (INT8/INT4) demonstrate that CLIQ consistently outperforms original queries across BERTScore, BLEU, and ROUGE, enabling more efficient extraction under limited budgets. These results indicate that quantization alone does not provide effective protection against query-based extraction, highlighting a previously underexplored security risk in edge-deployed LLMs.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> Directly addresses edge device deployment challenges and capabilities, relevant to the project&#39;s edge device focus.</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.23822v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24383v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24383v1" onchange="updateToolbar()">
+          <span class="rank">8위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24383v1">ViHOI: Human-Object Interaction Synthesis with Visual Priors</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>80.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 80.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:75 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Generating realistic and physically plausible 3D Human-Object Interactions (HOI) remains a key challenge in motion generation. One primary reason is that describing these physical constraints with words alone is difficult.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Generating realistic and physically plausible 3D Human-Object Interactions (HOI) remains a key challenge in motion generation. One primary reason is that describing these physical constraints with words alone is difficult. To address this limitation, we propose a new paradigm: extracting rich interaction priors from easily accessible 2D images. Specifically, we introduce ViHOI, a novel framework that enables diffusion-based generative models to leverage rich, task-specific priors from 2D images to enhance generation quality. We utilize a large Vision-Language Model (VLM) as a powerful prior-extraction engine and adopt a layer-decoupled strategy to obtain visual and textual priors. Concurrently, we design a Q-Former-based adapter that compresses the VLM&#39;s high-dimensional features into compact prior tokens, which significantly facilitates the conditional training of our diffusion model. Our framework is trained on motion-rendered images from the dataset to ensure strict semantic alignment between visual inputs and motion sequences. During inference, it leverages reference images synthesized by a text-to-image generation model to improve generalization to unseen objects and interaction categories. Experimental results demonstrate that ViHOI achieves state-of-the-art performance, outperforming existing methods across multiple benchmarks and demonstrating superior generalization.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 인간-물체 상호작용 생성에 초점을 맞춰 스포츠 동작 분석 및 하이라이트 영상 생성에 직접적으로 적용 가능</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 2D 영상에서 시각적 선호도를 추출해 스포츠 동작의 물리적 제약을 모델링하고, 확산 모델을 사용해 실제적인 경기 장면을 생성</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24383v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24343v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24343v1" onchange="updateToolbar()">
+          <span class="rank">9위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24343v1">Enhancing Efficiency and Performance in Deepfake Audio Detection through Neuron-level dropin &amp; Neuroplasticity Mechanisms</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>78.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 78.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:65 + bonus:+8
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.SD</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Current audio deepfake detection has achieved remarkable performance using diverse deep learning architectures such as ResNet, and has seen further improvements with the introduction of large models (LMs) like Wav2Vec. The success of large language models (LLMs) further demonstrates the benefits of scaling model parameters, but also highlights one bottleneck where performance gains are constrained by parameter counts.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Current audio deepfake detection has achieved remarkable performance using diverse deep learning architectures such as ResNet, and has seen further improvements with the introduction of large models (LMs) like Wav2Vec. The success of large language models (LLMs) further demonstrates the benefits of scaling model parameters, but also highlights one bottleneck where performance gains are constrained by parameter counts. Simply stacking additional layers, as done in current LLMs, is computationally expensive and requires full retraining. Furthermore, existing low-rank adaptation methods are primarily applied to attention-based architectures, which limits their scope. Inspired by the neuronal plasticity observed in mammalian brains, we propose novel algorithms, dropin and further plasticity, that dynamically adjust the number of neurons in certain layers to flexibly modulate model parameters. We evaluate these algorithms on multiple architectures, including ResNet, Gated Recurrent Neural Networks, and Wav2Vec. Experimental results using the widely recognised ASVSpoof2019 LA, PA, and FakeorReal dataset demonstrate consistent improvements in computational efficiency with the dropin approach and a maximum of around 39% and 66% relative reduction in Equal Error Rate with the dropin and plasticity approach among these dataset, respectively. The code and supplementary material are available at Github link.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> Efficiency techniques for neural networks on edge devices could be applicable to sports video processing, though focused on audio detection.</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24343v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24111v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24111v1" onchange="updateToolbar()">
+          <span class="rank">10위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24111v1">Toward a Multi-Layer ML-Based Security Framework for Industrial IoT</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>76.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 76.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:60 + bonus:+10
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CR</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">The Industrial Internet of Things (IIoT) introduces significant security challenges as resource-constrained devices become increasingly integrated into critical industrial processes. Existing security approaches typically address threats at a single network layer, often relying on expensive hardware and remaining confined to simulation environments.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">The Industrial Internet of Things (IIoT) introduces significant security challenges as resource-constrained devices become increasingly integrated into critical industrial processes. Existing security approaches typically address threats at a single network layer, often relying on expensive hardware and remaining confined to simulation environments. In this paper, we present the research framework and contributions of our doctoral thesis, which aims to develop a lightweight, Machine Learning (ML)-based security framework for IIoT environments. We first describe our adoption of the Tm-IIoT trust model and the Hybrid IIoT (H-IIoT) architecture as foundational baselines, then introduce the Trust Convergence Acceleration (TCA) approach, our primary contribution that integrates ML to predict and mitigate the impact of degraded network conditions on trust convergence, achieving up to a 28.6% reduction in convergence time while maintaining robustness against adversarial behaviors. We then propose a real-world deployment architecture based on affordable, open-source hardware, designed to implement and extend the security framework. Finally, we outline our ongoing research toward multi-layer attack detection, including physical-layer threat identification and considerations for robustness against adversarial ML attacks.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> IoT 장치를 위한 경량 ML 프레임워크로 실제 저비용 오픈소스 하드웨어에 배포되는 접근 방식이 엣지 디바이스 구현과 관련 있음</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24111v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24484v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24484v1" onchange="updateToolbar()">
+          <span class="rank">11위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24484v1">Video-Only ToM: Enhancing Theory of Mind in Multimodal Large Language Models</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>72.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 72.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:65 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">As large language models (LLMs) continue to advance, there is increasing interest in their ability to infer human mental states and demonstrate a human-like Theory of Mind (ToM). Most existing ToM evaluations, however, are centered on text-based inputs, while scenarios relying solely on visual information receive far less attention.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">As large language models (LLMs) continue to advance, there is increasing interest in their ability to infer human mental states and demonstrate a human-like Theory of Mind (ToM). Most existing ToM evaluations, however, are centered on text-based inputs, while scenarios relying solely on visual information receive far less attention. This leaves a gap, since real-world human-AI interaction typically requires multimodal understanding. In addition, many current methods regard the model as a black box and rarely probe how its internal attention behaves in multiple-choice question answering (QA). The impact of LLM hallucinations on such tasks is also underexplored from an interpretability perspective. To address these issues, we introduce VisionToM, a vision-oriented intervention framework designed to strengthen task-aware reasoning. The core idea is to compute intervention vectors that align visual representations with the correct semantic targets, thereby steering the model&#39;s attention through different layers of visual features. This guidance reduces the model&#39;s reliance on spurious linguistic priors, leading to more reliable multimodal language model (MLLM) outputs and better QA performance. Experiments on the EgoToM benchmark-an egocentric, real-world video dataset for ToM with three multiple-choice QA settings-demonstrate that our method substantially improves the ToM abilities of MLLMs. Furthermore, results on an additional open-ended generation task show that VisionToM enables MLLMs to produce free-form explanations that more accurately capture agents&#39; mental states, pushing machine-human collaboration toward greater alignment.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 비디오 기반 정신 상태 추론 기술이 스포츠 전략 분석에 부분적으로 적용 가능. 선수들의 의도와 행동 패턴을 분석하여 게임 전략을 예측하고 개인별 하이라이트를 생성하는 데 활용 가능.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> VisionToM 프레임워크를 스포츠 영상 분석에 적용하여 선수들의 시각적 정보를 정신 상태와 연결. 다중 선택 QA 방식을 게임 상황 분석에 변형 적용, 경기 전략 예측 정확도 향상.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24484v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.23854v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.23854v1" onchange="updateToolbar()">
+          <span class="rank">12위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.23854v1">Symbolic--KAN: Kolmogorov-Arnold Networks with Discrete Symbolic Structure for Interpretable Learning</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>72.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 72.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:65 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.CE</span>
+          
+          <span class="cat-tag">math.AP</span>
+          
+          <span class="cat-tag">math.DS</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Symbolic discovery of governing equations is a long-standing goal in scientific machine learning, yet a fundamental trade-off persists between interpretability and scalable learning. Classical symbolic regression methods yield explicit analytic expressions but rely on combinatorial search, whereas neural networks scale efficiently with data and dimensionality but produce opaque representations.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Symbolic discovery of governing equations is a long-standing goal in scientific machine learning, yet a fundamental trade-off persists between interpretability and scalable learning. Classical symbolic regression methods yield explicit analytic expressions but rely on combinatorial search, whereas neural networks scale efficiently with data and dimensionality but produce opaque representations. In this work, we introduce Symbolic Kolmogorov-Arnold Networks (Symbolic-KANs), a neural architecture that bridges this gap by embedding discrete symbolic structure directly within a trainable deep network. Symbolic-KANs represent multivariate functions as compositions of learned univariate primitives applied to learned scalar projections, guided by a library of analytic primitives, hierarchical gating, and symbolic regularization that progressively sharpens continuous mixtures into one-hot selections. After gated training and discretization, each active unit selects a single primitive and projection direction, yielding compact closed-form expressions without post-hoc symbolic fitting. Symbolic-KANs further act as scalable primitive discovery mechanisms, identifying the most relevant analytic components that can subsequently inform candidate libraries for sparse equation-learning methods. We demonstrate that Symbolic-KAN reliably recovers correct primitive terms and governing structures in data-driven regression and inverse dynamical systems. Moreover, the framework extends to forward and inverse physics-informed learning of partial differential equations, producing accurate solutions directly from governing constraints while constructing compact symbolic representations whose selected primitives reflect the true analytical structure of the underlying equations. These results position Symbolic-KAN as a step toward scalable, interpretable, and mechanistically grounded learning of governing laws.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 수학적 모델링 접근법이 스포츠 동작 분석에 잠재적으로 적용 가능</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.23854v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24505v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24505v1" onchange="updateToolbar()">
+          <span class="rank">13위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24505v1">JSSAnet: Theory-Guided Subchannel Partitioning and Joint Spatial Attention for Near-Field Channel Estimation</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>72.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 72.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:65 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.SP</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">The deployment of extremely large-scale antenna array (ELAA) in sixth-generation (6G) communication systems introduces unique challenges for efficient near-field channel estimation. To tackle these issues, this paper presents a theory-guided approach that incorporates angular information into an attention-based estimation framework.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">The deployment of extremely large-scale antenna array (ELAA) in sixth-generation (6G) communication systems introduces unique challenges for efficient near-field channel estimation. To tackle these issues, this paper presents a theory-guided approach that incorporates angular information into an attention-based estimation framework. A piecewise Fourier representation is proposed to implicitly encode the near-field channel&#39;s inherent nonlinearity, enabling the entire channel to be segmented into multiple subchannels, each mapped to the angular domain via the discrete Fourier transform (DFT). Then, we develop a joint subchannel-spatial-attention network (JSSAnet) to extract the spatial features of both intra- and inter-subchannels. To guide theoretically the design of the joint attention mechanism, we derive upper and lower bounds based on approximation criteria and DFT quantization loss mitigation, respectively. Following by both bounds, a JSSA layer of an attention block is constructed to assign independent and adaptive spatial attention weights to each subchannel in parallel. Subsequently, a feed-forward network (FFN) of an attention block further captures and refines the residual nonlinear dependencies across subchannels. Moreover, the proposed JSSA map is linearly computed via element-wise product combining large-kernel convolutions (DLKC), maintaining strong contextual learning capability. Numerical results verify the effectiveness of embedding sparsity information into the attention network and demonstrate JSSAnet achieves superior estimation performance compared with existing methods.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 주의 메커니즘을 활용한 비디오 처리 기술이 스포츠 경기 촬영 및 하이라이트 편집에 직접적으로 적용 가능</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 공간 주의 메커니즘을 이용해 경기장 내 선수들의 움직임과 상호작용을 실시간으로 분석하며 중요한 순간을 자동으로 감지</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24505v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24291v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24291v1" onchange="updateToolbar()">
+          <span class="rank">14위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24291v1">Cost-Sensitive Neighborhood Aggregation for Heterophilous Graphs: When Does Per-Edge Routing Help?</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>70.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 70.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+8
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Recent work distinguishes two heterophily regimes: adversarial, where cross-class edges dilute class signal and harm classification, and informative, where the heterophilous structure itself carries useful signal. We ask: when does per-edge message routing help, and when is a uniform spectral channel sufficient?</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Recent work distinguishes two heterophily regimes: adversarial, where cross-class edges dilute class signal and harm classification, and informative, where the heterophilous structure itself carries useful signal. We ask: when does per-edge message routing help, and when is a uniform spectral channel sufficient? To operationalize this question we introduce Cost-Sensitive Neighborhood Aggregation (CSNA), a GNN layer that computes pairwise distance in a learned projection and uses it to soft-route each message through concordant and discordant channels with independent transformations. Under a contextual stochastic block model we show that cost-sensitive weighting preserves class-discriminative signal where mean aggregation provably attenuates it, provided $w_+/w_- &gt; q/p$. On six benchmarks with uniform tuning, CSNA is competitive with state-of-the-art methods on adversarial-heterophily datasets (Texas, Wisconsin, Cornell, Actor) but underperforms on informative-heterophily datasets (Chameleon, Squirrel) -- precisely the regime where per-edge routing has no useful decomposition to exploit. The pattern is itself the finding: the cost function&#39;s ability to separate edge types serves as a diagnostic for the heterophily regime, revealing when fine-grained routing adds value over uniform channels and when it does not. Code is available at https://github.com/eyal-weiss/CSNA-public .</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이용 가능한 코드를 가진 그래프 신경망 접근 방식이 스포츠 데이터 분석에 적용 가능하지만 직접적인 관련은 없음</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24291v1">PDF</a>
+          
+          
+          <a href="https://github.com/eyal-weiss/CSNA-public">Code</a>
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24361v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24361v1" onchange="updateToolbar()">
+          <span class="rank">15위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24361v1">LATS: Large Language Model Assisted Teacher-Student Framework for Multi-Agent Reinforcement Learning in Traffic Signal Control</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>68.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 68.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          <span class="flag-tag flag-realtime">실시간</span>
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Adaptive Traffic Signal Control (ATSC) aims to optimize traffic flow and minimize delays by adjusting traffic lights in real time. Recent advances in Multi-agent Reinforcement Learning (MARL) have shown promise for ATSC, yet existing approaches still suffer from limited representational capacity, often leading to suboptimal performance and poor generalization in complex and dynamic traffic environments.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Adaptive Traffic Signal Control (ATSC) aims to optimize traffic flow and minimize delays by adjusting traffic lights in real time. Recent advances in Multi-agent Reinforcement Learning (MARL) have shown promise for ATSC, yet existing approaches still suffer from limited representational capacity, often leading to suboptimal performance and poor generalization in complex and dynamic traffic environments. On the other hand, Large Language Models (LLMs) excel at semantic representation, reasoning, and analysis, yet their propensity for hallucination and slow inference speeds often hinder their direct application to decision-making tasks. To address these challenges, we propose a novel learning paradigm named LATS that integrates LLMs and MARL, leveraging the former&#39;s strong prior knowledge and inductive abilities to enhance the latter&#39;s decision-making process. Specifically, we introduce a plug-and-play teacher-student learning module, where a trained embedding LLM serves as a teacher to generate rich semantic features that capture each intersection&#39;s topology structures and traffic dynamics. A much simpler (student) neural network then learns to emulate these features through knowledge distillation in the latent space, enabling the final model to operate independently from the LLM for downstream use in the RL decision-making process. This integration significantly enhances the overall model&#39;s representational capacity across diverse traffic scenarios, thus leading to more efficient and generalizable control strategies. Extensive experiments across diverse traffic datasets empirically demonstrate that our method enhances the representation learning capability of RL models, thereby leading to improved overall performance and generalization over both traditional RL and LLM-only approaches. [...]</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> Indirectly related to multi-agent systems which could apply to team sports analysis</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24361v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.23954v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.23954v1" onchange="updateToolbar()">
+          <span class="rank">16위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.23954v1">Towards Energy-aware Requirements Dependency Classification: Knowledge-Graph vs. Vector-Retrieval Augmented Inference with SLMs</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>68.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 68.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+5
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.SE</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          <span class="flag-tag flag-edge">엣지</span>
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">The continuous evolution of system specifications necessitates frequent evaluation of conflicting requirements, a process that is traditionally labour intensive. Although large language models (LLMs) have demonstrated significant potential for automating this detection, their massive computational requirements often result in excessive energy waste.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">The continuous evolution of system specifications necessitates frequent evaluation of conflicting requirements, a process that is traditionally labour intensive. Although large language models (LLMs) have demonstrated significant potential for automating this detection, their massive computational requirements often result in excessive energy waste. Consequently, there is a growing need to transition toward Small Language Models (SLMs) and energy aware architectures for sustainable Requirements Engineering. This study proposes and empirically evaluates an energy aware framework that compares Knowledge Graph-based Retrieval (KGR) with Vector-based Semantic Retrieval (VSR) to enhance SLM-based inference at the 7B to 8B parameter scale. By leveraging structured graph traversal and high dimensional semantic mapping, we extract candidate requirements, which are then classified as conflicting or neutral by an inference engine. We evaluate these retrieval enhanced strategies across Zero-Shot, Few-Shot, and Chain of Thoughts prompting methods. Using a three-pillar sustainability framework measuring energy consumption (Wh), latency (s), and carbon emissions (gCO2eq) alongside standard accuracy metrics (F1 Score), this research provides a first systematic empirical evaluation and trade off analysis between predictive performance and environmental impact. Our findings highlight the effectiveness of structured versus semantic retrieval in detecting requirement conflicts, offering a reproducible, sustainability aware architecture for energy efficient requirement engineering.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 에너지 효율적인 AI 접근 방식을 사용하지만 요구사항 분류에 초점을 맞추어 스포츠 영상 분석과 직접적인 관련이 없음</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.23954v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24431v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24431v1" onchange="updateToolbar()">
+          <span class="rank">17위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24431v1">Learning Response-Statistic Shifts and Parametric Roll Episodes from Wave--Vessel Time Series via LSTM Functional Models</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>67.2</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 67.2%"></div>
+          </div>
+          <span class="score-detail">
+            base:59 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">physics.comp-ph</span>
+          
+          <span class="cat-tag">physics.data-an</span>
+          
+          <span class="cat-tag">physics.flu-dyn</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Parametric roll is a rare but high-consequence instability that can trigger abrupt regime changes in ship response, including pronounced shifts in roll statistics and tail risk. This paper develops a data-driven surrogate that learns the nonlinear, causal functional mapping from incident wave--motion time series to vessel motions, and demonstrates that the surrogate reproduces both (i) parametric roll episodes and (ii) the associated statistical shifts in the response.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Parametric roll is a rare but high-consequence instability that can trigger abrupt regime changes in ship response, including pronounced shifts in roll statistics and tail risk. This paper develops a data-driven surrogate that learns the nonlinear, causal functional mapping from incident wave--motion time series to vessel motions, and demonstrates that the surrogate reproduces both (i) parametric roll episodes and (ii) the associated statistical shifts in the response. Crucially, the learning framework is data-source agnostic: the paired wave--motion time series can be obtained from controlled experiments (e.g., towing-tank or basin tests with wave probes and motion tracking) when a hull exists, or from high-fidelity simulations during design when experiments are not yet available. To provide a controlled severe-sea demonstration, we generate training data with a URANS numerical wave tank, using long-crested irregular seas synthesized from a modified Pierson--Moskowitz spectrum. The demonstration dataset comprises 49 random-phase realizations for each of three sea states, simulated at a fixed forward speed selected to yield encounter conditions under which parametric-roll episodes can occur. A stacked LSTM surrogate is trained on wave-elevation time series and evaluated on held-out realizations using time-domain accuracy and distributional fidelity metrics. In the most severe case, the model tracks the onset and growth of large-amplitude roll consistent with parametric excitation, and captures the corresponding changes in roll probability density functions (PDFs). We further compare loss-function choices (MSE, relative-entropy-based objectives, and amplitude-weighted variants) and show how they trade average error for improved tail fidelity relevant to operability and risk assessment.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> LSTM 시계열 분석 방법론은 스포츠 동작 패턴 인식에 적용 가능하며, 실시간 분석을 위한 저지연 처리가 가능함.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> 스포츠 선수의 동작을 시계열 데이터로 변환하여 LSTM 모델로 학습시켜 개인별 기술 패턴과 실수를 자동으로 감지하고 분석할 수 있음.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24431v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24571v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24571v1" onchange="updateToolbar()">
+          <span class="rank">18위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24571v1">Towards Training-Free Scene Text Editing</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>66.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 66.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+3
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Scene text editing seeks to modify textual content in natural images while maintaining visual realism and semantic consistency. Existing methods often require task-specific training or paired data, limiting their scalability and adaptability.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Scene text editing seeks to modify textual content in natural images while maintaining visual realism and semantic consistency. Existing methods often require task-specific training or paired data, limiting their scalability and adaptability. In this paper, we propose TextFlow, a training-free scene text editing framework that integrates the strengths of Attention Boost (AttnBoost) and Flow Manifold Steering (FMS) to enable flexible, high-fidelity text manipulation without additional training. Specifically, FMS preserves the structural and style consistency by modeling the visual flow of characters and background regions, while AttnBoost enhances the rendering of textual content through attention-based guidance. By jointly leveraging these complementary modules, our approach performs end-to-end text editing through semantic alignment and spatial refinement in a plug-and-play manner. Extensive experiments demonstrate that our framework achieves visual quality and text accuracy comparable to or superior to those of training-based counterparts, generalizing well across diverse scenes and languages. This study advances scene text editing toward a more efficient, generalizable, and training-free paradigm. Code is available at https://github.com/lyb18758/TextFlow</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이미지 텍스트 편집 기술은 스포츠 영상에 점수, 선수 정보, 통계 등의 텍스트 오버레이를 추가하는 데 활용 가능하며, 훈련 없이 작동하는 방식은 edge 디바이스 배포에 유리합니다.</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> TextFlow의 Attention Boost와 Flow Manifold Steering 모듈을 스포츠 영상에 적용하여 선수 이름, 실시간 통계, 경기 정보 등을 자연스럽게 삽입하고 시각적 일관성을 유지할 수 있습니다.</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24571v1">PDF</a>
+          
+          
+          <a href="https://github.com/lyb18758/TextFlow">Code</a>
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24355v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24355v1" onchange="updateToolbar()">
+          <span class="rank">19위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24355v1">Language-Guided Structure-Aware Network for Camouflaged Object Detection</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>64.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 64.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Camouflaged Object Detection (COD) aims to segment objects that are highly integrated with the background in terms of color, texture, and structure, making it a highly challenging task in computer vision. Although existing methods introduce multi-scale fusion and attention mechanisms to alleviate the above issues, they generally lack the guidance of textual semantic priors, which limits the model&#39;s ability to focus on camouflaged regions in complex scenes.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Camouflaged Object Detection (COD) aims to segment objects that are highly integrated with the background in terms of color, texture, and structure, making it a highly challenging task in computer vision. Although existing methods introduce multi-scale fusion and attention mechanisms to alleviate the above issues, they generally lack the guidance of textual semantic priors, which limits the model&#39;s ability to focus on camouflaged regions in complex scenes. To address this issue, this paper proposes a Language-Guided Structure-Aware Network (LGSAN). Specifically, based on the visual backbone PVT-v2, we introduce CLIP to generate masks from text prompts and RGB images, thereby guiding the multi-scale features extracted by PVT-v2 to focus on potential target regions. On this foundation, we further design a Fourier Edge Enhancement Module (FEEM), which integrates multi-scale features with high-frequency information in the frequency domain to extract edge enhancement features. Furthermore, we propose a Structure-Aware Attention Module (SAAM) to effectively enhance the model&#39;s perception of object structures and boundaries. Finally, we introduce a Coarse-Guided Local Refinement Module (CGLRM) to enhance fine-grained reconstruction and boundary integrity of camouflaged object regions. Extensive experiments demonstrate that our method consistently achieves highly competitive performance across multiple COD datasets, validating its effectiveness and robustness.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 객체 탐지 기술은 관련 있으나 위장물체 탐지는 스포츠 분석에 직접 적용 어렵다.</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24355v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.23806v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.23806v1" onchange="updateToolbar()">
+          <span class="rank">20위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.23806v1">Willful Disobedience: Automatically Detecting Failures in Agentic Traces</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>64.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 64.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.SE</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">AI agents are increasingly embedded in real software systems, where they execute multi-step workflows through multi-turn dialogue, tool invocations, and intermediate decisions. These long execution histories, called agentic traces, make validation difficult.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">AI agents are increasingly embedded in real software systems, where they execute multi-step workflows through multi-turn dialogue, tool invocations, and intermediate decisions. These long execution histories, called agentic traces, make validation difficult. Outcome-only benchmarks can miss critical procedural failures, such as incorrect workflow routing, unsafe tool usage, or violations of prompt-specified rules. This paper presents AgentPex, an AI-powered tool designed to systematically evaluate agentic traces. AgentPex extracts behavioral rules from agent prompts and system instructions, then uses these specifications to automatically evaluate traces for compliance. We evaluate AgentPex on 424 traces from τ2-bench across models in telecom, retail, and airline customer service. Our results show that AgentPex distinguishes agent behavior across models and surfaces specification violations that are not captured by outcome-only scoring. It also provides fine-grained analysis by domain and metric, enabling developers to understand agent strengths and weaknesses at scale.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> AI 에이전트 평가 방법론이 스포츠 분석 AI에 적용 가능하지만 스포츠 영상 처리와 직접적인 관련이 없음</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.23806v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.23869v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.23869v1" onchange="updateToolbar()">
+          <span class="rank">21위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.23869v1">Joint Source-Channel-Check Coding with HARQ for Reliable Semantic Communications</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>64.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 64.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:55 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.IV</span>
+          
+          <span class="cat-tag">cs.IT</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Semantic communication has emerged as a promising paradigm for improving transmission efficiency and task-level reliability, yet most existing reliability-enhancement approaches rely on retransmission strategies driven by semantic fidelity checking that require additional check codewords solely for retransmission triggering, thereby incurring substantial communication overhead. In this paper, we propose S3CHARQ, a Joint Source-Channel-Check Coding framework with hybrid automatic repeat request that fundamentally rethinks the role of check codewords in semantic communications.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Semantic communication has emerged as a promising paradigm for improving transmission efficiency and task-level reliability, yet most existing reliability-enhancement approaches rely on retransmission strategies driven by semantic fidelity checking that require additional check codewords solely for retransmission triggering, thereby incurring substantial communication overhead. In this paper, we propose S3CHARQ, a Joint Source-Channel-Check Coding framework with hybrid automatic repeat request that fundamentally rethinks the role of check codewords in semantic communications. By integrating the check codeword into the JSCC process, S3CHARQ enables JS3C, allowing the check codeword to simultaneously support semantic fidelity verification and reconstruction enhancement. At the transmitter, a semantic fidelity-aware check encoder embeds auxiliary reconstruction information into the check codeword. At the receiver, the JSCC and check codewords are jointly decoded by a JS3C decoder, while the check codeword is additionally exploited for perceptual quality estimation. Moreover, because retransmission decisions are necessarily based on imperfect semantic quality estimation in the absence of ground-truth reconstruction, estimation errors are unavoidable and fundamentally limit the effectiveness of rule-based decision schemes. To overcome this limitation, we develop a reinforcement learning-based retransmission decision module that enables adaptive, sample-level retransmission decisions, effectively balancing recovery and refinement information under dynamic channel conditions. Experimental results demonstrate that compared with existing HARQ-based semantic communication systems, the proposed S3CHARQ framework achieves a 2.36 dB improvement in the 97th percentile PSNR, as well as a 37.45% reduction in outage probability.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 의미 기반 통신 프레임워크가 효율적인 영상 전송에 관련 있을 수 있지만 스포츠 분석과 직접적인 관련은 없음</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.23869v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24198v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24198v1" onchange="updateToolbar()">
+          <span class="rank">22위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24198v1">RefReward-SR: LR-Conditioned Reward Modeling for Preference-Aligned Super-Resolution</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>62.4</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 62.4%"></div>
+          </div>
+          <span class="score-detail">
+            base:50 + bonus:+3
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+          <span class="flag-tag flag-code">코드</span>
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Recent advances in generative super-resolution (SR) have greatly improved visual realism, yet existing evaluation and optimization frameworks remain misaligned with human perception. Full-Reference and No-Reference metrics often fail to reflect perceptual preference, either penalizing semantically plausible details due to pixel misalignment or favoring visually sharp but inconsistent artifacts.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Recent advances in generative super-resolution (SR) have greatly improved visual realism, yet existing evaluation and optimization frameworks remain misaligned with human perception. Full-Reference and No-Reference metrics often fail to reflect perceptual preference, either penalizing semantically plausible details due to pixel misalignment or favoring visually sharp but inconsistent artifacts. Moreover, most SR methods rely on ground-truth (GT)-dependent distribution matching, which does not necessarily correspond to human judgments. In this work, we propose RefReward-SR, a low-resolution (LR) reference-aware reward model for preference-aligned SR. Instead of relying on GT supervision or NR evaluation, RefReward-SR assesses high-resolution (HR) reconstructions conditioned on their LR inputs, treating the LR image as a semantic anchor. Leveraging the visual-linguistic priors of a Multimodal Large Language Models (MLLM), it evaluates semantic consistency and plausibility in a reasoning-aware manner. To support this paradigm, we construct RefSR-18K, the first large-scale LR-conditioned preference dataset for SR, providing pairwise rankings based on LR-HR consistency and HR naturalness. We fine-tune the MLLM with Group Relative Policy Optimization (GRPO) using LR-conditioned ranking rewards, and further integrate GRPO into SR model training with RefReward-SR as the core reward signal for preference-aligned generation. Extensive experiments show that our framework achieves substantially better alignment with human judgments, producing reconstructions that preserve semantic consistency while enhancing perceptual plausibility and visual naturalness. Code, models, and datasets will be released upon paper acceptance.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이미지 스타일 전송 기술이 스포츠 콘텐츠의 이미지 보정에 간접적으로 적용 가능</p>
+        
+
+        
+        <p><strong>활용 인사이트:</strong> HAM 기술을 활용하면 스포츠 영상의 품질을 향상시키고 콘텐츠의 정체성을 유지하며 SNS 플랫폼에 최적화된 이미지 생성 가능</p>
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24198v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+      <div class="paper-card paper-card--collapsed" data-paper-url="http://arxiv.org/abs/2603.24043v1">
+        <div class="rank-title">
+          <input type="checkbox" class="paper-checkbox" data-tier="1" data-pdf="https://arxiv.org/pdf/2603.24043v1" onchange="updateToolbar()">
+          <span class="rank">23위</span>
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24043v1">HAM: A Training-Free Style Transfer Approach via Heterogeneous Attention Modulation for Diffusion Models</a>
+          </span>
+          
+        </div>
+
+        <div class="score-bar-container">
+          <span>60.0</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: 60.0%"></div>
+          </div>
+          <span class="score-detail">
+            base:50 + bonus:+0
+          </span>
+        </div>
+
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+
+        
+        
+        <div class="flags">
+          
+          
+          
+        </div>
+        
+
+        
+        <div class="abstract-section">
+          <p class="abstract-preview">Diffusion models have demonstrated remarkable performance in image generation, particularly within the domain of style transfer. Prevailing style transfer approaches typically leverage pre-trained diffusion models&#39; robust feature extraction capabilities alongside external modular control pathways to explicitly impose style guidance signals.</p>
+          
+          <details class="abstract-full">
+            <summary>more</summary>
+            <div class="details-content">Diffusion models have demonstrated remarkable performance in image generation, particularly within the domain of style transfer. Prevailing style transfer approaches typically leverage pre-trained diffusion models&#39; robust feature extraction capabilities alongside external modular control pathways to explicitly impose style guidance signals. However, these methods often fail to capture complex style reference or retain the identity of user-provided content images, thus falling into the trap of style-content balance. Thus, we propose a training-free style transfer approach via $\textbf{h}$eterogeneous $\textbf{a}$ttention $\textbf{m}$odulation ($\textbf{HAM}$) to protect identity information during image/text-guided style reference transfer, thereby addressing the style-content trade-off challenge. Specifically, we first introduces style noise initialization to initialize latent noise for diffusion. Then, during the diffusion process, it innovatively employs HAM for different attention mechanisms, including Global Attention Regulation (GAR) and Local Attention Transplantation (LAT), which better preserving the details of the content image while capturing complex style references. Our approach is validated through a series of qualitative and quantitative experiments, achieving state-of-the-art performance on multiple quantitative metrics.</div>
+          </details>
+          
+        </div>
+        
+
+        
+        <p><strong>선정 근거:</strong> 이미지 스타일 전송 기술이 스포츠 콘텐츠의 이미지 보정에 간접적으로 적용 가능</p>
+        
+
+        
+
+        <div class="paper-links">
+          
+          <a href="https://arxiv.org/pdf/2603.24043v1">PDF</a>
+          
+          
+        </div>
+
+        
+      </div>
+      
+
+      
+      <button class="show-more-btn" id="showMoreBtn" onclick="showAllTier1()">
+        나머지 18편 더 보기
+      </button>
+      
+
+      
+
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-remind">
+    
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22867v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22867v1">TRINE: A Token-Aware, Runtime-Adaptive FPGA Inference Engine for Multimodal AI</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">100.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AR</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Multimodal stacks that mix ViTs, CNNs, GNNs, and transformer NLP strain embedded platforms because their compute/memory patterns diverge and hard real-time targets leave little slack. TRINE is a single-bitstream FPGA accelerator and compiler that executes end-to-end multimodal inference without reconfiguration. Layers are unified as DDMM/SDDMM/SpMM and mapped to a mode-switchable engine that toggles at runtime among weight/output-stationary systolic, 1xCS SIMD, and a routable adder tree (RADT) on a shared PE array. A width-matched, two-stage top-k unit enables in-stream token pruning, while dependency-aware layer offloading (DALO) overlaps independent kernels across reconfigurable processing units to sustain utilization. Evaluated on Alveo U50 and ZCU104, TRINE reduces latency by up to 22.57x vs. RTX 4090 and 6.86x vs. Jetson Orin Nano at 20-21 W; token pruning alone yields up to 7.8x on ViT-heavy pipelines, and DALO contributes up to 79% throughput improvement. With int8 quantization, accuracy drops remain &lt;2.5% across representative tasks, delivering state-of-the-art latency and energy efficiency for unified vision, language, and graph workloads-in one bitstream.</div>
+        
+        
+        <div class="compact-reason">TRINE은 다중 모달 AI 가속을 위한 FPGA 엔진으로, rk3588 기반의 에지 디바이스에서 스포츠 촬영 및 분석을 위한 여러 AI 모델을 효율적으로 실행할 수 있게 해줍니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21792v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21792v1">Convolutions Predictable Offloading to an Accelerator: Formalization and Optimization</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">98.4</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AR</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Convolutional neural networks (CNNs) require a large number of multiply-accumulate (MAC) operations. To meet real-time constraints, they often need to be executed on specialized accelerators composed of an on-chip memory and a processing unit. However, the on-chip memory is often insufficient to store all the data required to compute a CNN layer. Thus, the computation must be performed in several offloading steps. We formalise such sequences of steps and apply our formalism to a state of the art decomposition of convolutions. In order to find optimal strategies in terms of duration, we encode the problem with a set of constraints. A Python-based simulator allows to analyse in-depth computed strategies.</div>
+        
+        
+        <div class="compact-reason">rk3588 엣지 디바이스에서 AI 모델 실행 최적화에 직접적으로 관련된 연구로 실시간 스포츠 촬영 및 분석 성능 향상에 필수적임</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21616v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21616v1">Rateless DeepJSCC for Broadcast Channels: a Rate-Distortion-Complexity Tradeoff</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">96.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.IT</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">eess.SP</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">In recent years, numerous data-intensive broadcasting applications have emerged at the wireless edge, calling for a flexible tradeoff between distortion, transmission rate, and processing complexity. While deep learning-based joint source-channel coding (DeepJSCC) has been identified as a potential solution to data-intensive communications, most of these schemes are confined to worst-case solutions, lack adaptive complexity, and are inefficient in broadcast settings. To overcome these limitations, this paper introduces nonlinear transform rateless source-channel coding (NTRSCC), a variable-length JSCC framework for broadcast channels based on rateless codes. In particular, we integrate learned source transformations with physical-layer LT codes, develop unequal protection schemes that exploit decoder side information, and devise approximations to enable end-to-end optimization of rateless parameters. Our framework enables heterogeneous receivers to adaptively adjust their received number of rateless symbols and decoding iterations in belief propagation, thereby achieving a controllable tradeoff between distortion, rate, and decoding complexity. Simulation results demonstrate that the proposed method enhances image broadcast quality under stringent communication and processing budgets over heterogeneous edge devices.</div>
+        
+        
+        <div class="compact-reason">Rateless DeepJSCC framework for broadcast channels could enable efficient streaming of sports content to heterogeneous edge devices.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21638v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21638v1">No Dense Tensors Needed: Fully Sparse Object Detection on Event-Camera Voxel Grids</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">96.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Event cameras produce asynchronous, high-dynamic-range streams well suited for detecting small, fast-moving drones, yet most event-based detectors convert the sparse event stream into dense tensors, discarding the representational efficiency of neuromorphic sensing. We propose SparseVoxelDet, to our knowledge the first fully sparse object detector for event cameras, in which backbone feature extraction, feature pyramid fusion, and the detection head all operate exclusively on occupied voxel positions through 3D sparse convolutions; no dense feature tensor is instantiated at any stage of the pipeline. On the FRED benchmark (629,832 annotated frames), SparseVoxelDet achieves 83.38% mAP at 50 while processing only 14,900 active voxels per frame (0.23% of the T.H.W grid), compared to 409,600 pixels for the dense YOLOv11 baseline (87.68% mAP at 50). Relaxing the IoU threshold from 0.50 to 0.40 recovers mAP to 89.26%, indicating that the remaining accuracy gap is dominated by box regression precision rather than detection capability. The sparse representation yields 858 times GPU memory compression and 3,670 times storage reduction relative to the equivalent dense 3D voxel tensor, with data-structure size that scales with scene dynamics rather than sensor resolution. Error forensics across 119,459 test frames confirms that 71 percent of failures are localization near-misses rather than missed targets. These results demonstrate that native sparse processing is a viable paradigm for event-camera object detection, exploiting the structural sparsity of neuromorphic sensor data without requiring neuromorphic computing hardware, and providing a framework whose representation cost is governed by scene activity rather than pixel count, a property that becomes increasingly valuable as event cameras scale to higher resolutions.</div>
+        
+        
+        <div class="compact-reason">이벤트 카메라를 이용한 효율적인 희소 객체 탐지 기술로 엣지 디바이스에 직접 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21718v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21718v1">ANCHOR: Adaptive Network based on Cascaded Harmonic Offset Routing</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">93.6</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.SP</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Time series analysis plays a foundational role in a wide range of real-world applications, yet accurately modeling complex non-stationary signals remains a shared challenge across downstream tasks. Existing methods attempt to extract features directly from one-dimensional sequences, making it difficult to handle the widely observed dynamic phase drift and discrete quantization error. To address this issue, we decouple temporal evolution into macroscopic physical periods and microscopic phase perturbations, and inject frequency-domain priors derived from the Real Fast Fourier Transform (RFFT) into the underlying spatial sampling process. Based on this idea, we propose a Frequency-Guided Deformable Module (FGDM) to adaptively compensate for microscopic phase deviations. Built upon FGDM, we further develop an Adaptive Network based on Cascaded Harmonic Offset Routing (ANCHOR) as a general-purpose backbone for time-series modeling. Through orthogonal channel partitioning and a progressive residual architecture, ANCHOR efficiently decouples multi-scale harmonic features while substantially suppressing the computational redundancy of multi-branch networks. Extensive experiments demonstrate that ANCHOR achieves the best performance in most short-term forecasting sub-tasks and exhibits strong competitiveness on several specific sub-tasks in anomaly detection and time-series classification, validating its effectiveness as a universal time-series foundation backbone.</div>
+        
+        
+        <div class="compact-reason">시계열 분석 기술로 스포츠 동작 분석에 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22855v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22855v1">TorR: Towards Brain-Inspired Task-Oriented Reasoning via Cache-Oriented Algorithm-Architecture Co-design</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">93.6</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.AR</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Task-oriented object detection (TOOD) atop CLIP offers open-vocabulary, prompt-driven semantics, yet dense per-window computation and heavy memory traffic hinder real-time, power-limited edge deployment. We present \emph{TorR}, a brain-inspired \textbf{algorithm--architecture co-design} that \textbf{replaces CLIP-style dense alignment with a hyperdimensional (HDC) associative reasoner} and turns temporal coherence into reuse. On the \emph{algorithm} side, TorR reformulates alignment as HDC similarity and graph composition, introducing \emph{partial-similarity reuse} via (i) query caching with per-class score accumulation, (ii) exact $δ$-updates when only a small set of hypervector bits change, and (iii) similarity/load-gated bypass under high system load. On the \emph{architecture} side, TorR instantiates a lane-scalable, bit-sliced item memory with bank/precision gating and a lightweight controller that schedules bypass/$δ$/full paths to meet RT-30/RT-60 targets as object counts vary. Synthesized in a TSMC 28\,nm process and exercised with a cycle-accurate simulator, TorR sustains real-time throughput with millijoule-scale energy per window ($\approx$50\,mJ at 60\,FPS; $\approx$113\,mJ at 30\,FPS) and low latency jitter, while delivering competitive AP@0.5 across five task prompts (mean 44.27\%) within a bounded margin to strong VLM baselines, but at orders-of-magnitude lower energy. The design exposes deployment-time configurability (effective dimension $D&#39;$, thresholds, precision) to trade accuracy, latency, and energy for edge budgets.</div>
+        
+        
+        <div class="compact-reason">TorR는 에지 디바이스에서 실시간 객체 탐지를 위한 뇀 영감 기술로, 스포츠 장면에서 선수 및 공 등의 실시간 추적과 분석에 적합합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22120v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22120v1">StreamingClaw Technical Report</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">92.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Applications such as embodied intelligence rely on a real-time perception-decision-action closed loop, posing stringent challenges for streaming video understanding. However, current agents suffer from fragmented capabilities, such as supporting only offline video understanding, lacking long-term multimodal memory mechanisms, or struggling to achieve real-time reasoning and proactive interaction under streaming inputs. These shortcomings have become a key bottleneck for preventing them from sustaining perception, making real-time decisions, and executing actions in real-world environments. To alleviate these issues, we propose StreamingClaw, a unified agent framework for streaming video understanding and embodied intelligence. It is also an OpenClaw-compatible framework that supports real-time, multimodal streaming interaction. StreamingClaw integrates five core capabilities: (1) It supports real-time streaming reasoning. (2) It supports reasoning about future events and proactive interaction under the online evolution of interaction objectives. (3) It supports multimodal long-term storage, hierarchical evolution, and efficient retrieval of shared memory across multiple agents. (4) It supports a closed-loop of perception-decision-action. In addition to conventional tools and skills, it also provides streaming tools and action-centric skills tailored for real-world physical environments. (5) It is compatible with the OpenClaw framework, allowing it to fully leverage the resources and support of the open-source community. With these designs, StreamingClaw integrates online real-time reasoning, multimodal long-term memory, and proactive interaction within a unified framework. Moreover, by translating decisions into executable actions, it enables direct control of the physical world, supporting practical deployment of embodied interaction.</div>
+        
+        
+        <div class="compact-reason">실시간 영상 이해 및 의사결정-행동 루프 기술이 스포츠 자동 촬영에 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21884v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21884v1">Not All Layers Are Created Equal: Adaptive LoRA Ranks for Personalized Image Generation</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">92.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Low Rank Adaptation (LoRA) is the de facto fine-tuning strategy to generate personalized images from pre-trained diffusion models. Choosing a good rank is extremely critical, since it trades off performance and memory consumption, but today the decision is often left to the community&#39;s consensus, regardless of the personalized subject&#39;s complexity. The reason is evident: the cost of selecting a good rank for each LoRA component is combinatorial, so we opt for practical shortcuts such as fixing the same rank for all components. In this paper, we take a first step to overcome this challenge. Inspired by variational methods that learn an adaptive width of neural networks, we let the ranks of each layer freely adapt during fine-tuning on a subject. We achieve it by imposing an ordering of importance on the rank&#39;s positions, effectively encouraging the creation of higher ranks when strictly needed. Qualitatively and quantitatively, our approach, LoRA$^2$, achieves a competitive trade-off between DINO, CLIP-I, and CLIP-T across 29 subjects while requiring much less memory and lower rank than high rank LoRA versions. Code: https://github.com/donaldssh/NotAllLayersAreCreatedEqual.</div>
+        
+        
+        <div class="compact-reason">개인화된 이미지 생성을 위한 적응형 LoRA 기술은 스포츠 영상을 맞춤형 하이라이트 시각물로 변환하는 데 사용될 수 있습니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21600v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21600v1">Benchmarking Message Brokers for IoT Edge Computing: A Comprehensive Performance Study</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">92.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.DC</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Asynchronous messaging is a cornerstone of modern distributed systems, enabling decoupled communication for scalable and resilient applications. Today&#39;s message queue (MQ) ecosystem spans a wide range of designs, from high-throughput streaming platforms to lightweight protocols tailored for edge and IoT environments. Despite this diversity, choosing an appropriate MQ system remains difficult. Existing evaluations largely focus on throughput and latency on fixed hardware, while overlooking CPU and memory footprint and the effects of resource constraints, factors that are critical for edge and IoT deployments. In this paper, we present a systematic performance study of eight prominent message brokers: Mosquitto, EMQX, HiveMQ, RabbitMQ, ActiveMQ Artemis, NATS Server, Redis (Pub/Sub), and Zenoh Router. We introduce mq-bench, a unified benchmarking framework to evaluate these systems under identical conditions, scaling up to 10,000 concurrent client pairs across three VM configurations representative of edge hardware. This study reveals several interesting and sometimes counter-intuitive insights. Lightweight native brokers achieve sub-millisecond latency, while feature-rich enterprise platforms incur 2-3X higher overhead. Under high connection loads, multi-threaded brokers like NATS and Zenoh scale efficiently, whereas the widely-deployed Mosquitto saturates earlier due to its single-threaded architecture. We also find that Java-based brokers consume significantly more memory than native implementations, which has important implications for memory-constrained edge deployments. Based on these findings, we provide practical deployment guidelines that map workload requirements and resource constraints to appropriate broker choices for telemetry, streaming analytics, and IoT use cases.</div>
+        
+        
+        <div class="compact-reason">IoT 엣지 컴퓨팅용 메시지 브로커 벤치마킹은 AI 카메라 디바이스의 내부 통신 시스템 설계에 중요합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22663v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22663v1">Short-Form Video Viewing Behavior Analysis and Multi-Step Viewing Time Prediction</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">92.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.MM</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Short-form videos have become one of the most popular user-generated content formats nowadays. Popular short-video platforms use a simple streaming approach that preloads one or more videos in the recommendation list in advance. However, this approach results in significant data wastage, as a large portion of the downloaded video data is not used due to the user&#39;s early skip behavior. To address this problem, the chunk-based preloading approach has been proposed, where videos are divided into chunks, and preloading is performed in a chunk-based manner to reduce data wastage. To optimize chunk-based preloading, it is important to understand the user&#39;s viewing behavior in short-form video streaming. In this paper, we conduct a measurement study to construct a user behavior dataset that contains users&#39; viewing times of one hundred short videos of various categories. Using the dataset, we evaluate the performance of standard time-series forecasting algorithms for predicting user viewing time in short-form video streaming. Our evaluation results show that Auto-ARIMA generally achieves the lowest and most stable forecasting errors across most experimental settings. The remaining methods, including AR, LR, SVR, and DTR, tend to produce higher errors and exhibit lower stability in many cases. The dataset is made publicly available at https://nvduc.github.io/shortvideodataset.</div>
+        
+        
+        <div class="compact-reason">숏폼 영상 시청 행동 분석 연구는 스포츠 하이라이트 플랫폼의 콘텐츠 추천 알고리즘을 최적화하는 데 직접적으로 활용될 수 있습니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21786v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21786v1">The Universal Normal Embedding</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">90.4</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">eess.IV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Generative models and vision encoders have largely advanced on separate tracks, optimized for different goals and grounded in different mathematical principles. Yet, they share a fundamental property: latent space Gaussianity. Generative models map Gaussian noise to images, while encoders map images to semantic embeddings whose coordinates empirically behave as Gaussian. We hypothesize that both are views of a shared latent source, the Universal Normal Embedding (UNE): an approximately Gaussian latent space from which encoder embeddings and DDIM-inverted noise arise as noisy linear projections. To test our hypothesis, we introduce NoiseZoo, a dataset of per-image latents comprising DDIM-inverted diffusion noise and matching encoder representations (CLIP, DINO). On CelebA, linear probes in both spaces yield strong, aligned attribute predictions, indicating that generative noise encodes meaningful semantics along linear directions. These directions further enable faithful, controllable edits (e.g., smile, gender, age) without architectural changes, where simple orthogonalization mitigates spurious entanglements. Taken together, our results provide empirical support for the UNE hypothesis and reveal a shared Gaussian-like latent geometry that concretely links encoding and generation. Code and data are available https://rbetser.github.io/UNE/</div>
+        
+        
+        <div class="compact-reason">유니버설 노말 임베딩 프레임워크는 스포츠 영상 처리 및 분석에 직접적으로 적용 가능하며, 생성 모델과 인코더 간의 잠재 공간 연결을 통해 영상 보정과 하이라이트 생성을 향상시킬 수 있습니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21590v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21590v1">Feature Incremental Clustering with Generalization Bounds</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">89.6</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">math.ST</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">In many learning systems, such as activity recognition systems, as new data collection methods continue to emerge in various dynamic environmental applications, the attributes of instances accumulate incrementally, with data being stored in gradually expanding feature spaces. How to design theoretically guaranteed algorithms to effectively cluster this special type of data stream, commonly referred to as activity recognition, remains unexplored. Compared to traditional scenarios, we will face at least two fundamental questions in this feature incremental scenario. (i) How to design preliminary and effective algorithms to address the feature incremental clustering problem? (ii) How to analyze the generalization bounds for the proposed algorithms and under what conditions do these algorithms provide a strong generalization guarantee? To address these problems, by tailoring the most common clustering algorithm, i.e., $k$-means, as an example, we propose four types of Feature Incremental Clustering (FIC) algorithms corresponding to different situations of data access: Feature Tailoring (FT), Data Reconstruction (DR), Data Adaptation (DA), and Model Reuse (MR), abbreviated as FIC-FT, FIC-DR, FIC-DA, and FIC-MR. Subsequently, we offer a detailed analysis of the generalization error bounds for these four algorithms and highlight the critical factors influencing these bounds, such as the amounts of training data, the complexity of the hypothesis space, the quality of pre-trained models, and the discrepancy of the reconstruction feature distribution. The numerical experiments show the effectiveness of the proposed algorithms, particularly in their application to activity recognition clustering tasks.</div>
+        
+        
+        <div class="compact-reason">특성 증분 클러스터링 알고리즘은 스포츠 동작 분석과 하이라이트 감지에 직접 적용 가능합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21666v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21666v1">Optimal Memory Encoding Through Fluctuation-Response Structure</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">89.6</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.NE</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Physical reservoir computing exploits the intrinsic dynamics of physical systems for information processing, while keeping the internal dynamics fixed and training only linear readouts; yet the role of input encoding remains poorly understood. We show that optimal input encoding is a geometric problem governed by the system&#39;s fluctuation-response structure. By measuring steady-state fluctuations and linear response, we derive an analytical criterion for the input direction that maximizes task-specific linear memory under a fixed power constraint, termed Response-based Optimal Memory Encoding (ROME). Backpropagation-based encoder optimization is shown to be equivalent to ROME, revealing a trade-off between task-dependent feature mixing and intrinsic noise. We apply ROME to various reservoir platforms, including spin-wave waveguides and spiking neural networks, demonstrating effective encoder design across physical and neuromorphic reservoirs, even in non-differentiable systems.</div>
+        
+        
+        <div class="compact-reason">물리적 리저버 컴퓨팅과 스파이킹 신경망은 엣지 디바이스의 영상 처리 효율성을 향상시키는 데 적용 가능합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22786v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22786v1">Predictive Photometric Uncertainty in Gaussian Splatting for Novel View Synthesis</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">89.6</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Recent advances in 3D Gaussian Splatting have enabled impressive photorealistic novel view synthesis. However, to transition from a pure rendering engine to a reliable spatial map for autonomous agents and safety-critical applications, knowing where the representation is uncertain is as important as the rendering fidelity itself. We bridge this critical gap by introducing a lightweight, plug-and-play framework for pixel-wise, view-dependent predictive uncertainty estimation. Our post-hoc method formulates uncertainty as a Bayesian-regularized linear least-squares optimization over reconstruction residuals. This architecture-agnostic approach extracts a per-primitive uncertainty channel without modifying the underlying scene representation or degrading baseline visual fidelity. Crucially, we demonstrate that providing this actionable reliability signal successfully translates 3D Gaussian splatting into a trustworthy spatial map, further improving state-of-the-art performance across three critical downstream perception tasks: active view selection, pose-agnostic scene change detection, and pose-agnostic anomaly detection.</div>
+        
+        
+        <div class="compact-reason">3D 가우시안 스플래팅의 불확실성 예측 기술은 스포츠 장면의 3D 재구성 및 중요 순간 정확히 식별 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22958v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22958v1">Toward Integrated Sensing, Communications, and Edge Intelligence Networks</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">88.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">eess.SP</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Wireless systems are expanding their purposes, from merely connecting humans and things to connecting intelligence and opportunistically sensing of the environment through radio-frequency signals. In this paper, we introduce the concept of triple-functional networks in which the same infrastructure and resources are shared for integrated sensing, communications, and (edge) Artificial Intelligence (AI) inference. This concept opens up several opportunities, such as devising non-orthogonal resource deployment and power consumption to concurrently update multiple services, but also challenges related to resource management and signaling cross-talk, among others. The core idea of this work is that computation-related aspects, including computing resources and AI models availability, should be explicitly considered when taking resource allocation decisions, to address the conflicting goals of the services coexistence. After showing the natural coupling between theoretical performance bounds of the three services, we formulate a service coexistence optimization problem that is solved optimally, and showcase the advantages against a disjoint allocation strategy.</div>
+        
+        
+        <div class="compact-reason">통합 센싱, 통신, 에지 AI 네트워크로 스포츠 촬영 및 분석 시스템에 활용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21615v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21615v1">AdaEdit: Adaptive Temporal and Channel Modulation for Flow-Based Image Editing</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">86.4</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Inversion-based image editing in flow matching models has emerged as a powerful paradigm for training-free, text-guided image manipulation. A central challenge in this paradigm is the injection dilemma: injecting source features during denoising preserves the background of the original image but simultaneously suppresses the model&#39;s ability to synthesize edited content. Existing methods address this with fixed injection strategies -- binary on/off temporal schedules, uniform spatial mixing ratios, and channel-agnostic latent perturbation -- that ignore the inherently heterogeneous nature of injection demand across both the temporal and channel dimensions. In this paper, we present AdaEdit, a training-free adaptive editing framework that resolves this dilemma through two complementary innovations. First, we propose a Progressive Injection Schedule that replaces hard binary cutoffs with continuous decay functions (sigmoid, cosine, or linear), enabling a smooth transition from source-feature preservation to target-feature generation and eliminating feature discontinuity artifacts. Second, we introduce Channel-Selective Latent Perturbation, which estimates per-channel importance based on the distributional gap between the inverted and random latents and applies differentiated perturbation strengths accordingly -- strongly perturbing edit-relevant channels while preserving structure-encoding channels. Extensive experiments on the PIE-Bench benchmark (700 images, 10 editing types) demonstrate that AdaEdit achieves an 8.7% reduction in LPIPS, a 2.6% improvement in SSIM, and a 2.3% improvement in PSNR over strong baselines, while maintaining competitive CLIP similarity. AdaEdit is fully plug-and-play and compatible with multiple ODE solvers including Euler, RF-Solver, and FireFlow. Code is available at https://github.com/leeguandong/AdaEdit</div>
+        
+        
+        <div class="compact-reason">스포츠 영상 하이라이트 제작에 직접 적용 가능한 이미지 편집 기술</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22908v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22908v1">Dual-Teacher Distillation with Subnetwork Rectification for Black-Box Domain Adaptation</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">85.6</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Assuming that neither source data nor the source model is accessible, black box domain adaptation represents a highly practical yet extremely challenging setting, as transferable information is restricted to the predictions of the black box source model, which can only be queried using target samples. Existing approaches attempt to extract transferable knowledge through pseudo label refinement or by leveraging external vision language models (ViLs), but they often suffer from noisy supervision or insufficient utilization of the semantic priors provided by ViLs, which ultimately hinder adaptation performance. To overcome these limitations, we propose a dual teacher distillation with subnetwork rectification (DDSR) model that jointly exploits the specific knowledge embedded in black box source models and the general semantic information of a ViL. DDSR adaptively integrates their complementary predictions to generate reliable pseudo labels for the target domain and introduces a subnetwork driven regularization strategy to mitigate overfitting caused by noisy supervision. Furthermore, the refined target predictions iteratively enhance both the pseudo labels and ViL prompts, enabling more accurate and semantically consistent adaptation. Finally, the target model is further optimized through self training with classwise prototypes. Extensive experiments on multiple benchmark datasets validate the effectiveness of our approach, demonstrating consistent improvements over state of the art methods, including those using source data or models.</div>
+        
+        
+        <div class="compact-reason">도메인 적응 기술은 다양한 스포츠 환경에서 AI 모델을 효과적으로 적용시키는 데 필수적입니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21596v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21596v1">In-network Attack Detection with Federated Deep Learning in IoT Networks: Real Implementation and Analysis</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.CR</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">The rapid expansion of the Internet of Things (IoT) and its integration with backbone networks have heightened the risk of security breaches. Traditional centralized approaches to anomaly detection, which require transferring large volumes of data to central servers, suffer from privacy, scalability, and latency limitations. This paper proposes a lightweight autoencoder-based anomaly detection framework designed for deployment on resource-constrained edge devices, enabling real-time detection while minimizing data transfer and preserving privacy. Federated learning is employed to train models collaboratively across distributed devices, where local training occurs on edge nodes and only model weights are aggregated at a central server. A real-world IoT testbed using Raspberry Pi sensor nodes was developed to collect normal and attack traffic data. The proposed federated anomaly detection system, implemented and evaluated on the testbed, demonstrates its effectiveness in accurately identifying network attacks. The communication overhead was reduced significantly while achieving comparable performance to the centralized method.</div>
+        
+        
+        <div class="compact-reason">Federated learning for IoT edge devices with real-time processing, applicable to edge computing aspects of the project</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22231v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22231v1">One Model, Two Markets: Bid-Aware Generative Recommendation</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.IR</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">cs.GT</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Generative Recommender Systems using semantic ids, such as TIGER (Rajput et al., 2023), have emerged as a widely adopted competitive paradigm in sequential recommendation. However, existing architectures are designed solely for semantic retrieval and do not address concerns such as monetization via ad revenue and incorporation of bids for commercial retrieval. We propose GEM-Rec, a unified framework that integrates commercial relevance and monetization objectives directly into the generative sequence. We introduce control tokens to decouple the decision of whether to show an ad from which item to show. This allows the model to learn valid placement patterns directly from interaction logs, which inherently reflect past successful ad placements. Complementing this, we devise a Bid-Aware Decoding mechanism that handles real-time pricing, injecting bids directly into the inference process to steer the generation toward high-value items. We prove that this approach guarantees allocation monotonicity, ensuring that higher bids weakly increase an ad&#39;s likelihood of being shown without requiring model retraining. Experiments demonstrate that GEM-Rec allows platforms to dynamically optimize for semantic relevance and platform revenue.</div>
+        
+        
+        <div class="compact-reason">GEM-Rec 프레임워크는 광고 수익 모델을 통합하여 스포츠 콘텐츠 플랫폼의 수익화 전략에 직접 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.23192v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.23192v1">GTLR-GS: Geometry-Texture Aware LiDAR-Regularized 3D Gaussian Splatting for Realistic Scene Reconstruction</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">84.0</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.GR</span>
+          
+          <span class="cat-tag">cs.MM</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Recent advances in 3D Gaussian Splatting (3DGS) have enabled real-time, photorealistic scene reconstruction. However, conventional 3DGS frameworks typically rely on sparse point clouds derived from Structure-from-Motion (SfM), which inherently suffer from scale ambiguity, limited geometric consistency, and strong view dependency due to the lack of geometric priors. In this work, a LiDAR-centric 3D Gaussian Splatting framework is proposed that explicitly incorporates metric geometric priors into the entire Gaussian optimization process. Instead of treating LiDAR data as a passive initialization source, 3DGS optimization is reformulated as a geometry-conditioned allocation and refinement problem under a fixed representational budget. Specifically, this work introduces (i) a geometry-texture-aware allocation strategy that selectively assigns Gaussian primitives to regions with high structural or appearance complexity, (ii) a curvature-adaptive refinement mechanism that dynamically guides Gaussian splitting toward geometrically complex areas during training, and (iii) a confidence-aware metric depth regularization that anchors the reconstructed geometry to absolute scale using LiDAR measurements while maintaining optimization stability. Extensive experiments on the ScanNet++ dataset and a custom real-world dataset validate the proposed approach. The results demonstrate state-of-the-art performance in metric-scale reconstruction with high geometric fidelity.</div>
+        
+        
+        <div class="compact-reason">LiDAR 기반 3D 가우시안 스플래팅은 스포츠 장면의 실시간 3D 재구성을 통해 다각도 분석을 가능하게 합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21783v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21783v1">SHARP: Spectrum-aware Highly-dynamic Adaptation for Resolution Promotion in Remote Sensing Synthesis</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">82.4</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Text-to-image generation powered by Diffusion Transformers (DiTs) has made remarkable strides, yet remote sensing (RS) synthesis lags behind due to two barriers: the absence of a domain-specialized DiT prior and the prohibitive cost of training at the large resolutions that RS applications demand. Training-free resolution promotion via Rotary Position Embedding (RoPE) rescaling offers a practical remedy, but every existing method applies a static positional scaling rule throughout the denoising process. This uniform compression is particularly harmful for RS imagery, whose substantially denser medium- and high-frequency energy encodes the fine structures critical for aerial-scene realism, such as vehicles, building contours, and road markings. Addressing both challenges requires a domain-specialized generative prior coupled with a denoising-aware positional adaptation strategy. To this end, we fine-tune FLUX on over 100,000 curated RS images to build a strong domain prior (RS-FLUX), and propose Spectrum-aware Highly-dynamic Adaptation for Resolution Promotion (SHARP), a training-free method that introduces a rational fractional time schedule k_rs(t) into RoPE. SHARP applies strong positional promotion during the early layout-formation stage and progressively relaxes it during detail recovery, aligning extrapolation strength with the frequency-progressive nature of diffusion denoising. Its resolution-agnostic formulation further enables robust multi-scale generation from a single set of hyperparameters. Extensive experiments across six square and rectangular resolutions show that SHARP consistently outperforms all training-free baselines on CLIP Score, Aesthetic Score, and HPSv2, with widening margins at more aggressive extrapolation factors and negligible computational overhead. Code and weights are available at https://github.com/bxuanz/SHARP.</div>
+        
+        
+        <div class="compact-reason">스포츠 영상 품질 향상을 위한 고해상도 기술 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22998v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22998v1">VQ-Jarvis: Retrieval-Augmented Video Restoration Agent with Sharp Vision and Fast Thought</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">82.4</span>
+            <span class="recommend-count">1회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Video restoration in real-world scenarios is challenged by heterogeneous degradations, where static architectures and fixed inference pipelines often fail to generalize. Recent agent-based approaches offer dynamic decision making, yet existing video restoration agents remain limited by insufficient quality perception and inefficient search strategies. We propose VQ-Jarvis, a retrieval-augmented, all-in-one intelligent video restoration agent with sharper vision and faster thought. VQ-Jarvis is designed to accurately perceive degradations and subtle differences among paired restoration results, while efficiently discovering optimal restoration trajectories. To enable sharp vision, we construct VSR-Compare, the first large-scale video paired enhancement dataset with 20K comparison pairs covering 7 degradation types, 11 enhancement operators, and diverse content domains. Based on this dataset, we train a multiple operator judge model and a degradation perception model to guide agent decisions. To achieve fast thought, we introduce a hierarchical operator scheduling strategy that adapts to video difficulty: for easy cases, optimal restoration trajectories are retrieved in a one-step manner from a retrieval-augmented generation (RAG) library; for harder cases, a step-by-step greedy search is performed to balance efficiency and accuracy. Extensive experiments demonstrate that VQ-Jarvis consistently outperforms existing methods on complex degraded videos.</div>
+        
+        
+        <div class="compact-reason">VQ-Jarvis는 실시간 비디오 복원 기술로 스포츠 촬영 품질 향상에 직접 적용 가능하며, 다양한 품질 저하 상황에 대응할 수 있는 강력한 복원 능력을 제공합니다.</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21482v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21482v1">ALADIN:Attribute-Language Distillation Network for Person Re-Identification</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Recent vision-language models such as CLIP provide strong cross-modal alignment, but current CLIP-guided ReID pipelines rely on global features and fixed prompts. This limits their ability to capture fine-grained attribute cues and adapt to diverse appearances. We propose ALADIN, an attribute-language distillation network that distills knowledge from a frozen CLIP teacher to a lightweight ReID student. ALADIN introduces fine-grained attribute-local alignment to establish adaptive text-visual correspondence and robust representation learning. A Scene-Aware Prompt Generator produces image-specific soft prompts to facilitate adaptive alignment. Attribute-local distillation enforces consistency between textual attributes and local visual features, significantly enhancing robustness under occlusions. Furthermore, we employ cross-modal contrastive and relation distillation to preserve the inherent structural relationships among attributes. To provide precise supervision, we leverage Multimodal LLMs to generate structured attribute descriptions, which are then converted into localized attention maps via CLIP. At inference, only the student is used. Experiments on Market-1501, DukeMTMC-reID, and MSMT17 show improvements over CNN-, Transformer-, and CLIP-based methods, with better generalization and interpretability.</div>
+        
+        
+        <div class="compact-reason">선수 추적 및 분석을 위한 인물 재식별 시스템 직접 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.22271v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.22271v1">DUO-VSR: Dual-Stream Distillation for One-Step Video Super-Resolution</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CV</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Diffusion-based video super-resolution (VSR) has recently achieved remarkable fidelity but still suffers from prohibitive sampling costs. While distribution matching distillation (DMD) can accelerate diffusion models toward one-step generation, directly applying it to VSR often results in training instability alongside degraded and insufficient supervision. To address these issues, we propose DUO-VSR, a three-stage framework built upon a Dual-Stream Distillation strategy that unifies distribution matching and adversarial supervision for one-step VSR. Firstly, a Progressive Guided Distillation Initialization is employed to stabilize subsequent training through trajectory-preserving distillation. Next, the Dual-Stream Distillation jointly optimizes the DMD and Real-Fake Score Feature GAN (RFS-GAN) streams, with the latter providing complementary adversarial supervision leveraging discriminative features from both real and fake score models. Finally, a Preference-Guided Refinement stage further aligns the student with perceptual quality preferences. Extensive experiments demonstrate that DUO-VSR achieves superior visual quality and efficiency over previous one-step VSR approaches.</div>
+        
+        
+        <div class="compact-reason">비디오 슈퍼-해상도를 위한 이중-스트림 증류 프레임워크로 스포츠 영상 보정 및 편집과 직접적인 관련성 있음</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21991v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21991v1">λ-GELU: Learning Gating Hardness for Controlled ReLU-ization in Deep Networks</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.LG</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Gaussian Error Linear Unit (GELU) is a widely used smooth alternative to Rectifier Linear Unit (ReLU), yet many deployment, compression, and analysis toolchains are most naturally expressed for piecewise-linear (ReLU-type) networks. We study a hardness-parameterized formulation of GELU, f(x;λ)=xΦ(λ x), where Φ is the Gaussian CDF and λ \in [1, infty) controls gate sharpness, with the goal of turning smooth gated training into a controlled path toward ReLU-compatible models. Learning λ is non-trivial: naive updates yield unstable dynamics and effective gradient attenuation, so we introduce a constrained reparameterization and an optimizer-aware update scheme.   Empirically, across a diverse set of model--dataset pairs spanning MLPs, CNNs, and Transformers, we observe structured layerwise hardness profiles and assess their robustness under different initializations. We further study a deterministic ReLU-ization strategy in which the learned gates are progressively hardened toward a principled target, enabling a post-training substitution of λ-GELU by ReLU with reduced disruption. Overall, λ-GELU provides a minimal and interpretable knob to profile and control gating hardness, bridging smooth training with ReLU-centric downstream pipelines.</div>
+        
+        
+        <div class="compact-reason">신경망 최적화 기술로 rk3588 같은 엣지 디바이스에서 효율적인 AI 모델 배포에 적용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21763v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21763v1">Mapping Travel Experience in Public Transport: Real-Time Evidence and Spatial Analysis in Hamburg</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.HC</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Shifting travel from private cars to public transport is critical for meeting climate and related mobility goals, yet passengers will only choose transit if it offers a consistently positive experience. Previous studies of passenger satisfaction have largely relied on retrospective surveys, which overlook the dynamic and spatially differentiated nature of travel experience. This paper introduces a novel combination of real-time experience sampling and spatial hot spot analysis to capture and map where public transport users report consistently positive or negative experiences.   Data were collected from 239 participants in Hamburg between March and September 2025. Using a smartphone application, travelers reported their momentary journey experience every five minutes during everyday trips, yielding over 21,000 in-situ evaluations. These geo-referenced data were analyzed with the Getis-Ord $Gi^{*}$ statistic to detect significant clusters of positive and negative travel experience. The analysis identified distinct hot and cold spots of travel experience across the network. Cold spots were shaped by heterogeneous problems, ranging from predominantly delay-dominated to overcrowding or socially stressful locations. In contrast, hot spots emerged through different pathways, including comfort-oriented, time-efficient or context-driven environments.   The findings highlight three contributions. First, cold spots are not uniform but reflect specific local constellations of problems, requiring targeted interventions. Second, hot spots illustrate multiple success models that can serve as benchmarks for replication. Third, this study demonstrates the value of combining dynamic high-resolution sampling with spatial statistics to guide more effective and place-specific improvements in public transport.</div>
+        
+        
+        <div class="compact-reason">실시간 데이터 수집 및 공간 분석 방법론이 스포츠 경기 데이터 수집과 분석에 직접적으로 적용 가능하며, 경험 매핑 기법을 통해 선수들의 움직임 패턴과 경기 전략 분석에 활용 가능</div>
+        
+      </div>
+      
+      <div class="compact-card compact-card--remind" data-paper-url="http://arxiv.org/abs/2603.21496v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.21496v1">A Framework for Closed-Loop Robotic Assembly, Alignment and Self-Recovery of Precision Optical Systems</a>
+          </span>
+          <span class="compact-meta">
+            <span class="score-detail">80.0</span>
+            <span class="recommend-count">2회째</span>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.RO</span>
+          
+          <span class="cat-tag">cs.AI</span>
+          
+          <span class="cat-tag">physics.optics</span>
+          
+        </div>
+        
+        
+        <div class="compact-body">Robotic automation has transformed scientific workflows in domains such as chemistry and materials science, yet free-space optics, which is a high precision domain, remains largely manual. Optical systems impose strict spatial and angular tolerances, and their performance is governed by tightly coupled physical parameters, making generalizable automation particularly challenging. In this work, we present a robotics framework for the autonomous construction, alignment, and maintenance of precision optical systems. Our approach integrates hierarchical computer vision systems, optimization routines, and custom-built tools to achieve this functionality. As a representative demonstration, we perform the fully autonomous construction of a tabletop laser cavity from randomly distributed components. The system performs several tasks such as laser beam centering, spatial alignment of multiple beams, resonator alignment, laser mode selection, and self-recovery from induced misalignment and disturbances. By achieving closed-loop autonomy for highly sensitive optical systems, this work establishes a foundation for autonomous optical experiments for applications across technical domains.</div>
+        
+        
+        <div class="compact-reason">Computer vision and optimization methodologies relevant to video analysis but specifically for optical systems</div>
+        
+      </div>
+      
+    
+  </div>
+
+  <div class="tab-content tab-panel-below">
+    
+      <div class="empty-message">
+        점수 미달 논문이 없습니다.
+      </div>
+    
+  </div>
+
+  <div class="tab-content tab-panel-excluded">
+    
+      
+      <div class="compact-card compact-card--discarded" data-paper-url="http://arxiv.org/abs/2603.24150v1">
+        <div class="rank-title">
+          <span class="paper-title">
+            <a href="http://arxiv.org/abs/2603.24150v1">A visual observation on the geometry of UMAP projections of the difference vectors of antonym and synonym word pair embeddings</a>
+          </span>
+        </div>
+        
+        <div class="categories">
+          
+          <span class="cat-tag">cs.CL</span>
+          
+          <span class="cat-tag">cs.LG</span>
+          
+        </div>
+        
+        
+        <div class="compact-reason">Word embedding geometry analysis is unrelated to sports video processing or edge devices.</div>
+        
+      </div>
+      
+    
+  </div>
+</div>
+
+<div class="download-toolbar" id="downloadToolbar">
+  <div class="toolbar-selects">
+    <button class="toolbar-btn" onclick="toggleSelect('all')">All</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier1')">Tier 1</button>
+    <button class="toolbar-btn" onclick="toggleSelect('tier2')">Tier 2</button>
+    <button class="toolbar-btn" onclick="toggleSelect('none')">Deselect</button>
+  </div>
+  <button class="toolbar-btn primary" id="downloadBtn" onclick="downloadSelected()">Download 0 PDFs</button>
+</div>
+
+<footer>
+  <p>이 리포트는 arXiv API를 사용하여 생성되었습니다.</p>
+  <p>arXiv 논문의 저작권은 각 저자에게 있습니다.</p>
+  <p>Thank you to arXiv for use of its open access interoperability.</p>
+  <p>run_id: 50 | embedding: en_synthetic
+    | weights: {&#39;embed&#39;: 0.35, &#39;llm&#39;: 0.55, &#39;recency&#39;: 0.1}</p>
+</footer>
+
+<script>
+var READ_KEY = 'paperscout_read';
+var SUPABASE_CFG = {
+  enabled: true,
+  url: 'https://qcvlnebvjzkgbbxainsk.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjdmxuZWJ2anprZ2JieGFpbnNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0ODcyNTgsImV4cCI6MjA4NzA2MzI1OH0.Z53_RbpMnN3U6eyMlIxq-4h16hhvhawDzjKDb_iSNvI'
+};
+
+/* localStorage helpers */
+function getLocalRead() {
+  try { return JSON.parse(localStorage.getItem(READ_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveLocalRead(arr) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+/* Supabase helpers */
+function supabaseHeaders() {
+  return {
+    'apikey': SUPABASE_CFG.key,
+    'Authorization': 'Bearer ' + SUPABASE_CFG.key,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
+  };
+}
+
+function fetchReadFromSupabase() {
+  if (!SUPABASE_CFG.enabled) return Promise.resolve([]);
+  return fetch(SUPABASE_CFG.url + '/rest/v1/read_papers?select=paper_url', {
+    headers: supabaseHeaders()
+  })
+  .then(function(r) { return r.ok ? r.json() : []; })
+  .then(function(rows) { return rows.map(function(r) { return r.paper_url; }); })
+  .catch(function() { return []; });
+}
+
+function markReadOnSupabase(url) {
+  if (!SUPABASE_CFG.enabled || !url) return;
+  fetch(SUPABASE_CFG.url + '/rest/v1/read_papers', {
+    method: 'POST',
+    headers: Object.assign({}, supabaseHeaders(), {'Prefer': 'return=minimal,resolution=ignore-duplicates'}),
+    body: JSON.stringify({ paper_url: url })
+  }).catch(function() {});
+}
+
+/* Unified read state */
+var _readCache = null;
+
+function getReadPapers() {
+  if (_readCache) return _readCache;
+  _readCache = getLocalRead();
+  return _readCache;
+}
+
+function markAsRead(url) {
+  if (!url) return;
+  var read = getReadPapers();
+  if (read.indexOf(url) === -1) {
+    read.push(url);
+    _readCache = read;
+    saveLocalRead(read);
+  }
+  markReadOnSupabase(url);
+}
+
+function isRead(url) {
+  return getReadPapers().indexOf(url) !== -1;
+}
+
+function applyReadState() {
+  var cards = document.querySelectorAll('[data-paper-url]');
+  var remindHidden = 0;
+  cards.forEach(function(card) {
+    var url = card.dataset.paperUrl;
+    if (!isRead(url)) return;
+    // Remind tab: hide read papers entirely
+    if (card.classList.contains('compact-card--remind')) {
+      card.style.display = 'none';
+      remindHidden++;
+    } else {
+      card.classList.add('paper-read');
+    }
+  });
+  // Update remind tab count
+  var remindLabel = document.querySelector('label[for="tab-remind"]');
+  if (remindLabel) {
+    var total = document.querySelectorAll('.compact-card--remind').length;
+    var visible = total - remindHidden;
+    remindLabel.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 (' + visible + ')';
+  }
+  // Show empty message if all remind papers are hidden
+  var remindPanel = document.querySelector('.tab-panel-remind');
+  if (remindPanel) {
+    var visibleCards = remindPanel.querySelectorAll('.compact-card--remind:not([style*="display: none"])');
+    var emptyMsg = remindPanel.querySelector('.empty-message');
+    if (visibleCards.length === 0 && !emptyMsg) {
+      var msg = document.createElement('div');
+      msg.className = 'empty-message';
+      msg.textContent = '\uB2E4\uC2DC \uBCF4\uAE30 \uB17C\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.';
+      remindPanel.appendChild(msg);
+    }
+  }
+}
+
+function trackClicks() {
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var card = link.closest('[data-paper-url]');
+    if (!card) return;
+    markAsRead(card.dataset.paperUrl);
+    card.classList.add('paper-read');
+    // If remind card, hide after brief delay
+    if (card.classList.contains('compact-card--remind')) {
+      setTimeout(function() {
+        card.style.display = 'none';
+        applyReadState();
+      }, 200);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Apply localStorage state immediately for fast UX
+  applyReadState();
+  trackClicks();
+  // Then merge Supabase data for cross-device sync
+  fetchReadFromSupabase().then(function(remote) {
+    if (!remote || remote.length === 0) return;
+    var local = getLocalRead();
+    var merged = local.slice();
+    var changed = false;
+    remote.forEach(function(url) {
+      if (merged.indexOf(url) === -1) {
+        merged.push(url);
+        changed = true;
+      }
+    });
+    if (changed) {
+      _readCache = merged;
+      saveLocalRead(merged);
+      applyReadState();
+    }
+  });
+});
+
+function showAllTier1() {
+  document.querySelectorAll('.paper-card--collapsed').forEach(function(el) {
+    el.classList.remove('paper-card--collapsed');
+  });
+  var btn = document.getElementById('showMoreBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+function toggleSelect(filter) {
+  var boxes = document.querySelectorAll('.tab-panel-today .paper-checkbox');
+  boxes.forEach(function(cb) {
+    if (filter === 'none') { cb.checked = false; }
+    else if (filter === 'all') { cb.checked = true; }
+    else if (filter === 'tier1') { cb.checked = cb.dataset.tier === '1'; }
+    else if (filter === 'tier2') { cb.checked = cb.dataset.tier === '2'; }
+  });
+  updateToolbar();
+}
+
+function updateToolbar() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var toolbar = document.getElementById('downloadToolbar');
+  var btn = document.getElementById('downloadBtn');
+  var count = 0;
+  checked.forEach(function(cb) { if (cb.dataset.pdf) count++; });
+  if (checked.length > 0) {
+    toolbar.classList.add('visible');
+    document.body.classList.add('toolbar-active');
+    btn.textContent = 'Download ' + count + ' PDFs';
+    btn.disabled = (count === 0);
+  } else {
+    toolbar.classList.remove('visible');
+    document.body.classList.remove('toolbar-active');
+  }
+}
+
+function downloadSelected() {
+  var checked = document.querySelectorAll('.paper-checkbox:checked');
+  var urls = [];
+  checked.forEach(function(cb) { if (cb.dataset.pdf) urls.push(cb.dataset.pdf); });
+  if (urls.length === 0) return;
+  urls.forEach(function(url, i) {
+    setTimeout(function() { window.open(url, '_blank'); }, i * 300);
+  });
+}
+</script>
+
+</body>
+</html>
